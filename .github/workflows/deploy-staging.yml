@@ -1,0 +1,91 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [develop]
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: CI Gate
+    uses: ./.github/workflows/ci.yml
+
+  migrate-db:
+    name: Run Database Migrations (Staging)
+    needs: ci
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run migrations
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  deploy-web:
+    name: Deploy Web to Vercel (Staging)
+    needs: [ci, migrate-db]
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy to Vercel
+        run: |
+          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  deploy-worker:
+    name: Deploy Worker to Railway (Staging)
+    needs: [ci, migrate-db]
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --service worker --environment staging
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
