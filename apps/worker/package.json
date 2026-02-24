@@ -12,7 +12,11 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "socket.io": "^4.8.0",
+    "@bull-board/api": "^6.0.0",
+    "@bull-board/express": "^6.0.0",
+    "bullmq": "^5.0.0",
+    "express": "^4.21.0",
+    "zod": "^3.24.0",
     "@ai-office/ai": "workspace:*",
     "@ai-office/db": "workspace:*",
     "@ai-office/queue": "workspace:*",
@@ -22,6 +26,7 @@
   "devDependencies": {
     "@ai-office/tsconfig": "workspace:*",
     "@ai-office/eslint-config": "workspace:*",
+    "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",

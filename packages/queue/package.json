@@ -15,7 +15,7 @@
   "dependencies": {
     "bullmq": "^5.0.0",
     "ioredis": "^5.4.0",
-    "@ai-office/shared": "workspace:*"
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@ai-office/tsconfig": "workspace:*",

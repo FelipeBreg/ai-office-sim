@@ -1,26 +1,99 @@
-import { createServer } from 'node:http';
+import express from 'express';
+import { createBullBoard } from '@bull-board/api';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
+import { ExpressAdapter } from '@bull-board/express';
+import { getAllQueues } from '@ai-office/queue';
+import {
+  createAgentExecutionWorker,
+  createAgentScheduledWorker,
+  createToolExecutionWorker,
+  createEmbeddingGenerationWorker,
+  createNotificationWorker,
+  createAnalyticsWorker,
+  createCleanupWorker,
+} from './workers/index.js';
 
-const PORT = process.env.PORT ?? 4000;
+const PORT = Number(process.env.PORT ?? 4000);
+const isDev = process.env.NODE_ENV !== 'production';
+const SHUTDOWN_TIMEOUT_MS = 30_000;
 
-const server = createServer((_req, res) => {
-  if (_req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
-    return;
-  }
-  res.writeHead(404);
-  res.end();
+// ── Global error handlers ──
+process.on('unhandledRejection', (reason) => {
+  console.error('[worker] Unhandled rejection:', reason);
 });
 
-server.listen(PORT, () => {
-  console.log(`[worker] Health endpoint listening on port ${PORT}`);
+process.on('uncaughtException', (err) => {
+  console.error('[worker] Uncaught exception:', err);
+  shutdown();
+});
+
+// ── Start all workers ──
+const workers = [
+  createAgentExecutionWorker(),
+  createAgentScheduledWorker(),
+  createToolExecutionWorker(),
+  createEmbeddingGenerationWorker(),
+  createNotificationWorker(),
+  createAnalyticsWorker(),
+  createCleanupWorker(),
+];
+
+console.log(`[worker] Started ${workers.length} queue workers`);
+
+// ── Express server for health + bull board ──
+const app = express();
+
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', workers: workers.length, timestamp: new Date().toISOString() });
+});
+
+if (isDev) {
+  const serverAdapter = new ExpressAdapter();
+  serverAdapter.setBasePath('/admin/queues');
+
+  createBullBoard({
+    queues: getAllQueues().map((q) => new BullMQAdapter(q)),
+    serverAdapter,
+  });
+
+  app.use('/admin/queues', serverAdapter.getRouter());
+  console.log(`[worker] Bull Board available at http://localhost:${PORT}/admin/queues`);
+}
+
+const server = app.listen(PORT, () => {
+  console.log(`[worker] HTTP server listening on port ${PORT}`);
   console.log(`[worker] Ready to process jobs`);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('[worker] SIGTERM received, shutting down...');
+// ── Graceful shutdown with timeout ──
+let isShuttingDown = false;
+
+async function shutdown() {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  console.log('[worker] Shutting down...');
+
+  // Hard exit fallback if graceful shutdown takes too long
+  const forceExit = setTimeout(() => {
+    console.error(`[worker] Forced exit after ${SHUTDOWN_TIMEOUT_MS}ms timeout`);
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS);
+
+  try {
+    await Promise.all(workers.map((w) => w.close()));
+    console.log('[worker] All workers closed');
+  } catch (err) {
+    console.error('[worker] Error closing workers:', err);
+  }
+
+  server.closeAllConnections();
   server.close(() => {
+    console.log('[worker] HTTP server closed');
+    clearTimeout(forceExit);
     process.exit(0);
   });
-});
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
