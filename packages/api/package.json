@@ -13,16 +13,18 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@trpc/server": "^11.0.0",
-    "superjson": "^2.2.0",
-    "zod": "^3.24.0",
     "@ai-office/db": "workspace:*",
-    "@ai-office/shared": "workspace:*"
+    "@ai-office/shared": "workspace:*",
+    "@trpc/server": "^11.0.0",
+    "drizzle-orm": "^0.38.0",
+    "superjson": "^2.2.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@ai-office/tsconfig": "workspace:*",
     "@ai-office/eslint-config": "workspace:*",
-    "typescript": "^5.7.0",
-    "eslint": "^9.0.0"
+    "@ai-office/tsconfig": "workspace:*",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.7.0"
   }
 }
