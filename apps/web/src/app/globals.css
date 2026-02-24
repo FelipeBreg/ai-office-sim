@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Font */
+  --font-family-mono: var(--font-mono), 'Courier New', monospace;
+
+  /* Background layers */
+  --color-bg-deepest: #0A0E14;
+  --color-bg-base: #0D1117;
+  --color-bg-raised: #131920;
+  --color-bg-overlay: #1A2028;
+
+  /* Border colors */
+  --color-border-default: #1E2A35;
+  --color-border-subtle: #162029;
+  --color-border-hover: #2A3A4A;
+
+  /* Text colors */
+  --color-text-primary: #E6EDF3;
+  --color-text-secondary: #8B949E;
+  --color-text-muted: #6E7681;
+  --color-text-disabled: #484F58;
+
+  /* Accent colors */
+  --color-accent-cyan: #00C8E0;
+  --color-accent-cyan-hover: #00D4EF;
+  --color-accent-cyan-dim: rgba(0, 200, 224, 0.15);
+
+  /* Status colors */
+  --color-status-success: #2EA043;
+  --color-status-warning: #D29922;
+  --color-status-error: #F85149;
+  --color-status-info: #58A6FF;
+
+  /* Risk level colors */
+  --color-risk-critical: #FF1A1A;
+
+  /* Layout dimensions */
+  --width-sidebar-expanded: 220px;
+  --width-sidebar-collapsed: 52px;
+  --height-header: 44px;
+  --width-panel: 360px;
+
+  /* Border radius — all zero (DOS aesthetic) */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-full: 0px;
+}
+
+body {
+  font-family: var(--font-family-mono);
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  background-color: var(--color-bg-deepest);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-default);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-hover);
+}
