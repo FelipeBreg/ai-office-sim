@@ -276,3 +276,94 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #5 — Epic P0-4: CI/CD Pipeline — GitHub Actions, Vercel, Railway
+================================================================================
+Hash:     bec2cb2
+Date:     2026-02-24 ~19:30 -0300
+Tasks:    P0-4.1 through P0-4.5 (5 tasks)
+================================================================================
+
+WHAT WAS BUILT:
+  .github/workflows/ci.yml:
+    - Triggers: pull_request + push to main/develop + workflow_call (reusable)
+    - Node.js matrix: 20, 22
+    - Services: pgvector/pgvector:pg16 + redis:7-alpine with health checks
+    - Steps: checkout → pnpm 9 → Node.js → install → lint → typecheck → test → build
+    - Concurrency: cancel-in-progress per ref
+    - timeout-minutes: 15
+
+  .github/workflows/deploy-staging.yml:
+    - Trigger: push to develop
+    - Job graph: ci (gate) → migrate-db → deploy-web + deploy-worker (parallel)
+    - cancel-in-progress: false (prevents partial deploys)
+    - Web: Vercel (preview environment)
+    - Worker: Railway CLI (staging environment)
+
+  .github/workflows/deploy-production.yml:
+    - Trigger: push to main
+    - Job graph: ci (gate) → migrate-db → deploy-web + deploy-worker (parallel)
+    - cancel-in-progress: false
+    - Web: Vercel (production environment, --prod flag)
+    - Worker: Railway CLI (production environment)
+
+  vercel.json:
+    - Framework: nextjs
+    - installCommand: pnpm install --frozen-lockfile
+    - buildCommand: pnpm turbo build --filter=web
+    - No rootDirectory (runs from repo root for monorepo compat)
+
+  apps/worker/Dockerfile:
+    - Multi-stage build (builder + runner)
+    - Base: node:20-alpine
+    - Copies ALL workspace package.json files (pnpm lockfile requirement)
+    - Build: pnpm turbo build --filter=worker...
+    - Prune: pnpm prune --prod (in builder, before copy to runner)
+    - Non-root user: worker (uid 1001)
+    - HEALTHCHECK: wget http://localhost:4000/health every 30s
+    - Exposes port 4000
+
+  .dockerignore:
+    - Excludes: node_modules, .git, .github, .turbo, .next, .env*, *.md,
+      dist, coverage, .vscode, .idea
+    - Allows: .env.example
+
+FILES CREATED (6 new):
+  .github/workflows/ci.yml
+  .github/workflows/deploy-staging.yml
+  .github/workflows/deploy-production.yml
+  vercel.json
+  apps/worker/Dockerfile
+  .dockerignore
+
+REVIEW — ISSUES FOUND AND FIXED BEFORE COMMIT:
+  CRITICAL (3):
+    1. ci.yml missing workflow_call trigger → production deploy referenced it as
+       reusable workflow but it had no workflow_call trigger → Added
+    2. Dockerfile missing packages/api and apps/web package.json → pnpm
+       --frozen-lockfile fails when workspace packages are absent → Added ALL
+       workspace package.json files
+    3. deploy-web ran in parallel with migrate-db (web could deploy before
+       migrations) → Changed deploy-web needs to [ci, migrate-db]
+
+  HIGH (5):
+    4. Staging deploy had no CI gate → Added ci job using workflow_call
+    5. Staging deploy was missing database migrations → Added migrate-db job
+    6. Dockerfile ran as root → Added non-root user (worker, uid 1001)
+    7. Dockerfile copied full node_modules with devDeps to runner → Added
+       pnpm prune --prod in builder stage before copy
+    8. vercel.json buildCommand used fragile "cd ../.. &&" path → Changed to
+       root-relative "pnpm turbo build --filter=web", removed rootDirectory
+
+  MEDIUM (2):
+    9. Staging cancel-in-progress:true could leave partial deploys → Changed
+       to false (matches production)
+    10. No timeout on CI job (default 6h) → Added timeout-minutes: 15
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - All 3 workflows have correct job dependency graphs
+  - Dockerfile includes all 10 workspace package.json files
+  - Non-root user configured in runner stage
+
+
+================================================================================
