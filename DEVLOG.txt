@@ -577,3 +577,129 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #11 — Epic P0-7: First Agent Execution Loop
+================================================================================
+Hash:     fb7a4f4
+Date:     2026-02-24 ~22:00 -0300
+Tasks:    P0-7.1 through P0-7.6 (6 tasks)
+================================================================================
+
+WHAT WAS BUILT:
+  packages/ai/src/engine/types.ts:
+    - AgentSession: sessionId, agentId, projectId, startedAt, actionCount,
+      totalTokens, totalCostUsd, status, abortReason
+    - AgentContext: agent config, systemPrompt, tools: ToolDefinition[],
+      memory, conversationHistory, triggerPayload
+    - ToolDefinition: name, description, inputSchema (Zod), requiresApproval,
+      execute(input, context)
+    - ToolExecutionContext: agentId, projectId, sessionId
+    - ExecutionResult: sessionId, status, actions, finalResponse, totalTokens,
+      totalCostUsd, durationMs, abortReason
+    - ActionRecord: type (llm_call | tool_call), toolName, input, output,
+      error, tokensUsed, costUsd, durationMs
+    - SafetyLimits: maxActionsPerSession(20), maxTokensPerSession(100K),
+      maxDurationMs(5min), maxConsecutiveErrors(3), toolCallMinIntervalMs(2s)
+
+  packages/ai/src/engine/executor.ts — Core agentic loop:
+    - Builds messages from context (merges to avoid consecutive user messages)
+    - Calls Claude via callLLM with tool definitions from registry
+    - Detects stop_reason: max_tokens → abort with "[Response truncated]"
+    - Tool execution: Zod validation → approval check → rate limit (2s) →
+      execute with 60s timeout (timer cleared with .finally())
+    - Truncates tool results to 10K chars to prevent context window bloat
+    - Failed LLM calls count toward action limit
+    - Non-blocking action_logs persistence
+    - Safety checks per iteration: action count, token budget, duration,
+      consecutive errors
+    - Ensures terminal status (completed | error | aborted) before returning
+
+  packages/ai/src/tools/registry.ts:
+    - ToolRegistry class: register, get, getAll, getByNames, toAnthropicTools
+    - zodToJsonSchema + zodTypeToJsonSchema: hand-rolled converters for
+      ZodString, ZodNumber, ZodBoolean, ZodOptional, ZodArray, ZodEnum, ZodObject
+    - 3 stub tools:
+      - get_current_time: returns ISO timestamp + timezone
+      - search_company_memory: placeholder for vector search
+      - log_message: structured JSON logging (prevents log injection)
+
+  packages/ai/src/memory/individual.ts:
+    - loadMemory(agentId, projectId): loads all key/value entries
+    - saveMemory(agentId, projectId, key, value): race-safe upsert
+      (try INSERT, catch duplicate → UPDATE fallback)
+    - searchMemory(agentId, projectId, query, topK): stub returning all
+      entries (TODO P1: vector similarity with pgvector)
+
+  apps/worker/src/jobs/agent-execution.ts:
+    - processAgentExecution(data): full agent execution handler
+    - CAS concurrency guard: UPDATE agents SET status='working'
+      WHERE id=agentId AND status='idle' (prevents parallel runs)
+    - Loads agent config, memory, builds context, creates session
+    - Configurable limits: maxActionsPerSession from agent config,
+      token budget from cost budget × 100K
+    - Sentry.captureException on failure with agentId/projectId/sessionId tags
+    - Updates agent status to idle (success) or error (failure)
+
+  packages/ai/src/index.ts:
+    - Updated barrel exports for all engine components:
+      executeAgent, AgentSession, AgentContext, ToolDefinition,
+      ToolExecutionContext, ExecutionResult, ActionRecord, SafetyLimits,
+      DEFAULT_SAFETY_LIMITS, toolRegistry, loadMemory, saveMemory, searchMemory
+
+FILES CREATED (5 new, 2 modified):
+  New:
+    packages/ai/src/engine/types.ts
+    packages/ai/src/engine/executor.ts
+    packages/ai/src/tools/registry.ts
+    packages/ai/src/memory/individual.ts
+    apps/worker/src/jobs/agent-execution.ts
+  Modified:
+    packages/ai/src/index.ts (barrel exports)
+    pnpm-lock.yaml
+
+REVIEW — ISSUES FOUND AND FIXED BEFORE COMMIT:
+  CRITICAL (3):
+    1. Failed LLM calls did not increment actionCount → could infinite-loop
+       on persistent API errors → Added session.actionCount++ in catch block
+    2. Promise.race timer leaked on successful tool execution → clearTimeout
+       never called → Added .finally(() => clearTimeout(timeoutId!))
+    3. Unbounded tool result strings could fill context window → Added
+       MAX_TOOL_RESULT_LENGTH (10K chars) truncation with "[truncated]" marker
+
+  HIGH (5):
+    4. Consecutive user messages would violate Anthropic API contract
+       → Added merge logic: if last message is user role, concatenate content
+    5. stop_reason: max_tokens treated as successful completion (silent
+       truncation) → Detect stop_reason and abort with clear message
+    6. No concurrency guard → agent could run multiple sessions in parallel
+       → CAS: UPDATE WHERE status='idle', skip if already working
+    7. requiresApproval tools created wasteful retry loop (never-ending
+       tool call attempts) → Abort session with reason message for review
+    8. Log injection via log_message tool → Structured JSON logging with
+       JSON.stringify and message length limit (1000 chars)
+
+  MEDIUM (9):
+    9. safeStringify helper missing (JSON.stringify could throw on circular refs)
+       → Added try/catch wrapper with String() fallback
+    10. toolDef.execute called with raw input before Zod validation
+        → Moved validation before execution, use parseResult.data
+    11. Wrong duration calculated for error actions (used shared start time)
+        → Per-call llmCallStart/toolStart timestamps
+    12. Missing type narrowing on tool_use blocks → Added type predicate filter
+    13. No rate limiting between tool calls → Added toolCallMinIntervalMs (2s)
+    14. Worker imported from deep @ai-office/ai paths → Updated barrel exports
+    15. zodToJsonSchema fragile (doesn't handle ZodDefault, ZodNullable, etc.)
+        → Acknowledged: TODO replace with zod-to-json-schema library
+    16. Anthropic Tool type mismatch in inline tool generation
+        → Simplified to use registry.toAnthropicTools()
+    17. triggerPayload could be huge → Sliced to 10K chars
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - All safety limits enforced: actions, tokens, duration, errors, rate limit
+  - Timer cleanup verified (no leaks in Promise.race)
+  - CAS concurrency guard prevents parallel agent sessions
+  - Tool results truncated to 10K chars
+  - All 3 stub tools registered and functional
+
+
+================================================================================
