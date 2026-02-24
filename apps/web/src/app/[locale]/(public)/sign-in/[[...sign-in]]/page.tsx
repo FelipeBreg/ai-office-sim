@@ -1,9 +1,16 @@
 import { SignIn } from '@clerk/nextjs';
 
-export default function SignInPage() {
+export default async function SignInPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-bg-deepest">
       <SignIn
+        forceRedirectUrl={`/${locale}`}
         appearance={{
           elements: {
             rootBox: 'mx-auto',
