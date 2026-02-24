@@ -190,3 +190,89 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #3 — Epic P0-3: Redis & BullMQ Queue System
+================================================================================
+Hash:     f528052
+Date:     2026-02-24 ~18:20 -0300
+Tasks:    P0-3.1 through P0-3.5 (5 tasks)
+================================================================================
+
+WHAT WAS BUILT:
+  packages/queue/src/:
+    - connection.ts: BullMQ connection options factory (parses REDIS_URL,
+      includes db index, enableReadyCheck, maxRetriesPerRequest)
+    - jobs.ts: 7 Zod schemas for typed job payloads (AgentExecution,
+      AgentScheduled, ToolExecution, EmbeddingGeneration, Notification,
+      Analytics, Cleanup)
+    - queues.ts: 7 BullMQ queue instances as lazy singletons with
+      per-queue retry/backoff config + removeOnFail:false (dead letter)
+    - index.ts: Barrel export (QUEUE_NAMES, getters, schemas, types)
+
+  apps/worker/src/:
+    - workers/create-worker.ts: Generic typed worker factory with
+      Zod validation, error/completed/failed/stalled handlers
+    - workers/*.worker.ts: 7 stub workers using factory pattern
+    - index.ts: Express server + Bull Board (dev) + health endpoint
+      + graceful shutdown with 30s timeout + global error handlers
+
+  Queue architecture (7 queues):
+    agent-execution:   concurrency=5,  retry=3x 30s exp backoff
+    agent-scheduled:   concurrency=3,  retry=3x 30s exp backoff
+    tool-execution:    concurrency=10, retry=5x 10s exp backoff
+    embedding-generation: concurrency=3, retry=3x 15s exp backoff
+    notification:      concurrency=5,  retry=5x 60s exp backoff
+    analytics:         concurrency=1,  retry=3x 60s exp backoff
+    cleanup:           concurrency=1,  retry=2x 120s exp backoff
+
+FILES CREATED (11 new, 4 modified):
+  New:
+    packages/queue/src/connection.ts, jobs.ts, queues.ts
+    apps/worker/src/workers/create-worker.ts
+    apps/worker/src/workers/{agent-execution,agent-scheduled,tool-execution,
+      embedding-generation,notification,analytics,cleanup}.worker.ts
+    apps/worker/src/workers/index.ts
+  Modified:
+    packages/queue/src/index.ts, packages/queue/package.json
+    apps/worker/src/index.ts, apps/worker/package.json, pnpm-lock.yaml
+
+REVIEW — ISSUES FOUND AND FIXED BEFORE COMMIT:
+  CRITICAL (3):
+    1. Workers never validated job payloads with Zod at runtime
+       → Created createTypedWorker factory with schema.parse() on every job
+    2. getConnectionOptions() missing enableReadyCheck:false (race on reconnect)
+       → Added to connection options
+    3. createRedisConnection() was a footgun (unused but exported, leaked connections)
+       → Removed entirely, only getConnectionOptions() remains
+
+  HIGH (2):
+    4. Graceful shutdown could hang indefinitely (no timeout)
+       → Added 30s hard-exit timeout + server.closeAllConnections()
+    5. getConnectionOptions() dropped Redis db index from URL path
+       → Added db: Number(parsed.pathname.slice(1)) parsing
+
+  MEDIUM (1):
+    6. No error event handlers on workers (could crash process)
+       → Added worker.on('error') in the factory
+
+  LOW (3) — also fixed:
+    7. No unhandledRejection/uncaughtException handlers → Added
+    8. 7 worker files were 250+ lines of boilerplate → Extracted factory (30 lines)
+    9. Unused socket.io dep in worker → Removed (will add in P0-9)
+    10. Unused @ai-office/shared dep in queue package → Removed
+
+  ALSO FIXED DURING CODING (before review):
+    - Missing zod dep in packages/queue/package.json
+    - ioredis import: default vs named export issue with NodeNext resolution
+      → Used named import { Redis } from 'ioredis'
+    - bull-board adapter import path: .js extension not in exports map
+      → Removed .js suffix
+    - bullmq needed as direct dep in worker (Worker class import)
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - pnpm install: zero errors across all workspaces
+  - All 7 queues match roadmap concurrency and retry specs
+  - All 7 workers validate payloads with Zod before processing
+
+
+================================================================================
