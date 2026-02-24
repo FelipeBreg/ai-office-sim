@@ -1,4 +1,24 @@
+// Client
 export { createAnthropicClient, createDirectClient } from './client.js';
 export type { HeliconeProperties } from './client.js';
+
+// Engine
 export { callLLM } from './engine/llm.js';
 export type { LLMCallContext, LLMCallResult } from './engine/llm.js';
+export { executeAgent } from './engine/executor.js';
+export type {
+  AgentSession,
+  AgentContext,
+  ToolDefinition,
+  ToolExecutionContext,
+  ExecutionResult,
+  ActionRecord,
+  SafetyLimits,
+} from './engine/types.js';
+export { DEFAULT_SAFETY_LIMITS } from './engine/types.js';
+
+// Tools
+export { toolRegistry } from './tools/registry.js';
+
+// Memory
+export { loadMemory, saveMemory, searchMemory } from './memory/individual.js';
