@@ -477,3 +477,103 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #9 — Epic P0-6: LLM Observability (Helicone + Sentry)
+================================================================================
+Hash:     2e78b43
+Date:     2026-02-24 ~21:00 -0300
+Tasks:    P0-6.1 through P0-6.4 (4 tasks)
+================================================================================
+
+WHAT WAS BUILT:
+  packages/ai/src/client.ts:
+    - createAnthropicClient(): routes through Helicone proxy with custom
+      properties (ProjectId, AgentId, SessionId, AgentName)
+    - createDirectClient(): cached singleton for direct Anthropic API
+    - getApiKey(): validates ANTHROPIC_API_KEY with clear error message
+    - Auto-falls back to direct API when HELICONE_API_KEY is unset
+
+  packages/ai/src/engine/llm.ts:
+    - callLLM() wrapper around messages.create() with:
+      - Helicone proxy with 5s timeout (HELICONE_TIMEOUT_MS)
+      - Fallback to direct API on APIConnectionError or 5xx (typed detection)
+      - Token tracking: input_tokens, output_tokens, total
+      - Cost calculation from MODEL_PRICING table (warns on unknown models)
+      - Latency measurement via performance.now()
+      - action_logs persistence (non-blocking: DB failure doesn't discard response)
+    - Model pricing: claude-sonnet-4-6 ($3/$15), claude-haiku-4-5 ($0.8/$4),
+      claude-opus-4-6 ($15/$75)
+
+  apps/web/ Sentry integration:
+    - sentry.client.config.ts: NEXT_PUBLIC_SENTRY_DSN, 10% prod traces
+    - sentry.server.config.ts: same DSN, 10% prod traces
+    - sentry.edge.config.ts: same DSN, 10% prod traces
+    - next.config.mjs: withSentryConfig wrapper, source map upload config
+
+  apps/worker/ Sentry integration:
+    - Sentry.init() at top of index.ts (no-op if DSN unset)
+    - captureException on unhandledRejection + uncaughtException
+
+  packages/db/src/index.ts:
+    - Re-exports drizzle-orm operators (eq, and, or, sql, desc, asc, etc.)
+      to prevent pnpm duplicate package instances across workspaces
+
+FILES CREATED (4 new, 11 modified):
+  New:
+    packages/ai/src/client.ts
+    packages/ai/src/engine/llm.ts
+    apps/web/sentry.client.config.ts
+    apps/web/sentry.server.config.ts
+    apps/web/sentry.edge.config.ts
+  Modified:
+    packages/ai/src/index.ts (barrel exports)
+    packages/ai/package.json (added drizzle-orm, @types/node)
+    packages/db/src/index.ts (drizzle-orm re-exports)
+    apps/web/next.config.mjs (withSentryConfig wrapper)
+    apps/web/package.json (added @sentry/nextjs, removed direct drizzle-orm)
+    apps/web/src/app/api/webhooks/clerk/route.ts (import from @ai-office/db)
+    apps/worker/package.json (added @sentry/node)
+    apps/worker/src/index.ts (Sentry init + captureException)
+    .env.example (added SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT)
+    pnpm-lock.yaml
+
+REVIEW — ISSUES FOUND AND FIXED BEFORE COMMIT:
+  CRITICAL (4):
+    1. Fallback detection used includes('5') — matched any string with digit 5
+       → Changed to APIConnectionError/APIError(status>=500) typed detection
+    2. Missing ANTHROPIC_API_KEY silently passed undefined to SDK
+       → Added getApiKey() with clear error message
+    3. DB insert failure in error path swallowed original LLM error
+       → Wrapped error-path DB insert in try/catch
+    4. DB insert failure in success path discarded valid LLM response
+       → Wrapped success-path insert in try/catch, returns result regardless
+
+  HIGH (5):
+    5. New Anthropic client created per call (connection pool churn)
+       → Cached direct client as singleton via createDirectClient()
+    6. costUsd.toFixed(6) introduced floating-point rounding before Postgres
+       → Changed to String(costUsd), let Postgres handle numeric(10,6)
+    7. Non-null assertion on actionLog!.id unsafe → Used actionLog?.id ?? null
+    8. Inconsistent Sentry DSN env vars (SENTRY_DSN vs NEXT_PUBLIC_SENTRY_DSN)
+       → Unified on NEXT_PUBLIC_SENTRY_DSN everywhere
+    9. Sentry.captureException called without init when DSN unset
+       → Always call Sentry.init() (no-op without DSN)
+
+  MEDIUM (4):
+    10. LLMCallError type exported but never used (dead code) → Removed
+    11. HELICONE_TIMEOUT_MS defined but never applied → Now passed to SDK
+    12. Hardcoded pricing with silent fallback → Added console.warn for unknown models
+    13. replaysOnErrorSampleRate without replayIntegration → Removed replay config
+
+  ALSO FIXED DURING CODING:
+    - pnpm drizzle-orm duplicate instance (web vs db) → Re-exported from @ai-office/db
+    - Duplicate import lines in llm.ts → Combined to single import
+    - Removed unused SENTRY_DSN from .env.example, added SENTRY_AUTH_TOKEN/ORG/PROJECT
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - Fallback uses typed SDK error classes (no string matching)
+  - DB logging is non-blocking in both error and success paths
+  - Direct client cached as singleton
+
+
+================================================================================
