@@ -1036,3 +1036,163 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #17 — Epic P0-10: UI Shell & Base Layout
+================================================================================
+Hash:     dd1863f
+Date:     2026-02-25 ~01:00 -0300
+Tasks:    P0-10.1 through P0-10.5 (5 tasks)
+================================================================================
+
+WHAT WAS BUILT:
+  apps/web/src/components/ui/:
+    - Button: primary/secondary/ghost/danger variants, sm/md/lg sizes
+    - Input: dark theme, focus ring, disabled state
+    - Skeleton: animated pulse placeholder
+    - Tooltip: hover + focus/blur (keyboard accessible), delayed show (200ms),
+      timeout cleared on unmount, 4 position sides, useId for a11y
+    - Separator: horizontal/vertical with aria-orientation
+    - Badge: default/warning/success/error/cyan variants
+    - index.ts barrel export
+
+  apps/web/src/stores/ui-store.ts:
+    - Zustand store for sidebarCollapsed + railCollapsed
+    - persist middleware with partialize (only data, no functions)
+    - skipHydration: true (rehydrated in AppShell useEffect)
+
+  apps/web/src/components/layout/app-shell.tsx:
+    - AppShell: flex layout with ProjectRail + RailExpandButton + Sidebar +
+      Header + main content area
+    - Rehydrates both project-store and ui-store on client mount
+
+  apps/web/src/components/layout/sidebar.tsx:
+    - 11 nav items with lucide-react icons
+    - Items: Office, ATLAS*, Agents, Workflows*, DevOps*, Approvals (badge),
+      Strategy*, Memory, Tools, Analytics*, Settings (*=Coming Soon)
+    - Collapsed mode: 52px with Tooltip on each item
+    - Expanded mode: 220px with label + badges
+    - Uses CSS custom properties for widths (--width-sidebar-*)
+    - Active route: cyan left border + bg-overlay highlight
+    - i18n labels via useTranslations('nav')
+    - aria-label on <nav> element
+    - Collapse/expand toggle button with ChevronLeft/ChevronRight
+
+  apps/web/src/components/layout/project-rail.tsx:
+    - ProjectRail: colored project squares from Zustand store
+    - Active project: color border + left indicator bar
+    - Tooltip on each project icon (hover + focus)
+    - "+" button for new project
+    - Collapsed by default (width: 0, overflow: hidden)
+    - RailExpandButton: separate component visible when collapsed
+    - project.color sanitized via safeColor() hex validation
+    - Collapse toggle only rendered when expanded (not clipped by overflow)
+
+  apps/web/src/components/layout/header.tsx:
+    - Breadcrumb: project name (colored) / page name (from route)
+    - Search stub: Cmd+K (Mac) / Ctrl+K (Win/Linux), platform detected via useEffect
+    - Notification bell with pulse indicator for pending approvals
+    - LocaleSwitcher (existing component)
+    - Company/Project switcher dropdown:
+      - Lists all projects with colored squares
+      - "ativo"/"active" indicator on current project
+      - Outside click + Escape key to close
+      - ARIA: aria-expanded, aria-haspopup, role=listbox, role=option
+    - Clerk UserButton with 24px avatar
+
+  apps/web/src/lib/safe-color.ts:
+    - safeColor(color): validates hex pattern /^#[0-9a-fA-F]{3,8}$/
+    - Returns fallback #6E7681 on invalid input (prevents CSS injection)
+
+  apps/web/src/components/shared/coming-soon.tsx:
+    - Placeholder component for feature-flagged routes
+    - Shows Construction icon + translated title + "Coming Soon" badge
+
+  apps/web/src/app/[locale]/(auth)/layout.tsx:
+    - Auth layout wrapping children with AppShell
+
+  apps/web/src/app/[locale]/(auth)/*/page.tsx:
+    - 11 route pages: office, atlas, agents, workflows, devops, approvals,
+      strategy, memory, tools, analytics, settings
+    - Active routes: placeholder with translated title
+    - Coming-soon routes: ComingSoon component
+
+  apps/web/src/app/[locale]/page.tsx:
+    - Root page redirects to /{locale}/office
+
+  apps/web/messages/pt-BR.json + en-US.json:
+    - Added 10 new nav keys: atlas, devops, memory, tools, comingSoon,
+      companies, newProject, active, collapseNav, expandNav,
+      searchPlaceholder, notifications
+
+FILES CREATED (25 new, 3 modified):
+  New:
+    apps/web/src/components/ui/button.tsx
+    apps/web/src/components/ui/input.tsx
+    apps/web/src/components/ui/skeleton.tsx
+    apps/web/src/components/ui/tooltip.tsx
+    apps/web/src/components/ui/separator.tsx
+    apps/web/src/components/ui/badge.tsx
+    apps/web/src/components/ui/index.ts
+    apps/web/src/stores/ui-store.ts
+    apps/web/src/components/layout/app-shell.tsx
+    apps/web/src/components/layout/sidebar.tsx
+    apps/web/src/components/layout/project-rail.tsx
+    apps/web/src/components/layout/header.tsx
+    apps/web/src/components/shared/coming-soon.tsx
+    apps/web/src/lib/safe-color.ts
+    apps/web/src/app/[locale]/(auth)/layout.tsx
+    apps/web/src/app/[locale]/(auth)/office/page.tsx
+    apps/web/src/app/[locale]/(auth)/atlas/page.tsx
+    apps/web/src/app/[locale]/(auth)/agents/page.tsx
+    apps/web/src/app/[locale]/(auth)/workflows/page.tsx
+    apps/web/src/app/[locale]/(auth)/devops/page.tsx
+    apps/web/src/app/[locale]/(auth)/approvals/page.tsx
+    apps/web/src/app/[locale]/(auth)/strategy/page.tsx
+    apps/web/src/app/[locale]/(auth)/memory/page.tsx
+    apps/web/src/app/[locale]/(auth)/tools/page.tsx
+    apps/web/src/app/[locale]/(auth)/analytics/page.tsx
+    apps/web/src/app/[locale]/(auth)/settings/page.tsx
+  Modified:
+    apps/web/src/app/[locale]/page.tsx (redirect to /office)
+    apps/web/messages/pt-BR.json (10 new nav keys)
+    apps/web/messages/en-US.json (10 new nav keys)
+
+REVIEW — ISSUES FOUND AND FIXED BEFORE COMMIT:
+  HIGH (7):
+    1. Tooltip: setTimeout not cleared on unmount (memory leak)
+       → Added cleanup useEffect
+    2. Tooltip: inaccessible to keyboard users (no focus/blur)
+       → Added onFocus/onBlur handlers, useId for ARIA
+    3. project.color used directly in inline styles (CSS injection risk)
+       → Created safeColor() with hex regex validation + fallback
+    4. Header project dropdown: no Escape key handling
+       → Added keydown listener for Escape alongside mousedown
+    5. ui-store: persist serialized functions to localStorage
+       → Added partialize to only persist data fields
+    6. Sidebar: React key on wrong element in .map()
+       → Moved key to outermost wrapper in both branches
+    7. Header: search shortcut hardcodes macOS ⌘ glyph
+       → Added platform detection useEffect, shows Ctrl+K on Win/Linux
+
+  MEDIUM (5):
+    8. Project rail toggle: icon didn't change based on state
+       → Only render toggle when expanded, RailExpandButton handles collapsed
+    9. Project rail toggle: clipped by overflow:hidden when collapsed
+       → Conditionally render with {!collapsed && ...}
+    10. RailExpandButton: missing aria-label
+        → Added translated aria-label
+    12. Sidebar <nav>: missing aria-label landmark
+        → Added aria-label="Main navigation"
+    14. Separator: missing aria-orientation
+        → Added aria-orientation={orientation}
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - 11 routes under (auth) group with AppShell wrapper
+  - Sidebar: 11 nav items, 5 with "Coming Soon" badge
+  - All project colors sanitized before inline style injection
+  - Tooltip accessible via keyboard (focus/blur + hover)
+  - Escape key closes dropdowns (header project switcher)
+  - Platform-aware keyboard shortcut display
+
+
+================================================================================
