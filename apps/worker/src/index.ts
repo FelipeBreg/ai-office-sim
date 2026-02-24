@@ -1,4 +1,12 @@
+import * as Sentry from '@sentry/node';
 import express from 'express';
+
+// Initialize Sentry (no-op if NEXT_PUBLIC_SENTRY_DSN / SENTRY_DSN is unset)
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment: process.env.NODE_ENV ?? 'development',
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+});
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
@@ -20,10 +28,12 @@ const SHUTDOWN_TIMEOUT_MS = 30_000;
 // ── Global error handlers ──
 process.on('unhandledRejection', (reason) => {
   console.error('[worker] Unhandled rejection:', reason);
+  Sentry.captureException(reason);
 });
 
 process.on('uncaughtException', (err) => {
   console.error('[worker] Uncaught exception:', err);
+  Sentry.captureException(err);
   shutdown();
 });
 

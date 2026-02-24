@@ -1,9 +1,7 @@
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import type { WebhookEvent } from '@clerk/nextjs/server';
-import { db } from '@ai-office/db';
-import { organizations, users, projects } from '@ai-office/db';
-import { eq, sql } from 'drizzle-orm';
+import { db, organizations, users, projects, eq, sql } from '@ai-office/db';
 
 export async function POST(req: Request): Promise<Response> {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
