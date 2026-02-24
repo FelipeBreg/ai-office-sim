@@ -703,3 +703,165 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #13 — Epic P0-8: Internationalization (next-intl)
+================================================================================
+Hash:     d9ee26e
+Date:     2026-02-24 ~23:00 -0300
+Tasks:    P0-8.1 through P0-8.4 (4 tasks)
+================================================================================
+
+WHAT WAS BUILT:
+  apps/web/src/i18n/routing.ts:
+    - defineRouting() with locales: ['pt-BR', 'en-US'], default: 'pt-BR'
+    - Exported Locale type
+
+  apps/web/src/i18n/request.ts:
+    - getRequestConfig() for server components
+    - Dynamic message import with try/catch fallback to default locale
+    - Validates locale against routing.locales via hasLocale()
+
+  apps/web/src/i18n/navigation.ts:
+    - createNavigation(routing) → Link, redirect, usePathname, useRouter,
+      getPathname (locale-aware navigation utilities)
+
+  apps/web/src/middleware.ts:
+    - Combined Clerk + next-intl middleware
+    - intlMiddleware runs inside clerkMiddleware callback, returning the
+      intl response for Clerk to decorate with auth headers
+    - Public routes include bare and locale-prefixed sign-in/sign-up/root
+    - API/webhook routes excluded from locale handling
+
+  apps/web/src/app/layout.tsx:
+    - Stripped to pass-through: renders only {children}
+    - Imports globals.css (no <html>/<body> — those live in [locale] layout)
+
+  apps/web/src/app/[locale]/layout.tsx:
+    - Renders <html lang={locale}> with IBM Plex Mono font variable
+    - ClerkProvider with locale-aware signInUrl, signUpUrl, afterSignOutUrl
+    - NextIntlClientProvider with locale + messages
+    - Validates locale via hasLocale(), calls notFound() on invalid
+    - generateStaticParams() for SSG support
+    - Metadata: title + description
+
+  apps/web/src/app/[locale]/page.tsx:
+    - Uses useTranslations('common') for localized content
+
+  apps/web/src/app/[locale]/(public)/sign-in/[[...sign-in]]/page.tsx:
+    - Clerk SignIn with forceRedirectUrl={`/${locale}`}
+    - Dark theme appearance overrides
+
+  apps/web/src/app/[locale]/(public)/sign-up/[[...sign-up]]/page.tsx:
+    - Clerk SignUp with forceRedirectUrl={`/${locale}`}
+    - Dark theme appearance overrides
+
+  apps/web/src/app/not-found.tsx:
+    - Root 404 page (outside locale segment, inline styles)
+
+  apps/web/src/app/[locale]/not-found.tsx:
+    - Locale-aware 404 page using translated strings
+
+  apps/web/src/components/locale-switcher/locale-switcher.tsx:
+    - Custom dropdown matching DOS design system
+    - Uses routing.locales as source of truth (no duplication)
+    - Runtime locale validation with fallback
+    - ARIA attributes: aria-expanded, aria-haspopup, aria-label, role=listbox/option
+    - Escape key to close, outside click to close
+    - Emoji flags for PT-BR and EN-US
+
+  apps/web/src/lib/formatters.ts:
+    - formatDate(date, locale): dd/MM/yyyy (PT-BR) | MM/dd/yyyy (EN-US)
+    - formatDateTime(date, locale): with time component
+    - formatCurrency(amount, currency, locale): R$ 1.234,56 | $1,234.56
+    - formatNumber(n, locale, options?): locale-aware number formatting
+    - formatRelativeTime(date, locale): "há 2 horas" | "2 hours ago"
+
+  apps/web/messages/pt-BR.json:
+    - Source of truth with 8 namespaces: common (24 keys), nav (10),
+      agents (18), office (8), approvals (14), workflows (13),
+      strategy (14), settings (16)
+
+  apps/web/messages/en-US.json:
+    - English translations matching all PT-BR keys
+
+  packages/tsconfig/nextjs.json:
+    - Added "dom" and "dom.iterable" to lib (required for client components)
+
+  next.config.mjs:
+    - Added createNextIntlPlugin wrapper
+
+  .env.example:
+    - Updated Clerk URLs with /pt-BR locale prefix
+
+FILES CREATED (13 new, 6 modified):
+  New:
+    apps/web/src/i18n/routing.ts
+    apps/web/src/i18n/request.ts
+    apps/web/src/i18n/navigation.ts
+    apps/web/src/app/[locale]/layout.tsx
+    apps/web/src/app/[locale]/page.tsx
+    apps/web/src/app/[locale]/not-found.tsx
+    apps/web/src/app/[locale]/(public)/sign-in/[[...sign-in]]/page.tsx
+    apps/web/src/app/[locale]/(public)/sign-up/[[...sign-up]]/page.tsx
+    apps/web/src/app/not-found.tsx
+    apps/web/src/components/locale-switcher/locale-switcher.tsx
+    apps/web/src/lib/formatters.ts
+    apps/web/messages/pt-BR.json
+    apps/web/messages/en-US.json
+  Modified:
+    apps/web/src/app/layout.tsx (stripped to pass-through)
+    apps/web/src/middleware.ts (combined Clerk + next-intl)
+    apps/web/next.config.mjs (createNextIntlPlugin)
+    apps/web/package.json (added next-intl)
+    packages/tsconfig/nextjs.json (added dom lib)
+    .env.example (locale-aware Clerk URLs)
+  Moved:
+    apps/web/src/app/page.tsx → apps/web/src/app/[locale]/page.tsx
+    apps/web/src/app/(public)/ → apps/web/src/app/[locale]/(public)/
+
+REVIEW — ISSUES FOUND AND FIXED BEFORE COMMIT:
+  CRITICAL (2):
+    1. Clerk sign-in/sign-up env vars pointed to bare /sign-in (no locale prefix)
+       → Updated .env.example to /pt-BR/sign-in, passed signInUrl/signUpUrl
+         dynamically to ClerkProvider based on current locale
+    2. Middleware intl response could discard Clerk auth headers — intlMiddleware
+       created new NextResponse after auth.protect() already ran
+       → Return intlMiddleware(req) from clerkMiddleware callback so Clerk
+         decorates the intl response with auth headers
+
+  HIGH (3):
+    3. <html> tag had no lang attribute — root layout rendered HTML shell without
+       locale access → Moved <html>/<body> to [locale]/layout.tsx, root layout
+       is now a pass-through that only renders {children}
+    4. No not-found.tsx anywhere — notFound() call on invalid locale showed
+       unstyled default 404 → Created both root and locale-aware 404 pages
+    6. Sign-in/sign-up pages lacked forceRedirectUrl — Clerk redirected to
+       bare / after auth → Added forceRedirectUrl={`/${locale}`} to both
+       SignIn and SignUp components
+
+  MEDIUM (3):
+    7. Public routes missing /:locale root path → Added to matcher
+    8. Unsafe type assertion useLocale() as Locale → Added runtime guard
+       with fallback to defaultLocale
+    9. Duplicated LOCALES array in LocaleSwitcher → Changed to use
+       routing.locales as single source of truth
+
+  LOW (3):
+    11. Dynamic import without try/catch → Added fallback to default locale
+    14. No generateStaticParams → Added for SSG support
+    17. Missing ARIA attributes on LocaleSwitcher → Added aria-expanded,
+        aria-haspopup, aria-label, role=listbox/option, Escape key handler
+
+  ALSO FIXED DURING CODING:
+    - packages/tsconfig/nextjs.json missing "dom" and "dom.iterable" lib entries
+      (required for client component DOM APIs like document, Node, HTMLElement)
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - All pages moved under [locale] dynamic segment
+  - <html lang={locale}> renders with correct locale
+  - 117 translation keys across 8 namespaces in both locales
+  - Formatters use Intl API for locale-aware date/number/currency
+  - ClerkProvider receives locale-aware URLs
+
+
+================================================================================
