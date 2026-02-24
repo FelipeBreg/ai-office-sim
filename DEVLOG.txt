@@ -865,3 +865,174 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #15 — Epic P0-9: tRPC Router & Socket.IO
+================================================================================
+Hash:     dd5f66d
+Date:     2026-02-24 ~24:00 -0300
+Tasks:    P0-9.1 through P0-9.5 (5 tasks)
+================================================================================
+
+WHAT WAS BUILT:
+  apps/web/src/app/api/trpc/[trpc]/route.ts:
+    - tRPC v11 fetch handler for Next.js App Router
+    - createTRPCContext with Clerk auth() userId
+    - x-project-id header forwarded to context
+    - Exports GET + POST handlers
+
+  apps/web/src/lib/trpc/client.ts:
+    - createTRPCReact<AppRouter>() with explicit ReturnType annotation
+      (fixes TS2742 non-portable inferred type error)
+
+  apps/web/src/lib/trpc/server.ts:
+    - Server-side caller for RSC: appRouter.createCaller(ctx)
+    - Cached via React.cache() to deduplicate within single request
+    - Reads x-project-id from headers()
+
+  apps/web/src/lib/trpc/provider.tsx:
+    - TRPCProvider wrapping children with QueryClientProvider
+    - httpBatchLink with superjson transformer
+    - Reads projectId from Zustand localStorage (JSON.parse in try/catch)
+    - staleTime: 30s, refetchOnWindowFocus: false
+
+  packages/api/src/root.ts:
+    - Merges 7 domain routers: agents, projects, actionLogs, approvals,
+      workflows, strategies, users
+    - Exports AppRouter type + appRouter instance
+
+  packages/api/src/routers/agents.ts:
+    - list, getById, create, update, delete, updateStatus, trigger
+    - All scoped to ctx.project via projectProcedure/adminProcedure
+    - trigger uses adminProcedure (prevents unauthorized agent execution)
+
+  packages/api/src/routers/projects.ts:
+    - list (by org), getById, create, update
+    - Scoped to ctx.org via protectedProcedure
+
+  packages/api/src/routers/action-logs.ts:
+    - list (paginated with cursor, type/agentId/date filters)
+    - getById
+    - Uses gte/lte from drizzle-orm for date range filtering
+
+  packages/api/src/routers/approvals.ts:
+    - listPending, approve, reject
+    - approve/reject use adminProcedure with reviewer tracking
+
+  packages/api/src/routers/workflows.ts:
+    - list, getById, create, update, delete, trigger
+    - trigger creates workflow_runs row (adminProcedure)
+
+  packages/api/src/routers/strategies.ts:
+    - list, getById, create, update, refineWithAI, addLearning
+    - addLearning uses adminProcedure (fixed from projectProcedure)
+    - confidence field: number→String() for numeric DB column
+    - refineWithAI: stub returning {enqueued: true} (TODO: BullMQ job)
+
+  packages/api/src/routers/users.ts:
+    - getCurrent, updateLocale, updateTimezone
+    - protectedProcedure (any authenticated user can update own settings)
+
+  packages/api/src/trpc.ts:
+    - Added AuthUser, AuthOrg, AuthProject narrowed types
+    - enforceAuth/enforceProject assign typed local vars before next()
+    - Note: tRPC v11 doesn't propagate narrowed types through chained
+      .use() middleware — routers use non-null assertions (!) as pragmatic
+      workaround (runtime safety guaranteed by middleware)
+
+  apps/worker/src/socket/server.ts:
+    - Socket.IO server attached to worker HTTP server
+    - JWT verified via @clerk/backend verifyToken() (not base64 decode)
+    - User lookup after auth to get orgId + role for authorization
+    - subscribe:project: verifies project belongs to user's org via DB query
+    - trigger:agent: requires admin+ role (ROLE_HIERARCHY check)
+    - CORS: explicit origin allowlist (localhost:3000/3001 + WEB_URL env)
+    - emitToProject(): typed helper for broadcasting to project rooms
+
+  packages/realtime/src/events.ts:
+    - 12 server→client events: agent:status_changed, agent:action,
+      agent:session_started, agent:session_complete, agent:error,
+      approval:requested, approval:resolved, workflow:started,
+      workflow:node_complete, workflow:complete, kpi:updated, learning:new
+    - 2 client→server events: subscribe:project, trigger:agent
+    - Typed interfaces for all event payloads
+    - SERVER_EVENTS and CLIENT_EVENTS const maps
+
+  apps/web/src/hooks/use-socket.ts:
+    - useSocket(projectId): global singleton with Clerk auth token
+    - Reference counting for cleanup (disconnect when count reaches 0)
+    - Reconnection: 5 attempts, 1s delay, websocket+polling
+    - useSocketEvent(event, handler): subscribes to typed events
+    - Handles race condition: polls for socket if not yet connected
+    - Re-subscribes on reconnect to catch missed events
+
+FILES CREATED (14 new, 9 modified):
+  New:
+    apps/web/src/app/api/trpc/[trpc]/route.ts
+    apps/web/src/lib/trpc/client.ts
+    apps/web/src/lib/trpc/server.ts
+    apps/web/src/lib/trpc/provider.tsx
+    apps/web/src/hooks/use-socket.ts
+    apps/worker/src/socket/server.ts
+    packages/api/src/routers/agents.ts
+    packages/api/src/routers/projects.ts
+    packages/api/src/routers/action-logs.ts
+    packages/api/src/routers/approvals.ts
+    packages/api/src/routers/workflows.ts
+    packages/api/src/routers/strategies.ts
+    packages/api/src/routers/users.ts
+    packages/realtime/src/events.ts
+  Modified:
+    packages/api/src/root.ts (merged 7 domain routers)
+    packages/api/src/trpc.ts (narrowed types, typed locals)
+    packages/realtime/src/index.ts (barrel exports for events)
+    apps/web/src/app/[locale]/layout.tsx (added TRPCProvider)
+    apps/web/package.json (added @tanstack/react-query, @trpc/client, @trpc/react-query, @trpc/server, socket.io-client)
+    apps/worker/package.json (added socket.io, @clerk/backend)
+    apps/worker/src/index.ts (Socket.IO server creation)
+    apps/worker/src/workers/create-worker.ts (ZodType generic fix)
+    pnpm-lock.yaml
+
+REVIEW — ISSUES FOUND AND FIXED BEFORE COMMIT:
+  CRITICAL (3):
+    1. Socket.IO JWT not verified — just base64 decoded without signature check
+       → Installed @clerk/backend, replaced with verifyToken() using
+         CLERK_SECRET_KEY (fails on expired/tampered tokens)
+    2. No project authorization on subscribe:project — any authenticated user
+       could subscribe to any project room (cross-tenant data leak)
+       → Added DB query: verify project.orgId matches socket.data.orgId
+    3. No authorization on trigger:agent — any user could trigger agent execution
+       → Added ROLE_HIERARCHY check requiring admin+ role
+
+  HIGH (5):
+    4. CORS origin undefined in production — process.env.NEXT_PUBLIC_SOCKET_URL
+       gate was inverted, production would have undefined origin
+       → Changed to explicit getAllowedOrigins() returning localhost + WEB_URL
+    5. JSON.parse in provider.tsx could throw on corrupted localStorage,
+       crashing all tRPC requests → Wrapped in try/catch with fallback
+    6. Socket never disconnects — components unmount but global socket stays open
+       with stale auth tokens → Added reference counting, disconnect when count=0
+    7. useSocketEvent misses events if socket not yet connected (race condition)
+       → Added polling interval + re-subscribe on reconnect event
+    8. strategies.addLearning used projectProcedure (any project member could add)
+       → Changed to adminProcedure
+
+  ALSO FIXED:
+    - ZodSchema<T> in createTypedWorker didn't accept schemas with .default()
+      (input type differs from output type) → Changed to ZodType<T, ZodTypeDef, unknown>
+    - tRPC v11 middleware type narrowing: chained .use() doesn't propagate
+      NonNullable types → Pragmatic solution: non-null assertions (!) in routers
+    - socket.io-client generic type complexity → Minimal any casts on .on/.off
+    - createCallerFactory not exported from @trpc/server → Used appRouter.createCaller()
+    - TS2742 non-portable inferred type → Explicit ReturnType annotation on trpc client
+    - strategies confidence: number input vs string DB column → String(confidence)
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - JWT verified with @clerk/backend verifyToken (cryptographic check)
+  - Project access verified via DB query (org isolation)
+  - Agent trigger requires admin+ role
+  - Socket cleanup on unmount (reference counting)
+  - 7 domain routers covering all 15 DB tables
+  - 14 typed Socket.IO events with const maps
+
+
+================================================================================
