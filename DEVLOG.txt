@@ -367,3 +367,113 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #7 — Epic P0-5: Authentication & Multi-Tenancy (Clerk)
+================================================================================
+Hash:     c424e05
+Date:     2026-02-24 ~20:15 -0300
+Tasks:    P0-5.1 through P0-5.5 (5 tasks)
+================================================================================
+
+WHAT WAS BUILT:
+  apps/web/src/middleware.ts:
+    - Clerk middleware with clerkMiddleware() + createRouteMatcher
+    - Public routes: /, /sign-in, /sign-up, /:locale/sign-in, /:locale/sign-up,
+      /api/webhooks
+    - All other routes require authentication
+
+  apps/web/src/app/layout.tsx:
+    - Wrapped with ClerkProvider
+    - IBM Plex Mono font, dark theme globals.css
+
+  apps/web/src/app/(public)/sign-in/[[...sign-in]]/page.tsx:
+    - Clerk SignIn component with dark theme appearance overrides
+
+  apps/web/src/app/(public)/sign-up/[[...sign-up]]/page.tsx:
+    - Clerk SignUp component with dark theme appearance overrides
+
+  apps/web/src/app/api/webhooks/clerk/route.ts:
+    - Svix webhook signature verification (uses raw body text)
+    - user.created: creates personal org (slug: personal-{clerkId}),
+      default project, user (idempotent with onConflictDoUpdate)
+    - user.updated: syncs email, name, avatar
+    - user.deleted: removes user + cleans up orphaned org if no members
+    - organization.created: upserts org by clerkOrgId, creates default project
+    - organizationMembership.created: updates user orgId + maps Clerk role
+      (org:admin→admin, org:member→viewer)
+
+  apps/web/src/stores/project-store.ts:
+    - Zustand store with persist middleware (skipHydration for SSR)
+    - State: currentOrgId, currentProjectId, userRole, organizations, projects
+    - Selectors: useActiveProject(), useProjects(), useUserRole(), useActiveOrg()
+    - Only currentOrgId + currentProjectId persisted to localStorage
+
+  packages/api/src/trpc.ts:
+    - createTRPCContext: accepts clerkUserId + projectId, looks up user/org/project
+    - publicProcedure: no auth required
+    - protectedProcedure: requires auth + org (narrows both to non-null)
+    - projectProcedure: requires auth + org + project, sets RLS session var
+      via parameterized SQL: set_config('app.current_project_id', $1, true)
+    - requireRole(minimumRole): middleware factory with hierarchy
+      viewer(0) < manager(1) < admin(2) < owner(3)
+    - adminProcedure: projectProcedure + requireRole('admin')
+    - ownerProcedure: projectProcedure + requireRole('owner')
+
+FILES CREATED (5 new, 7 modified):
+  New:
+    apps/web/src/middleware.ts
+    apps/web/src/app/(public)/sign-in/[[...sign-in]]/page.tsx
+    apps/web/src/app/(public)/sign-up/[[...sign-up]]/page.tsx
+    apps/web/src/app/api/webhooks/clerk/route.ts
+    apps/web/src/stores/project-store.ts
+  Modified:
+    apps/web/src/app/layout.tsx (added ClerkProvider)
+    apps/web/package.json (added @clerk/nextjs, svix, drizzle-orm)
+    packages/api/src/trpc.ts (full rewrite with auth context)
+    packages/api/src/index.ts (new exports)
+    packages/api/package.json (added drizzle-orm, @types/node)
+    .env.example (added CLERK_WEBHOOK_SECRET, after sign-in/up URLs)
+    pnpm-lock.yaml
+
+REVIEW — ISSUES FOUND AND FIXED BEFORE COMMIT:
+  CRITICAL (1):
+    1. SQL injection in RLS set_config via string interpolation
+       → Changed to parameterized query using drizzle-orm sql tag
+
+  HIGH (4):
+    2. Webhook body re-serialization (JSON.parse→JSON.stringify) could break
+       svix signature verification → Changed to req.text() for raw body
+    3. user.created handler not idempotent — plain INSERT without conflict
+       handling caused failures on webhook replay → Added onConflictDoUpdate
+    4. organization.created used clerkOrgId as conflict target but slug
+       collision would throw unhandled error → Wrapped in try/catch
+    5. organizationMembership.created did not map Clerk role, kept old role
+       (privilege escalation risk) → Added role mapping (org:admin→admin,
+       org:member→viewer)
+
+  MEDIUM (5):
+    6. Webhook threw raw Error on missing CLERK_WEBHOOK_SECRET → Changed to
+       console.error + HTTP 500 response
+    7. Org slug from email prefix could collide across domains → Changed to
+       personal-{clerkId} format
+    8. Zustand persist caused SSR hydration mismatch → Added skipHydration:true
+    9. Middleware public routes didn't account for locale-prefixed paths
+       → Added /:locale/sign-in and /:locale/sign-up patterns
+    10. enforceAuth middleware did not narrow org to non-null → Added org
+        null check with INTERNAL_SERVER_ERROR
+
+  ALSO FIXED DURING CODING:
+    - Missing @types/node in packages/api (needed for process.env in db client)
+    - Missing drizzle-orm in web app (needed for eq() in webhook handler)
+    - undici-types inference error on POST handler → Added explicit
+      Promise<Response> return type
+    - Role mapping type mismatch (string vs enum) → Used typed roleMap
+      with UserRole type alias
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - Webhook handler fully idempotent for all 5 event types
+  - RLS set_config uses parameterized SQL (no injection risk)
+  - Role hierarchy: viewer(0) < manager(1) < admin(2) < owner(3)
+
+
+================================================================================
