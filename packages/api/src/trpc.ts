@@ -87,6 +87,11 @@ export const createTRPCContext = async (opts: {
   };
 };
 
+// Narrowed types for use after middleware validation
+type AuthUser = NonNullable<TRPCContext['user']>;
+type AuthOrg = NonNullable<TRPCContext['org']>;
+type AuthProject = NonNullable<TRPCContext['project']>;
+
 const t = initTRPC.context<TRPCContext>().create({
   transformer: superjson,
 });
@@ -112,13 +117,9 @@ const enforceAuth = t.middleware(async ({ ctx, next }) => {
     });
   }
 
-  return next({
-    ctx: {
-      ...ctx,
-      user: ctx.user,
-      org: ctx.org,
-    },
-  });
+  const user: AuthUser = ctx.user;
+  const org: AuthOrg = ctx.org;
+  return next({ ctx: { user, org } });
 });
 
 export const protectedProcedure = t.procedure.use(enforceAuth);
@@ -129,6 +130,12 @@ const enforceProject = t.middleware(async ({ ctx, next }) => {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
       message: 'Authentication required',
+    });
+  }
+  if (!ctx.org) {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Organization not found for user',
     });
   }
   if (!ctx.project) {
@@ -143,14 +150,10 @@ const enforceProject = t.middleware(async ({ ctx, next }) => {
     sql`SELECT set_config('app.current_project_id', ${ctx.project.id}, true)`,
   );
 
-  return next({
-    ctx: {
-      ...ctx,
-      user: ctx.user,
-      org: ctx.org,
-      project: ctx.project,
-    },
-  });
+  const user: AuthUser = ctx.user;
+  const org: AuthOrg = ctx.org;
+  const project: AuthProject = ctx.project;
+  return next({ ctx: { user, org, project } });
 });
 
 export const projectProcedure = t.procedure.use(enforceProject);

@@ -1,12 +1,12 @@
 import { Worker } from 'bullmq';
 import type { Processor } from 'bullmq';
 import { getConnectionOptions } from '@ai-office/queue';
-import type { ZodSchema } from 'zod';
+import type { ZodType, ZodTypeDef } from 'zod';
 
 interface WorkerConfig<T> {
   queueName: string;
   concurrency: number;
-  schema: ZodSchema<T>;
+  schema: ZodType<T, ZodTypeDef, unknown>;
   processor: Processor<T>;
 }
 

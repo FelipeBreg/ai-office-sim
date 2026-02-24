@@ -7,6 +7,7 @@ Sentry.init({
   environment: process.env.NODE_ENV ?? 'development',
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 });
+import { createSocketServer } from './socket/server.js';
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
@@ -74,6 +75,10 @@ const server = app.listen(PORT, () => {
   console.log(`[worker] HTTP server listening on port ${PORT}`);
   console.log(`[worker] Ready to process jobs`);
 });
+
+// ── Socket.IO ──
+const io = createSocketServer(server);
+console.log(`[worker] Socket.IO server attached`);
 
 // ── Graceful shutdown with timeout ──
 let isShuttingDown = false;
