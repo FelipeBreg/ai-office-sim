@@ -1,2 +1,11 @@
-// Schema barrel export — populated in P0-2
-export {};
+export * from './custom-types.js';
+export * from './enums.js';
+export * from './organizations.js';
+export * from './users.js';
+export * from './projects.js';
+export * from './agents.js';
+export * from './action-logs.js';
+export * from './approvals.js';
+export * from './workflows.js';
+export * from './documents.js';
+export * from './strategies.js';
