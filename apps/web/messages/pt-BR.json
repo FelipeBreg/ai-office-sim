@@ -27,15 +27,26 @@
   },
   "nav": {
     "office": "Escritório",
+    "atlas": "ATLAS",
     "agents": "Agentes",
     "workflows": "Workflows",
+    "devops": "DevOps",
     "approvals": "Aprovações",
     "strategy": "Estratégia",
-    "documents": "Documentos",
+    "memory": "Memória",
+    "tools": "Ferramentas",
     "analytics": "Análises",
     "settings": "Configurações",
     "help": "Ajuda",
-    "logout": "Sair"
+    "logout": "Sair",
+    "comingSoon": "Em breve",
+    "companies": "Empresas",
+    "newProject": "Novo Projeto",
+    "active": "ativo",
+    "collapseNav": "Recolher navegação",
+    "expandNav": "Expandir navegação",
+    "searchPlaceholder": "buscar...",
+    "notifications": "Notificações"
   },
   "agents": {
     "title": "Agentes",

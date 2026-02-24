@@ -27,15 +27,26 @@
   },
   "nav": {
     "office": "Office",
+    "atlas": "ATLAS",
     "agents": "Agents",
     "workflows": "Workflows",
+    "devops": "DevOps",
     "approvals": "Approvals",
     "strategy": "Strategy",
-    "documents": "Documents",
+    "memory": "Memory",
+    "tools": "Tools",
     "analytics": "Analytics",
     "settings": "Settings",
     "help": "Help",
-    "logout": "Log out"
+    "logout": "Log out",
+    "comingSoon": "Coming Soon",
+    "companies": "Companies",
+    "newProject": "New Project",
+    "active": "active",
+    "collapseNav": "Collapse navigation",
+    "expandNav": "Expand navigation",
+    "searchPlaceholder": "search...",
+    "notifications": "Notifications"
   },
   "agents": {
     "title": "Agents",
