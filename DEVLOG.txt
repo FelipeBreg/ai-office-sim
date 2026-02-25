@@ -2287,3 +2287,91 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #27 — Epic P2-3: Click-to-Inspect Agent Detail
+================================================================================
+DATE: 2026-02-25
+HASH: 3329555
+PHASE: 2 — The Visualization
+EPIC: P2-3 (3 tasks: P2-3.1 through P2-3.3)
+
+WHAT WAS BUILT:
+  Click-to-inspect system for agent avatars. Clicking an avatar opens a
+  360px side panel with agent identity, status, live action feed, recent
+  activity, and quick action buttons. Framer Motion slide animation.
+
+FILES CREATED (1):
+  apps/web/src/components/office/AgentInspectPanel.tsx — DOM overlay panel
+
+FILES MODIFIED (6):
+  AgentAvatar.tsx — Added click/hover handlers with ThreeEvent types, selection glow
+  AgentLayer.tsx — Pass selectedAgentId + onSelectAgent through
+  OfficeCanvas.tsx — Manage selected state, build inspected agent data, render panel
+  index.ts — Export new components + types
+  en-US.json — Added agentPanel namespace (12 keys)
+  pt-BR.json — Added agentPanel namespace with PT-BR diacritics
+
+REVIEW — ISSUES FOUND AND FIXED:
+  HIGH (1):
+    1. THREE.Event deprecated type + casted stopPropagation → Changed to
+       ThreeEvent<PointerEvent|MouseEvent> from @react-three/fiber
+
+  MEDIUM (2):
+    2. Redundant agent?.status in useEffect deps → Removed
+    3. roomLabels recreated every render → Wrapped in useMemo
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+COMMIT #28 — Epic P2-4: Floor Layer System & Exploded View
+================================================================================
+DATE: 2026-02-25
+HASH: 53cb777
+PHASE: 2 — The Visualization
+EPIC: P2-4 (3 tasks: P2-4.1 through P2-4.3)
+
+WHAT WAS BUILT:
+  Multi-floor office with 4 floors stacked vertically, smooth transitions,
+  floor selector UI, and exploded view toggle. Zustand store for state.
+
+FILES CREATED (9):
+  layouts/types.ts — Shared types (FurniturePlacement, RoomLayout, FloorConfig)
+  layouts/intelligence.ts — Floor 2 layout (Análise + Laboratório de Dados)
+  layouts/communication.ts — Floor 3 layout (Marketing + Vendas)
+  layouts/basement.ts — Basement layout (Datacenter with 15 server racks)
+  layouts/floors.ts — FLOOR_CONFIGS master array + spacing constants
+  FloorSystem.tsx — Multi-floor renderer with opacity lerp + material caching
+  FloorCameraController.tsx — Smooth camera Y + zoom animation per floor
+  FloorSelector.tsx — DOM overlay with floor buttons + exploded view toggle
+  stores/floor-store.ts — Zustand store (activeFloor, exploded)
+
+FILES MODIFIED (5):
+  layouts/default.ts — Re-exports types from types.ts
+  OfficeRooms.tsx — Optional layout prop (falls back to defaultLayout)
+  OfficeLayout.tsx — Optional layout prop, removed = {} default
+  AgentPositions.ts — Now indexes desks from ALL floor configs (not just default)
+  OfficeCanvas.tsx — Uses FloorSystem instead of direct rendering
+
+REVIEW — ISSUES FOUND AND FIXED:
+  HIGH (3):
+    1. group.traverse() in useFrame every frame on all floors → Cached
+       material references once on mount, iterate flat array in useFrame
+    2. AgentPositions only indexed defaultLayout desks → Now iterates
+       all FLOOR_CONFIGS for complete desk coverage
+    3. useFloorStore in FloorLayer caused all floors to re-render →
+       Subscribed via refs outside React render cycle
+
+  MEDIUM (5):
+    4. @ts-expect-error on OrbitControls type → Proper unknown cast
+    5. Dead cameraTargetY state in Zustand store → Removed
+    6. OfficeLayout = {} default param unreachable → Removed
+    7. FloorSelector indexOf in map callback → Pre-computed with index
+    8. baseY could diverge from formula if spacing changed → Use
+       computed initialY from index formula
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
