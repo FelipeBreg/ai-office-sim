@@ -9,6 +9,36 @@ import { OfficeLighting } from './OfficeLighting';
 import { OfficeFloor } from './OfficeFloor';
 import { OfficeRooms } from './OfficeRooms';
 import { OfficeLayout } from './OfficeLayout';
+import { AgentLayer } from './AgentLayer';
+import type { AgentData } from './AgentLayer';
+
+// TODO: Replace with real agent data from tRPC query when API is wired
+const MOCK_AGENTS: AgentData[] = [
+  {
+    id: 'agent-1',
+    name: 'João Suporte',
+    roomKey: 'openWorkspace',
+    slotIndex: 0,
+  },
+  {
+    id: 'agent-2',
+    name: 'Maria Vendas',
+    roomKey: 'openWorkspace',
+    slotIndex: 1,
+  },
+  {
+    id: 'agent-3',
+    name: 'André Análise',
+    roomKey: 'openWorkspace',
+    slotIndex: 3,
+  },
+  {
+    id: 'agent-4',
+    name: 'Lúcia Redação',
+    roomKey: 'openWorkspace',
+    slotIndex: 4,
+  },
+];
 
 function Scene({ roomLabels }: { roomLabels: Record<string, string> }) {
   return (
@@ -39,6 +69,7 @@ function Scene({ roomLabels }: { roomLabels: Record<string, string> }) {
       <OfficeFloor />
       <OfficeRooms roomLabels={roomLabels} />
       <OfficeLayout />
+      <AgentLayer agents={MOCK_AGENTS} />
     </>
   );
 }

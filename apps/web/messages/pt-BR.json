@@ -194,7 +194,15 @@
     "meetingPod": "Sala de Reunião",
     "breakroom": "Copa",
     "serverRack": "Rack de Servidores",
-    "loading": "CARREGANDO ESCRITÓRIO..."
+    "loading": "CARREGANDO ESCRITÓRIO...",
+    "agentWorking": "Agente trabalhando",
+    "agentAwaitingApproval": "Agente aguardando aprovação",
+    "agentOffline": "Agente offline",
+    "statusIdle": "Ocioso",
+    "statusWorking": "Trabalhando",
+    "statusError": "Erro",
+    "statusAwaitingApproval": "Aguardando Aprovação",
+    "statusOffline": "Offline"
   },
   "approvals": {
     "title": "Aprovações",

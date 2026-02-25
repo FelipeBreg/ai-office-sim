@@ -194,7 +194,15 @@
     "meetingPod": "Meeting Pod",
     "breakroom": "Breakroom",
     "serverRack": "Server Rack",
-    "loading": "LOADING OFFICE..."
+    "loading": "LOADING OFFICE...",
+    "agentWorking": "Agent working",
+    "agentAwaitingApproval": "Agent awaiting approval",
+    "agentOffline": "Agent offline",
+    "statusIdle": "Idle",
+    "statusWorking": "Working",
+    "statusError": "Error",
+    "statusAwaitingApproval": "Awaiting Approval",
+    "statusOffline": "Offline"
   },
   "approvals": {
     "title": "Approvals",
