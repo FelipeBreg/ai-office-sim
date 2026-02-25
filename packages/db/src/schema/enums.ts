@@ -133,6 +133,17 @@ export const emailMessageTypeEnum = pgEnum('email_message_type', [
   'marketing',
 ]);
 
+// Agent Teams
+export const agentTeamEnum = pgEnum('agent_team', [
+  'development',
+  'research',
+  'marketing',
+  'sales',
+  'support',
+  'finance',
+  'operations',
+]);
+
 // Tool Credentials (OAuth2)
 export const toolTypeEnum = pgEnum('tool_type', [
   'google_gmail',

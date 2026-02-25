@@ -14,6 +14,7 @@ import {
   agentStatusEnum,
   triggerTypeEnum,
   memoryScopeEnum,
+  agentTeamEnum,
 } from './enums.js';
 import { projects } from './projects.js';
 import { vector } from './custom-types.js';
@@ -40,6 +41,7 @@ export const agents = pgTable(
       budget: number;
     }>(),
     tools: text('tools').array(),
+    team: agentTeamEnum('team'),
     memoryScope: memoryScopeEnum('memory_scope').notNull().default('read_write'),
     triggerType: triggerTypeEnum('trigger_type').notNull().default('manual'),
     triggerConfig: jsonb('trigger_config').$type<{
@@ -60,6 +62,7 @@ export const agents = pgTable(
     index('agent_project_id_idx').on(table.projectId),
     index('agent_status_idx').on(table.status),
     index('agent_archetype_idx').on(table.archetype),
+    index('agent_team_idx').on(table.team),
   ],
 );
 
