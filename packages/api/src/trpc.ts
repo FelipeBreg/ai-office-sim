@@ -1,8 +1,9 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import { db } from '@ai-office/db';
-import { users, projects, organizations } from '@ai-office/db';
-import { eq, and, sql } from '@ai-office/db';
+import { users, projects, organizations, agents, workflows } from '@ai-office/db';
+import { eq, and, sql, count, inArray } from '@ai-office/db';
+import { PLAN_LIMITS, type PlanTier, type ResourceType } from '@ai-office/shared';
 
 export interface TRPCContext {
   clerkUserId: string | null;
@@ -191,3 +192,64 @@ export const requireRole = (minimumRole: 'viewer' | 'manager' | 'admin' | 'owner
 // Convenience procedures with role checks
 export const adminProcedure = projectProcedure.use(requireRole('admin'));
 export const ownerProcedure = projectProcedure.use(requireRole('owner'));
+
+/**
+ * Checks if the organization has hit its plan limit for a resource type.
+ * Throws FORBIDDEN if the limit is exceeded.
+ */
+export async function enforceResourceLimit(
+  orgId: string,
+  plan: string,
+  resource: ResourceType,
+): Promise<void> {
+  const tier = plan as PlanTier;
+  const limits = PLAN_LIMITS[tier] ?? PLAN_LIMITS.starter;
+  const limit = limits[resource];
+
+  // -1 means unlimited
+  if (limit === -1) return;
+
+  let currentCount = 0;
+
+  if (resource === 'maxProjects') {
+    const [result] = await db
+      .select({ count: count() })
+      .from(projects)
+      .where(eq(projects.orgId, orgId));
+    currentCount = result?.count ?? 0;
+  } else if (resource === 'maxAgents') {
+    // Count all agents across all projects in this org
+    const orgProjects = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.orgId, orgId));
+    if (orgProjects.length > 0) {
+      const projectIds = orgProjects.map((p) => p.id);
+      const [result] = await db
+        .select({ count: count() })
+        .from(agents)
+        .where(inArray(agents.projectId, projectIds));
+      currentCount = result?.count ?? 0;
+    }
+  } else if (resource === 'maxWorkflows') {
+    const orgProjects = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.orgId, orgId));
+    if (orgProjects.length > 0) {
+      const projectIds = orgProjects.map((p) => p.id);
+      const [result] = await db
+        .select({ count: count() })
+        .from(workflows)
+        .where(inArray(workflows.projectId, projectIds));
+      currentCount = result?.count ?? 0;
+    }
+  }
+
+  if (currentCount >= limit) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: `Plan limit reached: ${tier} plan allows ${limit} ${resource.replace('max', '').toLowerCase()}. Upgrade your plan to add more.`,
+    });
+  }
+}

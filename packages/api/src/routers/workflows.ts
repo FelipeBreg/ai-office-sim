@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
+import { createTRPCRouter, projectProcedure, adminProcedure, enforceResourceLimit } from '../trpc.js';
 import { db, workflows, workflowRuns, eq, and, desc } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 
@@ -36,6 +36,8 @@ export const workflowsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await enforceResourceLimit(ctx.org!.id, ctx.org!.plan, 'maxWorkflows');
+
       const [workflow] = await db
         .insert(workflows)
         .values({
