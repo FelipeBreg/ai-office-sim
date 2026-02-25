@@ -806,6 +806,17 @@
     "collapseAll": "Collapse all",
     "webhookUrlPlaceholder": "https://your-domain.com/api/webhooks/whatsapp"
   },
+  "teamRoster": {
+    "header": "Team \u2014 {count} agents",
+    "show": "Roster",
+    "hide": "Hide",
+    "collapse": "Collapse",
+    "status_idle": "Idle",
+    "status_working": "Working",
+    "status_error": "Error",
+    "status_awaiting_approval": "Awaiting Approval",
+    "status_offline": "Offline"
+  },
   "agentPanel": {
     "title": "Agent Inspector",
     "close": "Close",

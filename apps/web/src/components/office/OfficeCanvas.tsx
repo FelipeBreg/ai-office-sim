@@ -11,6 +11,10 @@ import { FloorCameraController } from './FloorCameraController';
 import { FloorSelector } from './FloorSelector';
 import { AgentInspectPanel } from './AgentInspectPanel';
 import type { InspectedAgent } from './AgentInspectPanel';
+import { TeamRoster } from './TeamRoster';
+import { DataFlowLayer } from './DataFlowLayer';
+import type { DataFlowAgent } from './DataFlowLayer';
+import { AmbientParticles } from './AmbientParticles';
 import type { AgentStatus } from './AgentAvatar';
 import { useAgentStatuses } from './useAgentStatuses';
 
@@ -36,15 +40,26 @@ const MOCK_CURRENT_ACTIONS: Partial<Record<AgentStatus, string>> = {
   error: 'Falha na conexão com API',
 };
 
+// ── Agent room/slot mapping for data flow visualization ──────────────
+// Mirrors FLOOR_AGENTS in FloorSystem — needed to compute world positions
+const AGENT_ROOM_MAP: Record<string, { roomKey: string; slotIndex: number }> = {
+  'agent-1': { roomKey: 'openWorkspace', slotIndex: 0 },
+  'agent-2': { roomKey: 'openWorkspace', slotIndex: 1 },
+  'agent-3': { roomKey: 'openWorkspace', slotIndex: 3 },
+  'agent-4': { roomKey: 'openWorkspace', slotIndex: 4 },
+};
+
 // ── Scene (inside r3f Canvas) ────────────────────────────────────────
 function Scene({
   roomLabels,
   selectedAgentId,
   onSelectAgent,
+  dataFlowAgents,
 }: {
   roomLabels: Record<string, string>;
   selectedAgentId: string | null;
   onSelectAgent: (agentId: string) => void;
+  dataFlowAgents: DataFlowAgent[];
 }) {
   return (
     <>
@@ -77,6 +92,12 @@ function Scene({
         selectedAgentId={selectedAgentId}
         onSelectAgent={onSelectAgent}
       />
+
+      {/* Data flow particles: agent -> server room */}
+      <DataFlowLayer agents={dataFlowAgents} />
+
+      {/* Ambient background particle field */}
+      <AmbientParticles />
     </>
   );
 }
@@ -113,6 +134,21 @@ export function OfficeCanvas() {
   const handleDeselectAgent = useCallback(() => {
     setSelectedAgentId(null);
   }, []);
+
+  // Build data flow agent list (agent positions + live statuses for particle flows)
+  const dataFlowAgents: DataFlowAgent[] = useMemo(
+    () =>
+      ALL_MOCK_AGENTS.map((agent) => {
+        const mapping = AGENT_ROOM_MAP[agent.id];
+        return {
+          id: agent.id,
+          roomKey: mapping?.roomKey ?? 'openWorkspace',
+          slotIndex: mapping?.slotIndex ?? 0,
+          status: statuses.get(agent.id) ?? 'idle',
+        };
+      }),
+    [statuses],
+  );
 
   // Build inspected agent data for the panel
   const inspectedAgent: InspectedAgent | null = useMemo(() => {
@@ -154,11 +190,18 @@ export function OfficeCanvas() {
             roomLabels={roomLabels}
             selectedAgentId={selectedAgentId}
             onSelectAgent={handleSelectAgent}
+            dataFlowAgents={dataFlowAgents}
           />
         </Canvas>
 
         {/* DOM overlays — siblings to Canvas, absolute positioned */}
         <FloorSelector />
+        <TeamRoster
+          agents={ALL_MOCK_AGENTS}
+          statuses={statuses}
+          currentActions={MOCK_CURRENT_ACTIONS}
+          onSelectAgent={handleSelectAgent}
+        />
       </Suspense>
 
       {/* Agent Inspection Panel — DOM overlay, outside Canvas */}
