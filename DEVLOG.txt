@@ -1620,3 +1620,165 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #10 — Task P1-2.6: OAuth2 Credential Management
+================================================================================
+Hash:     2167fe1
+Date:     2026-02-24
+Tasks:    P1-2.6 (1 task, Epic P1-2: Email, Sheets & CRM Tool Integrations)
+================================================================================
+
+WHAT WAS BUILT:
+  - tool_credentials DB table for encrypted OAuth2 token storage (per project + tool type)
+  - OAuth2 utility: authorization URL, code exchange, token refresh (Google + RD Station)
+  - tRPC router: list/getAuthUrl/exchangeCode/disconnect/refreshTokens
+  - Auto-refreshing helper for tools to get valid access tokens
+
+DETAILS:
+  packages/db/src/schema/enums.ts (MODIFIED):
+    - Added toolTypeEnum: google_gmail, google_sheets, rdstation_crm, rdstation_marketing
+
+  packages/db/src/schema/tool-credentials.ts (NEW):
+    - tool_credentials table: id, project_id, tool_type, access_token (encrypted),
+      refresh_token (encrypted), expires_at, metadata (jsonb), timestamps
+    - Unique index on (project_id, tool_type), index on expires_at
+
+  packages/shared/src/utils/oauth2.ts (NEW):
+    - getAuthorizationUrl(): builds Google/RD Station auth URL with state param
+    - exchangeCodeForTokens(): exchanges auth code for access + refresh tokens
+    - refreshAccessToken(): refreshes expired access token
+    - GOOGLE_SCOPES / RDSTATION_SCOPES constants
+
+  packages/api/src/routers/tool-credentials.ts (NEW):
+    - list (projectProcedure): returns connections with expired status
+    - getAuthUrl (adminProcedure): generates OAuth URL with state
+    - exchangeCode (adminProcedure): exchanges code, encrypts + stores tokens
+    - disconnect (adminProcedure): deletes credential
+    - refreshTokens (adminProcedure): manual token refresh
+
+  packages/ai/src/tools/oauth2-helper.ts (NEW):
+    - getValidAccessToken(projectId, toolType): returns decrypted access token,
+      auto-refreshes if within 5min of expiry
+
+FILES CREATED (4 new, 3 modified):
+  New:
+    packages/db/src/schema/tool-credentials.ts
+    packages/shared/src/utils/oauth2.ts
+    packages/api/src/routers/tool-credentials.ts
+    packages/ai/src/tools/oauth2-helper.ts
+  Modified:
+    packages/db/src/schema/enums.ts
+    packages/db/src/schema/index.ts
+    packages/api/src/root.ts
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass
+  - tRPC router: trpc.toolCredentials.* (5 procedures)
+  - Env vars: GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, GOOGLE_OAUTH_REDIRECT_URI,
+    RDSTATION_OAUTH_CLIENT_ID, RDSTATION_OAUTH_CLIENT_SECRET, RDSTATION_OAUTH_REDIRECT_URI
+  - Requires Drizzle migration: drizzle-kit generate && drizzle-kit migrate
+
+
+================================================================================
+COMMIT #11 — Task P1-2.4: RD Station CRM Tools
+================================================================================
+Hash:     a87b5dd
+Date:     2026-02-24
+Tasks:    P1-2.4 (1 task, Epic P1-2: Email, Sheets & CRM Tool Integrations)
+================================================================================
+
+WHAT WAS BUILT:
+  - 5 CRM tools for Brazil's primary SME CRM (RD Station / Plug CRM API)
+  - search_contacts (read-only), create_contact (approval), update_contact (approval),
+    list_deals (read-only), create_deal (approval)
+
+DETAILS:
+  packages/ai/src/tools/crm/client.ts (NEW):
+    - RdStationCrmClient: REST API calls to plugcrm.net/api/v1
+    - 15s fetch timeout, token-based auth
+    - Typed interfaces: RdStationContact, RdStationDeal
+
+  packages/ai/src/tools/crm/search-contacts.ts (NEW):
+    - search_contacts tool: query contacts by name/email/phone
+  packages/ai/src/tools/crm/create-contact.ts (NEW):
+    - create_contact tool: create new lead (requires approval)
+  packages/ai/src/tools/crm/update-contact.ts (NEW):
+    - update_contact tool: update existing lead (requires approval)
+  packages/ai/src/tools/crm/list-deals.ts (NEW):
+    - list_deals tool: list pipeline deals
+  packages/ai/src/tools/crm/create-deal.ts (NEW):
+    - create_deal tool: create new opportunity (requires approval)
+  packages/ai/src/tools/crm/index.ts (NEW):
+    - Barrel export for all CRM tools and types
+
+FILES CREATED (7 new, 2 modified):
+  New:
+    packages/ai/src/tools/crm/client.ts
+    packages/ai/src/tools/crm/search-contacts.ts
+    packages/ai/src/tools/crm/create-contact.ts
+    packages/ai/src/tools/crm/update-contact.ts
+    packages/ai/src/tools/crm/list-deals.ts
+    packages/ai/src/tools/crm/create-deal.ts
+    packages/ai/src/tools/crm/index.ts
+  Modified:
+    packages/ai/src/tools/registry.ts
+    packages/ai/src/index.ts
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass
+  - 5 tools registered in toolRegistry
+  - Uses OAuth2 auto-refresh via oauth2-helper
+
+
+================================================================================
+COMMIT #12 — Task P1-2.3: Google Sheets Tools
+================================================================================
+Hash:     822fc50
+Date:     2026-02-24
+Tasks:    P1-2.3 (1 task, Epic P1-2: Email, Sheets & CRM Tool Integrations)
+================================================================================
+
+WHAT WAS BUILT:
+  - 3 Google Sheets tools using Sheets API v4 with OAuth2
+  - read_spreadsheet (read-only), write_spreadsheet (approval),
+    append_to_spreadsheet (approval)
+
+DETAILS:
+  packages/ai/src/tools/sheets/client.ts (NEW):
+    - GoogleSheetsClient: REST calls to sheets.googleapis.com/v4
+    - readRange, writeRange, appendRows methods
+    - 15s fetch timeout, Bearer token auth
+
+  packages/ai/src/tools/sheets/read.ts (NEW):
+    - read_spreadsheet: read cell range, returns 2D array
+  packages/ai/src/tools/sheets/write.ts (NEW):
+    - write_spreadsheet: overwrite cell range (approval)
+  packages/ai/src/tools/sheets/append.ts (NEW):
+    - append_to_spreadsheet: append rows to end (approval)
+  packages/ai/src/tools/sheets/index.ts (NEW):
+    - Barrel export
+
+FILES CREATED (5 new, 2 modified):
+  New:
+    packages/ai/src/tools/sheets/client.ts
+    packages/ai/src/tools/sheets/read.ts
+    packages/ai/src/tools/sheets/write.ts
+    packages/ai/src/tools/sheets/append.ts
+    packages/ai/src/tools/sheets/index.ts
+  Modified:
+    packages/ai/src/tools/registry.ts
+    packages/ai/src/index.ts
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass
+  - 3 tools registered in toolRegistry
+  - Uses OAuth2 auto-refresh via oauth2-helper
+
+
+================================================================================
+  EPIC P1-2 COMPLETE — All 6 tasks done (P1-2.1 through P1-2.6)
+  Total tools registered: 19 (3 stubs + 2 WhatsApp + 1 web search +
+    2 email + 5 CRM + 3 Sheets + 3 utility)
+================================================================================
+
+
+================================================================================
