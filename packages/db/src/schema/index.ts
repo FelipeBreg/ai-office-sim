@@ -16,3 +16,4 @@ export * from './archetypes.js';
 export * from './approval-rules.js';
 export * from './wiki.js';
 export * from './feedback.js';
+export * from './company-templates.js';

@@ -162,6 +162,9 @@ export const feedbackCategoryEnum = pgEnum('feedback_category', [
   'praise',
 ]);
 
+// Company Templates
+export const marketFocusEnum = pgEnum('market_focus', ['br', 'global', 'both']);
+
 // Tool Credentials (OAuth2)
 export const toolTypeEnum = pgEnum('tool_type', [
   'google_gmail',

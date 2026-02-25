@@ -14,6 +14,16 @@ export type AgentArchetype =
   | 'project_manager'
   | 'hr'
   | 'finance'
+  | 'email_campaign_manager'
+  | 'research'
+  | 'recruiter'
+  | 'social_media'
+  | 'mercado_livre'
+  | 'inventory_monitor'
+  | 'legal_research'
+  | 'ad_analyst'
+  | 'account_manager'
+  | 'deployment_monitor'
   | 'custom';
 
 export type AgentStatus = 'idle' | 'working' | 'awaiting_approval' | 'error' | 'offline';
@@ -40,3 +50,6 @@ export type WorkflowRunStatus = 'running' | 'completed' | 'failed' | 'cancelled'
 
 // Document types
 export type DocumentSourceType = 'upload' | 'web' | 'api' | 'agent';
+
+// Company Templates
+export type MarketFocus = 'br' | 'global' | 'both';

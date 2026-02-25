@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -21,12 +21,17 @@ import {
   PenTool,
   Wallet,
   BarChart3,
-  FileText,
-  Sparkles,
+  Megaphone,
+  ShoppingCart,
+  Scale,
+  Code,
+  Layout,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useRouter } from '@/i18n/navigation';
+import { getTemplatesForLocale, type CompanyTemplateDefinition } from '@ai-office/shared';
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -34,11 +39,22 @@ import { useRouter } from '@/i18n/navigation';
 
 type OnboardingStep = 0 | 1 | 2 | 3 | 4 | 5;
 
-type TemplateChoice = 'blank' | 'demo';
-
 type IntegrationChoice = 'whatsapp' | 'email' | 'skip';
 
 type AgentArchetype = 'support' | 'sales' | 'content_writer' | 'finance' | 'data_analyst';
+
+/* -------------------------------------------------------------------------- */
+/*  Icon mapping for template icons                                           */
+/* -------------------------------------------------------------------------- */
+
+const TEMPLATE_ICON_MAP: Record<string, LucideIcon> = {
+  megaphone: Megaphone,
+  'shopping-cart': ShoppingCart,
+  scale: Scale,
+  code: Code,
+  layout: Layout,
+  building: Building2,
+};
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                 */
@@ -255,23 +271,18 @@ function StepCompanyProject({
 /* -------------------------------------------------------------------------- */
 
 function StepChooseTemplate({
-  template,
-  setTemplate,
+  selectedSlug,
+  setSelectedSlug,
+  locale,
   t,
 }: {
-  template: TemplateChoice | null;
-  setTemplate: (v: TemplateChoice) => void;
-  t: (key: string) => string;
+  selectedSlug: string | null;
+  setSelectedSlug: (slug: string) => void;
+  locale: string;
+  t: (key: string, values?: Record<string, string>) => string;
 }) {
-  const templates: {
-    id: TemplateChoice;
-    icon: typeof FileText;
-    nameKey: string;
-    descKey: string;
-  }[] = [
-    { id: 'blank', icon: FileText, nameKey: 'templateBlank', descKey: 'templateBlankDesc' },
-    { id: 'demo', icon: Sparkles, nameKey: 'templateDemo', descKey: 'templateDemoDesc' },
-  ];
+  const templates = getTemplatesForLocale(locale as 'pt-BR' | 'en-US');
+  const isPtBr = locale === 'pt-BR';
 
   return (
     <div className="flex flex-col gap-8 py-6">
@@ -285,17 +296,20 @@ function StepChooseTemplate({
         <p className="mt-1 text-[10px] text-text-muted">{t('templateDescription')}</p>
       </div>
 
-      <div className="mx-auto grid w-full max-w-lg grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="mx-auto grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {templates.map((tmpl) => {
-          const Icon = tmpl.icon;
-          const isSelected = template === tmpl.id;
+          const Icon = TEMPLATE_ICON_MAP[tmpl.icon] ?? Building2;
+          const isSelected = selectedSlug === tmpl.slug;
+          const name = isPtBr ? tmpl.namePtBr : tmpl.nameEn;
+          const desc = isPtBr ? tmpl.descriptionPtBr : tmpl.descriptionEn;
+          const agentCount = tmpl.defaultAgents.length;
 
           return (
             <button
-              key={tmpl.id}
+              key={tmpl.slug}
               type="button"
-              onClick={() => setTemplate(tmpl.id)}
-              className={`group flex flex-col items-center gap-3 border p-6 text-center transition-all duration-200 ${
+              onClick={() => setSelectedSlug(tmpl.slug)}
+              className={`group flex flex-col items-center gap-3 border p-5 text-center transition-all duration-200 ${
                 isSelected
                   ? 'border-accent-cyan bg-accent-cyan/5'
                   : 'border-border-default bg-bg-base hover:border-border-hover hover:bg-bg-raised'
@@ -315,10 +329,15 @@ function StepChooseTemplate({
                   isSelected ? 'text-accent-cyan' : 'text-text-primary'
                 }`}
               >
-                {t(tmpl.nameKey)}
+                {name}
               </span>
-              <span className="text-[9px] leading-relaxed text-text-muted">
-                {t(tmpl.descKey)}
+              <span className="line-clamp-2 text-[9px] leading-relaxed text-text-muted">
+                {desc}
+              </span>
+              <span className="text-[8px] text-text-muted">
+                {agentCount > 0
+                  ? t('templateAgentCount', { count: String(agentCount) })
+                  : t('templateNoAgents')}
               </span>
               {isSelected && (
                 <div className="flex h-5 w-5 items-center justify-center bg-accent-cyan">
@@ -595,6 +614,7 @@ function StepDone({ t }: { t: (key: string) => string }) {
 
 export default function OnboardingPage() {
   const t = useTranslations('onboarding');
+  const locale = useLocale();
   const router = useRouter();
 
   /* ---- Step state ---- */
@@ -606,7 +626,7 @@ export default function OnboardingPage() {
   const [projectName, setProjectName] = useState('');
 
   /* ---- Step 2 state ---- */
-  const [template, setTemplate] = useState<TemplateChoice | null>(null);
+  const [templateSlug, setTemplateSlug] = useState<string | null>(null);
 
   /* ---- Step 3 state ---- */
   const [integration, setIntegration] = useState<IntegrationChoice | null>(null);
@@ -642,7 +662,7 @@ export default function OnboardingPage() {
       case 1:
         return companyName.trim().length > 0 && projectName.trim().length > 0;
       case 2:
-        return template !== null;
+        return templateSlug !== null;
       case 3:
         return integration !== null;
       case 4:
@@ -721,8 +741,9 @@ export default function OnboardingPage() {
               )}
               {step === 2 && (
                 <StepChooseTemplate
-                  template={template}
-                  setTemplate={setTemplate}
+                  selectedSlug={templateSlug}
+                  setSelectedSlug={setTemplateSlug}
+                  locale={locale === 'pt-BR' ? 'pt-BR' : 'en-US'}
                   t={t}
                 />
               )}

@@ -1,19 +1,33 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
-import { Check, ArrowLeft, ArrowRight, Loader2, FolderPlus, Palette, ChevronDown } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
+import {
+  Check, ArrowLeft, ArrowRight, Loader2, FolderPlus, Palette, ChevronDown,
+  Building2, Megaphone, ShoppingCart, Scale, Code, Layout, LayoutGrid,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useRouter } from '@/i18n/navigation';
 import { useProjectStore, useActiveOrg } from '@/stores/project-store';
+import { getTemplatesForLocale } from '@ai-office/shared';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                 */
 /* -------------------------------------------------------------------------- */
 
-const STEPS = ['stepName', 'stepDetails', 'stepReview'] as const;
+const STEPS = ['stepName', 'stepTemplate', 'stepDetails', 'stepReview'] as const;
+
+const TEMPLATE_ICON_MAP: Record<string, LucideIcon> = {
+  megaphone: Megaphone,
+  'shopping-cart': ShoppingCart,
+  scale: Scale,
+  code: Code,
+  layout: Layout,
+  building: Building2,
+};
 
 const COLORS = [
   { id: '#00C8E0', name: 'Cyan' },
@@ -201,7 +215,83 @@ function StepNameColor({
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Step 1: Sector + Primary Goal                                             */
+/*  Step 1: Choose Template                                                   */
+/* -------------------------------------------------------------------------- */
+
+function StepTemplate({
+  selectedSlug,
+  setSelectedSlug,
+  locale,
+  t,
+}: {
+  selectedSlug: string | null;
+  setSelectedSlug: (slug: string) => void;
+  locale: string;
+  t: (key: string, values?: Record<string, string | number>) => string;
+}) {
+  const templates = getTemplatesForLocale(locale as 'pt-BR' | 'en-US');
+  const isPtBr = locale === 'pt-BR';
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="text-center">
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center border border-accent-cyan/40 bg-accent-cyan/5">
+          <LayoutGrid size={18} strokeWidth={1} className="text-accent-cyan" />
+        </div>
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-text-primary">
+          {t('templateTitle')}
+        </h3>
+        <p className="mt-1 text-[9px] text-text-muted">{t('templateDescription')}</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {templates.map((tmpl) => {
+          const Icon = TEMPLATE_ICON_MAP[tmpl.icon] ?? Building2;
+          const isSelected = selectedSlug === tmpl.slug;
+          const name = isPtBr ? tmpl.namePtBr : tmpl.nameEn;
+          const desc = isPtBr ? tmpl.descriptionPtBr : tmpl.descriptionEn;
+          const agentCount = tmpl.defaultAgents.length;
+
+          return (
+            <button
+              key={tmpl.slug}
+              type="button"
+              onClick={() => setSelectedSlug(tmpl.slug)}
+              className={`group flex flex-col items-center gap-2 border p-4 text-center transition-all duration-200 ${
+                isSelected
+                  ? 'border-accent-cyan bg-accent-cyan/5'
+                  : 'border-border-default bg-bg-base hover:border-border-hover hover:bg-bg-raised'
+              }`}
+            >
+              <Icon
+                size={16}
+                strokeWidth={1.2}
+                className={isSelected ? 'text-accent-cyan' : 'text-text-muted group-hover:text-text-secondary'}
+              />
+              <span className={`text-[10px] font-medium ${isSelected ? 'text-accent-cyan' : 'text-text-primary'}`}>
+                {name}
+              </span>
+              <span className="line-clamp-2 text-[8px] leading-relaxed text-text-muted">{desc}</span>
+              <span className="text-[7px] text-text-muted">
+                {agentCount > 0
+                  ? t('templateAgentCount', { count: String(agentCount) })
+                  : t('templateNoAgents')}
+              </span>
+              {isSelected && (
+                <div className="flex h-4 w-4 items-center justify-center bg-accent-cyan">
+                  <Check size={9} strokeWidth={2.5} className="text-bg-deepest" />
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Step 2: Sector + Primary Goal                                             */
 /* -------------------------------------------------------------------------- */
 
 function StepDetails({
@@ -381,6 +471,7 @@ function UpgradeBanner({
 
 export default function ProjectWizardPage() {
   const t = useTranslations('projectWizard');
+  const locale = useLocale();
   const router = useRouter();
 
   /* ---- Wizard step ---- */
@@ -390,7 +481,10 @@ export default function ProjectWizardPage() {
   const [name, setName] = useState('');
   const [color, setColor] = useState('#00C8E0');
 
-  /* ---- Step 1 state ---- */
+  /* ---- Step 1 state: Template ---- */
+  const [templateSlug, setTemplateSlug] = useState<string | null>(null);
+
+  /* ---- Step 2 state ---- */
   const [sector, setSector] = useState('');
   const [primaryGoal, setPrimaryGoal] = useState('');
 
@@ -413,17 +507,23 @@ export default function ProjectWizardPage() {
       case 0:
         return name.trim().length > 0;
       case 1:
-        return true; // Optional fields
+        return true; // Template step is optional
       case 2:
+        return true; // Details step is optional
+      case 3:
         return name.trim().length > 0;
       default:
         return false;
     }
   }, [step, name]);
 
-  /* ---- Create mutation ---- */
+  /* ---- Mutations ---- */
+  const provisionMutation = trpc.companyTemplates.provision.useMutation();
+
   const createMutation = trpc.projects.create.useMutation({
-    onSuccess: (newProject) => {
+    onSuccess: async (newProject) => {
+      // Set the new project as active BEFORE provisioning, so the tRPC client
+      // sends the correct x-project-id header for the provision call.
       const store = useProjectStore.getState();
       store.setProjects([...store.projects, {
         id: newProject.id,
@@ -434,6 +534,16 @@ export default function ProjectWizardPage() {
         isActive: newProject.isActive,
       }]);
       store.setCurrentProject(newProject.id);
+
+      // Provision template agents if a template was selected
+      if (templateSlug && templateSlug !== 'blank-canvas') {
+        try {
+          await provisionMutation.mutateAsync({ templateSlug });
+        } catch {
+          // Non-blocking — project was created successfully
+        }
+      }
+
       router.push('/office');
     },
   });
@@ -511,6 +621,14 @@ export default function ProjectWizardPage() {
             />
           )}
           {step === 1 && (
+            <StepTemplate
+              selectedSlug={templateSlug}
+              setSelectedSlug={setTemplateSlug}
+              locale={locale === 'pt-BR' ? 'pt-BR' : 'en-US'}
+              t={t}
+            />
+          )}
+          {step === 2 && (
             <StepDetails
               sector={sector}
               setSector={setSector}
@@ -519,7 +637,7 @@ export default function ProjectWizardPage() {
               t={t}
             />
           )}
-          {step === 2 && (
+          {step === 3 && (
             <StepReview
               name={name}
               slug={slug}

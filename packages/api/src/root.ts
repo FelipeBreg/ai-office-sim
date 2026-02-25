@@ -13,6 +13,7 @@ import { documentsRouter } from './routers/documents.js';
 import { agentMemoryRouter } from './routers/agent-memory.js';
 import { wikiRouter } from './routers/wiki.js';
 import { feedbackRouter } from './routers/feedback.js';
+import { companyTemplatesRouter } from './routers/company-templates.js';
 
 export const appRouter = createTRPCRouter({
   agents: agentsRouter,
@@ -29,6 +30,7 @@ export const appRouter = createTRPCRouter({
   agentMemory: agentMemoryRouter,
   wiki: wikiRouter,
   feedback: feedbackRouter,
+  companyTemplates: companyTemplatesRouter,
 });
 
 export type AppRouter = typeof appRouter;
