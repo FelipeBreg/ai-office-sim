@@ -132,3 +132,11 @@ export const emailMessageTypeEnum = pgEnum('email_message_type', [
   'transactional',
   'marketing',
 ]);
+
+// Tool Credentials (OAuth2)
+export const toolTypeEnum = pgEnum('tool_type', [
+  'google_gmail',
+  'google_sheets',
+  'rdstation_crm',
+  'rdstation_marketing',
+]);

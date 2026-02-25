@@ -11,3 +11,11 @@ export function slugify(text: string): string {
 }
 
 export { encryptCredentials, decryptCredentials } from './crypto.js';
+export {
+  getAuthorizationUrl,
+  exchangeCodeForTokens,
+  refreshAccessToken,
+  GOOGLE_SCOPES,
+  RDSTATION_SCOPES,
+} from './oauth2.js';
+export type { OAuth2Provider, OAuth2Config, OAuth2Tokens } from './oauth2.js';
