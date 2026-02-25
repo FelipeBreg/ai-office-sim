@@ -10,3 +10,4 @@ export * from './workflows.js';
 export * from './documents.js';
 export * from './strategies.js';
 export * from './whatsapp.js';
+export * from './email.js';

@@ -38,5 +38,22 @@ export type {
   ConnectionStatus,
 } from './tools/whatsapp/index.js';
 
+// Email
+export {
+  createEmailClient,
+  sendEmailTool,
+} from './tools/email/index.js';
+export type {
+  EmailProvider,
+  EmailCredentials,
+  SmtpCredentials,
+  SendGridCredentials,
+  AwsSesCredentials,
+  EmailClient,
+  SendEmailParams,
+  SendEmailResult,
+  EmailConnectionStatus,
+} from './tools/email/index.js';
+
 // Memory
 export { loadMemory, saveMemory, searchMemory } from './memory/individual.js';

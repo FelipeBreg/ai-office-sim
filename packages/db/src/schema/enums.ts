@@ -109,3 +109,26 @@ export const whatsappTemplateStatusEnum = pgEnum('whatsapp_template_status', [
   'approved',
   'rejected',
 ]);
+
+// Email
+export const emailProviderEnum = pgEnum('email_provider', [
+  'smtp',
+  'sendgrid',
+  'aws_ses',
+]);
+export const emailConnectionStatusEnum = pgEnum('email_connection_status', [
+  'connected',
+  'disconnected',
+  'pending',
+]);
+export const emailMessageStatusEnum = pgEnum('email_message_status', [
+  'pending',
+  'sent',
+  'delivered',
+  'bounced',
+  'failed',
+]);
+export const emailMessageTypeEnum = pgEnum('email_message_type', [
+  'transactional',
+  'marketing',
+]);

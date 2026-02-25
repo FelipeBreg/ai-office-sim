@@ -4,6 +4,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { sendWhatsAppMessageTool } from './whatsapp/send.js';
 import { readWhatsAppMessagesTool } from './whatsapp/read.js';
 import { searchWebTool } from './web-search/index.js';
+import { sendEmailTool } from './email/send.js';
 
 // Convert Zod schema to JSON Schema for Anthropic tool format
 function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
@@ -133,3 +134,6 @@ toolRegistry.register(readWhatsAppMessagesTool);
 
 // ── Web Search ──
 toolRegistry.register(searchWebTool);
+
+// ── Email ──
+toolRegistry.register(sendEmailTool);

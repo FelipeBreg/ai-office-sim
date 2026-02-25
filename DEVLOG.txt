@@ -1468,3 +1468,88 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #8 — Task P1-2.1: send_email Tool (Nodemailer SMTP + Provider Abstraction)
+================================================================================
+Date:     2026-02-24
+Tasks:    P1-2.1 (1 task, Epic P1-2: Email, Sheets & CRM Tool Integrations)
+================================================================================
+
+WHAT WAS BUILT:
+  - send_email agent tool: SMTP via Nodemailer with provider abstraction
+  - Email DB schema: connections, messages, templates (3 tables, 4 enums)
+  - tRPC router for email connection management and templates
+  - CAN-SPAM/LGPD compliance headers for marketing emails
+  - Security: SSRF protection on attachments, header injection prevention
+
+DETAILS:
+  packages/db/src/schema/enums.ts (MODIFIED):
+    - Added emailProviderEnum (smtp, sendgrid, aws_ses)
+    - Added emailConnectionStatusEnum, emailMessageStatusEnum, emailMessageTypeEnum
+
+  packages/db/src/schema/email.ts (NEW):
+    - emailConnections: one per project, encrypted credentials (jsonb), fromEmail/fromName/replyTo
+    - emailMessages: audit trail with status, recipients (text[]), subject, bodyHtml, bodyText,
+      custom headers, attachments (jsonb), providerMessageId, error, sentAt
+    - emailTemplates: reusable templates with name (unique per project), messageType, isActive
+
+  packages/ai/src/tools/email/client.ts (NEW):
+    - EmailProvider type: smtp, sendgrid, aws_ses
+    - SmtpClient: Nodemailer createTransport with 15s timeouts, sendEmail(), verifyConnection()
+    - SendGridClient / AwsSesClient: stubs returning "not yet implemented"
+    - createEmailClient() factory function
+
+  packages/ai/src/tools/email/send.ts (NEW):
+    - Tool name: send_email, requiresApproval: true
+    - Input: { to, subject, body (HTML), cc?, bcc?, isMarketing?, attachments? }
+    - SSRF protection: attachment URLs must be HTTPS, no private IPs/localhost
+    - Header injection prevention: sanitizeDisplayName strips \r\n<>
+    - Auto-generates plaintext body from HTML for spam prevention
+    - Marketing emails get List-Unsubscribe header (mailto: form)
+    - Audit trail: inserts pending message, updates with result
+
+  packages/ai/src/tools/email/index.ts (NEW):
+    - Barrel export for client types and sendEmailTool
+
+  packages/api/src/routers/email.ts (NEW):
+    - getConnection (projectProcedure): returns sanitized connection
+    - saveConnection (adminProcedure): encrypts credentials, upserts
+    - updateConnectionStatus (adminProcedure): SMTP verify before connecting
+    - listTemplates, createTemplate, updateTemplate, deleteTemplate
+    - listMessages: cursor-based pagination by createdAt
+
+  packages/ai/src/tools/registry.ts (MODIFIED):
+    - Imported and registered sendEmailTool
+
+  packages/ai/src/index.ts (MODIFIED):
+    - Added barrel exports for email client, tool, and types
+
+  packages/ai/package.json (MODIFIED):
+    - Added nodemailer + @types/nodemailer
+
+  packages/api/src/root.ts (MODIFIED):
+    - Registered emailRouter
+
+FILES CREATED (5 new, 6 modified):
+  New:
+    packages/db/src/schema/email.ts
+    packages/ai/src/tools/email/client.ts
+    packages/ai/src/tools/email/send.ts
+    packages/ai/src/tools/email/index.ts
+    packages/api/src/routers/email.ts
+  Modified:
+    packages/db/src/schema/enums.ts
+    packages/db/src/schema/index.ts
+    packages/ai/src/tools/registry.ts
+    packages/ai/src/index.ts
+    packages/ai/package.json
+    packages/api/src/root.ts
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - Tool registered in toolRegistry
+  - tRPC router: trpc.email.* (9 procedures)
+  - Security review: SSRF blocked, header injection prevented
+  - Env vars: CREDENTIALS_ENCRYPTION_KEY (existing), SMTP creds via Settings UI
+
+
+================================================================================
