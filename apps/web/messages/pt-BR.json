@@ -169,7 +169,6 @@
       "phoneNumber": "Telefone (E.164)",
       "phoneNumberHint": "+5511999999999",
       "handlerAgent": "Agente Responsável",
-      "handlerAgentPlaceholder": "Selecione um agente...",
       "noAgent": "Nenhum (sem resposta automática)",
       "save": "Salvar Conexão",
       "verify": "Verificar Conexão",
