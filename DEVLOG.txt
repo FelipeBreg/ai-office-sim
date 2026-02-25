@@ -2141,3 +2141,39 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #24 — Phase 1 Comprehensive Audit Fixes
+================================================================================
+Hash:     d19182a
+Date:     2026-02-25
+Tasks:    N/A (full codebase audit — 5 parallel agents, all packages)
+================================================================================
+
+WHAT WAS FIXED (18 fixes across 19 files):
+
+  DB Schema:
+    - agentMemory: added uniqueIndex on (agentId, projectId, key) — prevents upsert races
+    - agentArchetypes: added uniqueIndex on (archetype) — prevents duplicate seeds
+    - realtime events: added 'cancelled' to AgentActionEvent.status union
+
+  API Routers (9 routers):
+    - Added ! assertions on 14 .returning() results across projects, workflows,
+      strategies, agents, whatsapp, email, approvals, agent-memory, users
+    - tool-credentials: getScopes() now checks RDSTATION_SCOPES (was only GOOGLE)
+    - agents: bounded tools array .max(50) + string .max(100)
+    - approval-notifications: removed unused 'and' import
+
+  Web App:
+    - workflows/page.tsx: fixed non-existent translation key
+    - analytics/page.tsx: nested button → div[role=button] in session timeline
+    - agents/new/page.tsx: rounded-full → rounded-none (DOS aesthetic)
+    - agents/[id]/page.tsx: removed unused useEffect import
+    - analytics/page.tsx: removed unused ActionType type + tCommon variable
+
+  Worker:
+    - index.ts: SENTRY_DSN with NEXT_PUBLIC fallback
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
