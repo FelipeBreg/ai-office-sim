@@ -3000,7 +3000,50 @@ FILES: 12 changed, 565 insertions, 51 deletions
 VERIFICATION:
   - turbo typecheck --force: 8/8 pass
 
-PHASE 3 STATUS: IN PROGRESS (5/9 epics done — P3-1 through P3-5; P3-6 & P3-8 deferred)
+================================================================================
+COMMIT #42 — Epic P3-7: Pix & Boleto Subscription Payments
+================================================================================
+DATE: 2026-02-25
+HASH: dc08565
+PHASE: 3 — Workflow Builder & Brazil Launch
+
+WHAT WAS BUILT:
+  P3-7.1: Stripe Integration Backend
+    - billing DB tables: subscriptions + invoices with 3 new enums
+    - stripeCustomerId column on organizations
+    - Stripe webhook handler with timing-safe HMAC-SHA256 verification
+    - 5 event handlers: checkout, invoice.paid, payment_failed,
+      subscription.updated, subscription.deleted
+    - Safe Stripe status mapping, price-to-plan mapping via env vars
+
+  P3-7.1b: Billing tRPC Router (5 procedures)
+    - currentSubscription, invoiceHistory, planPricing
+    - createCheckoutSession, createPortalSession (admin-only stubs)
+
+  P3-7.2: Pix Provider Stub (EFI Bank interface)
+  P3-7.3: Boleto Provider Stub (annual plans only)
+
+  P3-7.4: Billing Management Page
+    - Plan comparison grid (4 tiers, monthly/annual toggle, BRL/USD)
+    - Usage meters, subscription status, invoice history table
+    - Payment method badges (Pix + Boleto for pt-BR)
+    - 20+ new i18n keys per locale
+
+  Review Fixes:
+    1. CRITICAL: Timing-safe HMAC comparison (timingSafeEqual)
+    2. CRITICAL: Stripe status mapping (handles incomplete/paused)
+    3. HIGH: Empty-string env var key collision → filtered
+    4. HIGH: onConflictDoUpdate for idempotent webhooks
+    5. HIGH: Admin role required for billing mutations
+    6. MEDIUM: HTTPS-only URL validation for invoices
+    7. MEDIUM: PlanTier type for pricing/feature records
+
+FILES: 15 changed, 1002 insertions, 14 deletions
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+PHASE 3 STATUS: IN PROGRESS (6/9 done — P3-1..P3-5, P3-7; P3-6 & P3-8 deferred)
 
 
 ================================================================================
