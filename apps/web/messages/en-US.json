@@ -844,5 +844,32 @@
     "status_error": "Error",
     "status_awaiting_approval": "Awaiting Approval",
     "status_offline": "Offline"
+  },
+  "atlas": {
+    "title": "ATLAS",
+    "subtitle": "agent tracking & live advisory system",
+    "transcript": "Transcript",
+    "emptyState": "Ask anything about the company.",
+    "suggestion1": "How is MRR this month?",
+    "suggestion2": "What are the biggest risks?",
+    "suggestion3": "What should we prioritize this week?",
+    "inputPlaceholder": "Or type your question...",
+    "stateIdle": "ATLAS",
+    "stateIdleSub": "ready to listen",
+    "stateListening": "LISTENING",
+    "stateListeningSub": "speak now...",
+    "stateThinking": "PROCESSING",
+    "stateThinkingSub": "analyzing context...",
+    "stateSpeaking": "RESPONDING",
+    "stateSpeakingSub": "atlas is speaking",
+    "micStart": "click to speak",
+    "micStop": "click to stop",
+    "you": "You",
+    "atlasLabel": "ATLAS",
+    "now": "Now",
+    "activeAgents": "{count} active agents",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "reset": "Reset"
   }
 }

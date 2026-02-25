@@ -844,5 +844,32 @@
     "status_error": "Erro",
     "status_awaiting_approval": "Aguardando Aprovação",
     "status_offline": "Offline"
+  },
+  "atlas": {
+    "title": "ATLAS",
+    "subtitle": "agent tracking & live advisory system",
+    "transcript": "Transcrição",
+    "emptyState": "Pergunte qualquer coisa sobre a empresa.",
+    "suggestion1": "Como está o MRR este mês?",
+    "suggestion2": "Quais os maiores riscos?",
+    "suggestion3": "O que priorizar esta semana?",
+    "inputPlaceholder": "Ou digite sua pergunta...",
+    "stateIdle": "ATLAS",
+    "stateIdleSub": "pronto para ouvir",
+    "stateListening": "OUVINDO",
+    "stateListeningSub": "fale agora...",
+    "stateThinking": "PROCESSANDO",
+    "stateThinkingSub": "analisando contexto...",
+    "stateSpeaking": "RESPONDENDO",
+    "stateSpeakingSub": "atlas está falando",
+    "micStart": "clique para falar",
+    "micStop": "clique para parar",
+    "you": "Você",
+    "atlasLabel": "ATLAS",
+    "now": "Agora",
+    "activeAgents": "{count} agentes ativos",
+    "mute": "Silenciar",
+    "unmute": "Ativar som",
+    "reset": "Resetar"
   }
 }
