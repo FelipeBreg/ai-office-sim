@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
-import { db, strategies, strategyKpis, strategyLearnings, eq, and, desc } from '@ai-office/db';
+import { db, strategies, strategyKpis, strategyLearnings, eq, and, desc, count, sql } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 
 export const strategiesRouter = createTRPCRouter({
@@ -39,20 +39,105 @@ export const strategiesRouter = createTRPCRouter({
       return { ...strategy, kpis, learnings };
     }),
 
+  listPendingLearnings: projectProcedure.query(async ({ ctx }) => {
+    return db
+      .select()
+      .from(strategyLearnings)
+      .where(
+        and(
+          eq(strategyLearnings.projectId, ctx.project!.id),
+          eq(strategyLearnings.isApplied, false),
+        ),
+      )
+      .orderBy(desc(strategyLearnings.createdAt));
+  }),
+
+  applyLearning: adminProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [learning] = await db
+        .select()
+        .from(strategyLearnings)
+        .where(
+          and(
+            eq(strategyLearnings.id, input.id),
+            eq(strategyLearnings.projectId, ctx.project!.id),
+          ),
+        )
+        .limit(1);
+
+      if (!learning) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Learning not found' });
+      }
+
+      // Apply learning + increment version in a transaction
+      const result = await db.transaction(async (tx) => {
+        const [updated] = await tx
+          .update(strategyLearnings)
+          .set({ isApplied: true, appliedAt: new Date() })
+          .where(eq(strategyLearnings.id, input.id))
+          .returning();
+
+        await tx
+          .update(strategies)
+          .set({ version: sql`${strategies.version} + 1` })
+          .where(eq(strategies.id, learning.strategyId));
+
+        // TODO: P3-2.6 — merge learning into strategy aiRefined text via Claude call
+
+        return updated!;
+      });
+
+      return result;
+    }),
+
+  dismissLearning: adminProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [learning] = await db
+        .select()
+        .from(strategyLearnings)
+        .where(
+          and(
+            eq(strategyLearnings.id, input.id),
+            eq(strategyLearnings.projectId, ctx.project!.id),
+          ),
+        )
+        .limit(1);
+
+      if (!learning) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Learning not found' });
+      }
+
+      // Mark as applied (dismissed) so it no longer appears as pending
+      const [updated] = await db
+        .update(strategyLearnings)
+        .set({ isApplied: true, appliedAt: new Date() })
+        .where(eq(strategyLearnings.id, input.id))
+        .returning();
+
+      return updated!;
+    }),
+
   create: adminProcedure
     .input(
       z.object({
         type: z.enum(['growth', 'retention', 'brand', 'product']),
         userDraft: z.string().optional(),
+        startDate: z.string().datetime().optional(),
+        endDate: z.string().datetime().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const { startDate, endDate, ...data } = input;
       const [strategy] = await db
         .insert(strategies)
         .values({
           projectId: ctx.project!.id,
           createdBy: ctx.user!.id,
-          ...input,
+          ...data,
+          ...(startDate ? { startDate: new Date(startDate) } : {}),
+          ...(endDate ? { endDate: new Date(endDate) } : {}),
         })
         .returning();
       return strategy!;

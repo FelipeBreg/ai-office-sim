@@ -2714,5 +2714,124 @@ REMAINING ITEMS (documented, deferred):
 VERIFICATION:
   - turbo typecheck --force: 8/8 pass
 
+PHASE 2 + AUDITS STATUS: COMPLETE (commits #27-#36)
+
+
+================================================================================
+COMMIT #37 — Epic P3-3: Multi-Project Support
+================================================================================
+DATE: 2026-02-25
+HASH: 5476505
+PHASE: 3 — Workflow Builder & Brazil Launch
+
+WHAT WAS BUILT:
+  P3-3.1: Project Switcher Dropdown
+    - New <ProjectSwitcher> component in sidebar with colored dots per project
+    - Click to switch active project, updates Zustand project store
+    - Integrated into existing sidebar layout
+
+  P3-3.2: Settings Page Rebuild (5 Tabs)
+    - Settings page rewritten with tabbed layout: General, Members, Billing,
+      Notifications, Integrations
+    - Each tab renders its own section with proper form controls
+    - 532+ lines of settings UI (was minimal placeholder before)
+
+  P3-3.3: Plan Tier Enforcement
+    - New plan-limits.ts in @ai-office/shared with starter/growth/pro/enterprise
+    - tRPC middleware extended with plan limit checks on create mutations
+    - Agent, project, and workflow create routes enforce tier limits
+
+  P3-3.4: Project Creation Wizard
+    - 3-step wizard at /settings/projects/new (590 lines)
+    - Plan limit check on step 1, upgrade banner if at capacity
+    - i18n keys for projectWizard namespace in both locales
+
+FILES: 12 changed, 1516 insertions, 15 deletions
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+COMMIT #38 — Epic P3-4: Ten Additional Agent Archetypes
+================================================================================
+DATE: 2026-02-25
+HASH: 60b0b3c
+PHASE: 3 — Workflow Builder & Brazil Launch
+
+WHAT WAS BUILT:
+  P3-4.1–P3-4.10: 10 New Agent Archetypes
+    - email_campaign_manager: Email marketing automation
+    - research: Deep research and analysis
+    - recruiter: Talent sourcing and screening
+    - social_media: Social media content management
+    - mercado_livre: Mercado Livre marketplace integration
+    - inventory_monitor: Stock level monitoring
+    - legal_research: Legal document analysis (Brazil-focused)
+    - ad_analyst: Advertising performance analysis
+    - account_manager: Client relationship management
+    - deployment_monitor: Infrastructure and deployment monitoring
+
+  Supporting Changes:
+    - DB enum extended with 10 new archetype values
+    - API router validation updated for new archetypes
+    - Agent wizard updated with icons, tool presets, and bilingual prompts
+    - Agents list page updated with archetype labels
+    - i18n: 30 new keys per locale (en-US + pt-BR)
+
+FILES: 6 changed, 144 insertions, 1 deletion
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+COMMIT #39 — Epic P3-1: Visual Workflow Editor (React Flow)
+================================================================================
+DATE: 2026-02-25
+HASH: 83f68d6
+PHASE: 3 — Workflow Builder & Brazil Launch
+
+WHAT WAS BUILT:
+  P3-1.1: React Flow Canvas
+    - @xyflow/react integrated with dark theme matching DOS aesthetic
+    - Minimap, controls toolbar, snap-to-grid (20px)
+    - Background dot pattern, fitView on load
+
+  P3-1.2: 6 Custom Node Types
+    - TriggerNode: Workflow entry point (webhook, schedule, manual)
+    - AgentNode: AI agent execution step
+    - ConditionNode: If/else branching with expression field
+    - ApprovalNode: Human approval gate
+    - DelayNode: Time delay with duration display
+    - OutputNode: Workflow output/result endpoint
+    - All nodes styled with DOS aesthetic (cyan borders, monospace)
+
+  P3-1.3: Configuration Panel
+    - Right-side panel (297 lines) with per-node-type forms
+    - Dynamic form fields based on selected node type
+    - Agent selection, condition expressions, delay configuration
+
+  P3-1.4: Workflow Save/Load
+    - Editor page at /workflows/[id] with tRPC save/load
+    - Serializes React Flow nodes + edges to DB JSON columns
+
+  P3-1.6: Workflow List Page
+    - Card grid layout with workflow name, status, node count
+    - Skeleton loading states, empty state, error state
+    - Create new workflow button → navigates to editor
+
+  NOT YET DONE (deferred to later):
+    - P3-1.5: Parallel branch support (DAG executor dependency)
+    - P3-1.7: DAG executor (requires agent execution engine integration)
+    - P3-1.8: Workflow run history
+
+FILES: 15 changed, 1360 insertions, 4 deletions
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+PHASE 3 STATUS: IN PROGRESS (3/9 epics done — P3-1, P3-3, P3-4)
+
 
 ================================================================================
