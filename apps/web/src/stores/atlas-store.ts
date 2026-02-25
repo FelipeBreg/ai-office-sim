@@ -23,6 +23,7 @@ interface AtlasStore {
   reset: () => void;
 }
 
+const MAX_MESSAGES = 200;
 let msgCounter = 0;
 
 export const useAtlasStore = create<AtlasStore>()((set) => ({
@@ -44,7 +45,7 @@ export const useAtlasStore = create<AtlasStore>()((set) => ({
           text,
           timestamp: Date.now(),
         },
-      ],
+      ].slice(-MAX_MESSAGES),
     })),
   clearMessages: () => set({ messages: [] }),
   reset: () =>

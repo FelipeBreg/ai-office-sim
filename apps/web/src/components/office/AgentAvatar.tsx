@@ -225,11 +225,11 @@ export const AgentAvatar = memo(function AgentAvatar({
       <mesh geometry={geometries.bodyGeo} position={[0, 0.55, 0]}>
         <meshStandardMaterial
           ref={bodyMatRef}
-          color={STATUS_CONFIG[status].color}
+          color={COLOR_IDLE}
           transparent
           opacity={0.6}
-          emissive={STATUS_CONFIG[status].color}
-          emissiveIntensity={STATUS_CONFIG[status].baseIntensity}
+          emissive={COLOR_IDLE}
+          emissiveIntensity={0.5}
         />
       </mesh>
 
@@ -237,11 +237,11 @@ export const AgentAvatar = memo(function AgentAvatar({
       <mesh geometry={geometries.headGeo} position={[0, 1.13, 0]}>
         <meshStandardMaterial
           ref={headMatRef}
-          color={STATUS_CONFIG[status].color}
+          color={COLOR_IDLE}
           transparent
           opacity={0.6}
-          emissive={STATUS_CONFIG[status].color}
-          emissiveIntensity={STATUS_CONFIG[status].baseIntensity}
+          emissive={COLOR_IDLE}
+          emissiveIntensity={0.5}
         />
       </mesh>
 

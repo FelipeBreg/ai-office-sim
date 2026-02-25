@@ -16,7 +16,7 @@ const WALL_THICKNESS = 0.05;
 const WALL_COLOR = '#1A3A5F';
 const EDGE_COLOR = '#00D4FF';
 
-function Room({ room, label }: RoomProps) {
+const Room = memo(function Room({ room, label }: RoomProps) {
   const { position, size } = room;
   const [width, depth] = size;
 
@@ -105,7 +105,8 @@ function Room({ room, label }: RoomProps) {
       </Text>
     </group>
   );
-}
+});
+Room.displayName = 'Room';
 
 interface OfficeRoomsProps {
   roomLabels: Record<string, string>;

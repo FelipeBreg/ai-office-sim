@@ -44,7 +44,7 @@ function OrbVisualizationBase({ state, intensity }: OrbVisualizationProps) {
     let lastTimestamp = 0;
 
     function draw(timestamp: number) {
-      const delta = lastTimestamp ? (timestamp - lastTimestamp) / 1000 : 0.016;
+      const delta = Math.min(lastTimestamp ? (timestamp - lastTimestamp) / 1000 : 0.016, 0.1);
       lastTimestamp = timestamp;
       timeRef.current += delta;
       const t = timeRef.current;

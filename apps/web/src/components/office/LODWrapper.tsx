@@ -39,12 +39,13 @@ export const SimpleFurniture = memo(function SimpleFurniture({ furnitureType }: 
   if (!config) return null;
 
   const { size, yOffset } = config;
+  const [w, h, d] = size;
 
   const geometries = useMemo(() => {
-    const boxGeo = new THREE.BoxGeometry(size[0], size[1], size[2]);
+    const boxGeo = new THREE.BoxGeometry(w, h, d);
     const edgesGeo = new THREE.EdgesGeometry(boxGeo);
     return { boxGeo, edgesGeo };
-  }, [size[0], size[1], size[2]]);
+  }, [w, h, d]);
 
   useEffect(() => {
     return () => {
