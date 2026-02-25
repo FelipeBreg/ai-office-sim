@@ -38,6 +38,10 @@ export const emailConnections = pgTable(
           secure?: boolean;
           user?: string;
           pass?: string;
+          // IMAP (optional overrides — defaults to SMTP host, port 993, secure true)
+          imapHost?: string;
+          imapPort?: number;
+          imapSecure?: boolean;
           // SendGrid
           apiKey?: string;
           // AWS SES

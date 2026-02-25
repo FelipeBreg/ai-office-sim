@@ -42,6 +42,7 @@ export type {
 export {
   createEmailClient,
   sendEmailTool,
+  readEmailTool,
 } from './tools/email/index.js';
 export type {
   EmailProvider,
@@ -53,6 +54,9 @@ export type {
   SendEmailParams,
   SendEmailResult,
   EmailConnectionStatus,
+  ReadEmailParams,
+  ReadEmailResult,
+  EmailMessage,
 } from './tools/email/index.js';
 
 // Memory

@@ -5,6 +5,7 @@ import { sendWhatsAppMessageTool } from './whatsapp/send.js';
 import { readWhatsAppMessagesTool } from './whatsapp/read.js';
 import { searchWebTool } from './web-search/index.js';
 import { sendEmailTool } from './email/send.js';
+import { readEmailTool } from './email/read.js';
 
 // Convert Zod schema to JSON Schema for Anthropic tool format
 function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
@@ -137,3 +138,4 @@ toolRegistry.register(searchWebTool);
 
 // ── Email ──
 toolRegistry.register(sendEmailTool);
+toolRegistry.register(readEmailTool);

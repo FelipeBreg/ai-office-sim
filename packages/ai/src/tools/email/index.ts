@@ -9,5 +9,9 @@ export type {
   SendEmailParams,
   SendEmailResult,
   EmailConnectionStatus,
+  ReadEmailParams,
+  ReadEmailResult,
+  EmailMessage,
 } from './client.js';
 export { sendEmailTool } from './send.js';
+export { readEmailTool } from './read.js';
