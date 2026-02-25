@@ -2238,3 +2238,52 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #26 — Epic P2-2: Agent Avatar System
+================================================================================
+DATE: 2026-02-25
+HASH: 13322ee
+PHASE: 2 — The Visualization
+EPIC: P2-2 (5 tasks: P2-2.1 through P2-2.5)
+
+WHAT WAS BUILT:
+  Agent avatar 3D models as semi-transparent humanoid figures (capsule body +
+  sphere head) rendered at desk positions with status-based emissive glow.
+  5 status colors with pulsing animations, idle bob + breathing, floating
+  name labels, position mapping system, and mock status cycling hook.
+
+FILES CREATED (4 new):
+  apps/web/src/components/office/AgentAvatar.tsx — Avatar component with glow/animations
+  apps/web/src/components/office/AgentLayer.tsx — Renders all agent avatars
+  apps/web/src/components/office/AgentPositions.ts — Desk slot position mapping
+  apps/web/src/components/office/useAgentStatuses.ts — Status hook with mock cycling
+
+FILES MODIFIED (4):
+  apps/web/src/components/office/OfficeCanvas.tsx — Added AgentLayer + mock agents
+  apps/web/src/components/office/index.ts — Exported new components + types
+  apps/web/messages/en-US.json — Added status keys to office namespace
+  apps/web/messages/pt-BR.json — Added matching PT-BR keys with diacritics
+
+REVIEW — ISSUES FOUND AND FIXED BEFORE COMMIT:
+  HIGH (3):
+    1. useFrame stale closure — cfg + position captured in render scope, used inside
+       useFrame callback → Added cfgRef + posRef updated every render
+    2. Single debounce ref shared across all agents — one agent's update canceled
+       another's → Changed to per-agent debounce Map
+    3. agentIds referential instability could cause infinite effect teardown →
+       Stabilized with idsKey = agentIds.join(',')
+
+  MEDIUM (4):
+    4. Label color #00D4FF deviated from brand accent → Changed to #00C8E0
+    5. DoubleSide on closed convex geometry (sphere, cylinder) → Removed
+    6. Materials not explicitly disposed on unmount → Added bodyMatRef/headMatRef
+       disposal in useEffect cleanup
+    7. Hardcoded MOCK_AGENTS with no TODO → Added replacement comment
+
+  LOW (1):
+    8. TEXT_CHARACTERS missing punctuation → Added .-_/()
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
