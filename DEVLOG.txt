@@ -2835,3 +2835,97 @@ PHASE 3 STATUS: IN PROGRESS (3/9 epics done — P3-1, P3-3, P3-4)
 
 
 ================================================================================
+COMMIT #40 — Epic P3-2: Strategy Command Center
+================================================================================
+DATE: 2026-02-25
+HASH: 829b22c
+PHASE: 3 — Workflow Builder & Brazil Launch
+
+WHAT WAS BUILT:
+  P3-2.1: KPI Dashboard Bar
+    - 6-metric horizontal grid (MRR, Leads, Churn, NPS, Actions, Strategies)
+    - Trend indicators (up/down/flat) with color-coded direction
+    - Churn metric correctly inverts color (down = good)
+    - Mock data with TODO for real tRPC data source (Phase 4)
+    - i18n: all labels use translation keys
+
+  P3-2.2: Gantt-Style Timeline View
+    - 12-column CSS grid representing Jan-Dec
+    - Strategy bars positioned by startDate/endDate with status-based colors
+    - Active=#27AE60, At Risk=#F39C12, Planned=#484F58, Completed=#00C8E0
+    - Vertical dashed "TODAY" line at current month
+    - Click-to-select opens strategy detail panel
+    - Cross-year edge case guard (skips bars where endMonth < startMonth)
+
+  P3-2.3: Agent Learning Insight Strip
+    - Fetches pending learnings via trpc.strategies.listPendingLearnings
+    - Carousel navigation (prev/next) with counter
+    - Apply/Dismiss buttons wired to real tRPC mutations
+    - Confidence percentage badge
+    - Auto-refetches every 60 seconds
+    - Empty state with i18n message
+
+  P3-2.4: Strategy Detail Panel
+    - Framer Motion slide-in from right (400px wide)
+    - 4 sections: Header (status + type badges), Definition (draft + AI refined),
+      KPIs (progress bars with color coding), Learnings (with apply/dismiss)
+    - ESC to close, click overlay to close
+    - Loading skeleton while fetching
+    - Apply/Dismiss buttons wired with cache invalidation
+
+  P3-2.5: Strategy Creation Wizard
+    - 2-step modal: Define (objective, type, dates) → Review (side-by-side)
+    - 4 strategy type cards (Growth, Retention, Brand, Product)
+    - Simulated AI refinement with 2.5s loading state
+    - Creates strategy via tRPC with startDate/endDate
+    - Timer cleanup on close (no memory leak)
+    - Full i18n: all labels, placeholders, button text
+
+  P3-2.6: Learning Application Flow
+    - applyLearning: marks as applied + increments strategy version in transaction
+    - dismissLearning: marks as applied (sets isApplied=true to remove from pending)
+    - TODO: P3-2.6 merge learning into aiRefined text via Claude call
+
+  P3-2.7: Goals Section (3 Time Horizons)
+    - 3-column grid: 1-Year (blue), 6-Month (cyan), 1-Month (green)
+    - Each goal card: icon, label, title, description, KPI progress bars
+    - Color-coded progress (>=70% green, >=40% orange, <40% red)
+    - Division-by-zero guard on progress calculation
+    - Mock data with TODO for real goals endpoint
+
+  P3-2.8: Learning Detection BullMQ Job
+    - Analytics worker handles 'learning_detection' type
+    - Queries active strategies + recent agent actions (7 days)
+    - Finds most active agent per strategy
+    - Deduplication: skips if learning exists for strategy+agent in past 7 days
+    - Structured error logging (no silent catch)
+    - TODO: Replace stub with real Claude analysis call
+
+  tRPC Router Additions (3 new procedures):
+    - listPendingLearnings: returns non-applied learnings for project
+    - applyLearning: transactional apply + version increment
+    - dismissLearning: marks as applied (removed from pending)
+    - create: now accepts optional startDate/endDate
+
+  i18n Expansion:
+    - 60+ new keys per locale in strategy namespace
+    - Covers: KPI labels, status/type names, wizard steps, insights,
+      detail panel, goals, buttons, aria labels
+
+  Review Fixes (from code review):
+    1. CRITICAL: setTimeout memory leak in wizard — added ref + cleanup on close
+    2. HIGH: 8 hardcoded English strings replaced with t() calls
+    3. HIGH: Timeline cross-year guard (endMonth < startMonth → skip)
+    4. HIGH: applyLearning wrapped in DB transaction (was 2 separate updates)
+    5. MEDIUM: Goals division-by-zero guard on KPI progress
+    6. MEDIUM: Analytics worker deduplication + error logging (was silent catch)
+
+FILES: 12 changed, 1915 insertions, 17 deletions
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+PHASE 3 STATUS: IN PROGRESS (4/9 epics done — P3-1, P3-2, P3-3, P3-4)
+
+
+================================================================================
