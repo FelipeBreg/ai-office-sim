@@ -1409,3 +1409,62 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #7 — Task P1-2.5: Web Search Tool (Serper API + Redis Cache)
+================================================================================
+Date:     2026-02-24
+Tasks:    P1-2.5 (1 task, Epic P1-2: Email, Sheets & CRM Tool Integrations)
+================================================================================
+
+WHAT WAS BUILT:
+  - search_web agent tool: Google Search via Serper API with Redis caching
+  - Shared Redis client singleton reusable across packages
+  - Fully integrated into existing tool registry
+
+DETAILS:
+  packages/queue/src/redis.ts (NEW):
+    - getRedisClient() singleton using { Redis } from 'ioredis'
+    - Parses REDIS_URL env var (same as BullMQ queues)
+    - lazyConnect: true for deferred connection
+    - Exported from packages/queue/src/index.ts
+
+  packages/ai/src/tools/web-search/search.ts (NEW):
+    - Tool name: search_web
+    - Input schema: { query (required), numResults? (1-20, default 5), locale? (default 'pt-BR') }
+    - requiresApproval: false (read-only)
+    - Cache: SHA-256 hash key, 1h TTL in Redis
+    - API: POST https://google.serper.dev/search with X-API-KEY header
+    - Response: extracts organic results → { title, url, snippet, position }
+    - 10s fetch timeout via AbortSignal.timeout()
+    - Graceful handling: missing API key returns setup instructions,
+      Redis errors are non-fatal, API errors include status + body
+
+  packages/ai/src/tools/web-search/index.ts (NEW):
+    - Barrel export for searchWebTool
+
+  packages/ai/src/tools/registry.ts (MODIFIED):
+    - Imported and registered searchWebTool
+
+  packages/ai/src/index.ts (MODIFIED):
+    - Added barrel export for searchWebTool
+
+  packages/ai/package.json (MODIFIED):
+    - Added @ai-office/queue workspace dependency
+
+FILES CREATED (3 new, 4 modified):
+  New:
+    packages/queue/src/redis.ts
+    packages/ai/src/tools/web-search/search.ts
+    packages/ai/src/tools/web-search/index.ts
+  Modified:
+    packages/queue/src/index.ts
+    packages/ai/src/tools/registry.ts
+    packages/ai/src/index.ts
+    packages/ai/package.json
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - Tool registered in toolRegistry, available to all agents
+  - Env var: SERPER_API_KEY required at runtime
+
+
+================================================================================

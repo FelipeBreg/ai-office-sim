@@ -20,6 +20,9 @@ export { DEFAULT_SAFETY_LIMITS } from './engine/types.js';
 // Tools
 export { toolRegistry } from './tools/registry.js';
 
+// Web Search
+export { searchWebTool } from './tools/web-search/index.js';
+
 // WhatsApp
 export {
   createWhatsAppClient,

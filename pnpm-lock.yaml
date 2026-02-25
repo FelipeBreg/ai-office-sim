@@ -181,6 +181,9 @@ importers:
       '@ai-office/db':
         specifier: workspace:*
         version: link:../db
+      '@ai-office/queue':
+        specifier: workspace:*
+        version: link:../queue
       '@ai-office/shared':
         specifier: workspace:*
         version: link:../shared

@@ -3,6 +3,7 @@ import type { ToolDefinition, ToolExecutionContext } from '../engine/types.js';
 import type Anthropic from '@anthropic-ai/sdk';
 import { sendWhatsAppMessageTool } from './whatsapp/send.js';
 import { readWhatsAppMessagesTool } from './whatsapp/read.js';
+import { searchWebTool } from './web-search/index.js';
 
 // Convert Zod schema to JSON Schema for Anthropic tool format
 function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
@@ -129,3 +130,6 @@ toolRegistry.register({
 // ── WhatsApp Tools ──
 toolRegistry.register(sendWhatsAppMessageTool);
 toolRegistry.register(readWhatsAppMessagesTool);
+
+// ── Web Search ──
+toolRegistry.register(searchWebTool);

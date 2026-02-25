@@ -1,4 +1,5 @@
 export { getConnectionOptions } from './connection.js';
+export { getRedisClient } from './redis.js';
 export {
   QUEUE_NAMES,
   type QueueName,
