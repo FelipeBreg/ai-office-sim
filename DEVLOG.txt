@@ -1929,12 +1929,84 @@ VERIFICATION:
 
 
 ================================================================================
-  EPIC P1-3 COMPLETE — P1-3.1, P1-3.2, P1-3.5, P1-3.6 done
-  (P1-3.3, P1-3.4, P1-3.7 are UI tasks — in progress)
+
+
+================================================================================
+COMMIT #19 — P1-4.1, P1-6.1, P1-3.3, P1-3.4: Agent List, Approvals, Memory UI
+================================================================================
+Hash:     a638975
+Date:     2026-02-25
+Tasks:    P1-4.1, P1-6.1, P1-3.3, P1-3.4
+================================================================================
+
+WHAT WAS BUILT:
+  apps/web/src/app/[locale]/(auth)/agents/page.tsx (REWRITTEN):
+    - Agent list page: card grid with status dots (animated pulse for working)
+    - Archetype badges, team badges, tool count, relative timestamps
+    - Loading skeletons, empty state with "Create Agent" CTA, error state
+  apps/web/src/app/[locale]/(auth)/approvals/page.tsx (REWRITTEN):
+    - Approval inbox: Pending/All tabs
+    - Risk level badges (low=cyan, medium=warning, high=orange, critical=red)
+    - Expandable JSON payload preview
+    - Approve/Reject buttons with optional comment field
+    - Real-time invalidation after mutations
+  apps/web/src/app/[locale]/(auth)/memory/page.tsx (REWRITTEN):
+    - Two tabs: Company Documents + Agent Memory
+    - Semantic search bar with results display
+    - Drag-and-drop file upload zone (PDF, DOCX, TXT, CSV)
+    - Ingested document list with chunk counts + delete
+    - Agent memory key-value editor with inline editing
+  packages/api/src/routers/documents.ts (NEW):
+    - list, search, upload, delete procedures for documents
+  packages/api/src/routers/agent-memory.ts (NEW):
+    - list, update, delete procedures for agent memory entries
+  apps/web/messages/en-US.json + pt-BR.json (MODIFIED):
+    - Added agents, approvals, memory translation namespaces
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+COMMIT #20 — P1-4.2, P1-4.3, P1-8.1, P1-8.2, P1-8.3: Wizard, Detail, Activity
+================================================================================
+Hash:     6dcb210
+Date:     2026-02-25
+Tasks:    P1-4.2, P1-4.3, P1-8.1, P1-8.2, P1-8.3
+================================================================================
+
+WHAT WAS BUILT:
+  apps/web/src/app/[locale]/(auth)/agents/new/page.tsx (NEW):
+    - 7-step agent creation wizard
+    - Steps: Name+Archetype → System Prompt → Tools → Memory → Trigger → Team → Review
+    - Archetype pre-fill for prompts and tools
+    - Step indicator with numbered dots and connecting lines
+    - Auto slug generation from name
+  apps/web/src/app/[locale]/(auth)/agents/[id]/page.tsx (NEW):
+    - Agent detail page with 4 tabs: Overview, Configuration, Activity Log, Memory
+    - Editable config: system prompt (bilingual), tools, trigger, memory, team
+    - "Test Run" button, Active/Inactive toggle
+    - Inline memory editor with key-value editing
+  apps/web/src/app/[locale]/(auth)/analytics/page.tsx (REWRITTEN):
+    - Activity log list with filters (agent, status) and pagination
+    - Action detail drawer (400px slide-in from right)
+    - Session timeline view with vertical timeline nodes
+    - Collapsible JSON payloads, duration, token costs
+  apps/web/messages/en-US.json + pt-BR.json (MODIFIED):
+    - Added agentWizard, agentDetail, activity translation namespaces
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+  EPIC P1-3 COMPLETE — All backend + UI tasks done (P1-3.1–P1-3.6)
+  (P1-3.7 Company Wiki deferred to post-alpha)
+  EPIC P1-4 COMPLETE — All tasks done (P1-4.1–P1-4.5)
   EPIC P1-5 COMPLETE — All 5 archetypes seeded
-  EPIC P1-6 BACKEND COMPLETE — P1-6.2, P1-6.3, P1-6.4 done
-  (P1-6.1 Approval inbox UI — in progress)
+  EPIC P1-6 COMPLETE — All tasks done (P1-6.1–P1-6.4)
   EPIC P1-7 COMPLETE — Both finance tools done
+  EPIC P1-8 COMPLETE — All 3 activity log views done
 ================================================================================
 
 
