@@ -20,5 +20,20 @@ export { DEFAULT_SAFETY_LIMITS } from './engine/types.js';
 // Tools
 export { toolRegistry } from './tools/registry.js';
 
+// WhatsApp
+export {
+  createWhatsAppClient,
+  sendWhatsAppMessageTool,
+  readWhatsAppMessagesTool,
+} from './tools/whatsapp/index.js';
+export type {
+  WhatsAppProvider,
+  WhatsAppCredentials,
+  WhatsAppClient,
+  SendMessageParams,
+  SendMessageResult,
+  ConnectionStatus,
+} from './tools/whatsapp/index.js';
+
 // Memory
 export { loadMemory, saveMemory, searchMemory } from './memory/individual.js';

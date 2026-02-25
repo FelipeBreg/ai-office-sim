@@ -81,3 +81,31 @@ export const kpiDirectionEnum = pgEnum('kpi_direction', [
   'higher_is_better',
   'lower_is_better',
 ]);
+
+// WhatsApp
+export const whatsappProviderEnum = pgEnum('whatsapp_provider', [
+  'zapi',
+  'twilio',
+  'meta_cloud',
+]);
+export const whatsappConnectionStatusEnum = pgEnum('whatsapp_connection_status', [
+  'connected',
+  'disconnected',
+  'pending',
+]);
+export const whatsappMessageDirectionEnum = pgEnum('whatsapp_message_direction', [
+  'inbound',
+  'outbound',
+]);
+export const whatsappMessageStatusEnum = pgEnum('whatsapp_message_status', [
+  'pending',
+  'sent',
+  'delivered',
+  'read',
+  'failed',
+]);
+export const whatsappTemplateStatusEnum = pgEnum('whatsapp_template_status', [
+  'pending',
+  'approved',
+  'rejected',
+]);

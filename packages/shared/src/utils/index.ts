@@ -9,3 +9,5 @@ export function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)+/g, '');
 }
+
+export { encryptCredentials, decryptCredentials } from './crypto.js';

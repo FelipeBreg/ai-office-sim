@@ -4,4 +4,4 @@ export * from './schema/index.js';
 
 // Re-export drizzle-orm operators to prevent duplicate package instances
 // across pnpm workspaces. Consumers should import from @ai-office/db.
-export { eq, and, or, not, sql, desc, asc, count, inArray } from 'drizzle-orm';
+export { eq, and, or, not, sql, desc, asc, count, inArray, lt, gt, gte, lte } from 'drizzle-orm';

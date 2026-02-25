@@ -6,6 +6,7 @@ import { approvalsRouter } from './routers/approvals.js';
 import { workflowsRouter } from './routers/workflows.js';
 import { strategiesRouter } from './routers/strategies.js';
 import { usersRouter } from './routers/users.js';
+import { whatsappRouter } from './routers/whatsapp.js';
 
 export const appRouter = createTRPCRouter({
   agents: agentsRouter,
@@ -15,6 +16,7 @@ export const appRouter = createTRPCRouter({
   workflows: workflowsRouter,
   strategies: strategiesRouter,
   users: usersRouter,
+  whatsapp: whatsappRouter,
 });
 
 export type AppRouter = typeof appRouter;

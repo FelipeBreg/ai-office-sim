@@ -13,6 +13,7 @@
   "dependencies": {
     "@ai-office/api": "workspace:*",
     "@ai-office/db": "workspace:*",
+    "@ai-office/queue": "workspace:^",
     "@ai-office/realtime": "workspace:*",
     "@ai-office/shared": "workspace:*",
     "@clerk/nextjs": "^6.38.2",

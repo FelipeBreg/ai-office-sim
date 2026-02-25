@@ -1196,3 +1196,160 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #18 — Epic P1-1: WhatsApp Business API Integration
+================================================================================
+Hash:     (pending)
+Date:     2026-02-25 ~02:30 -0300
+Tasks:    P1-1.1 through P1-1.5 (5 tasks: schema, provider client, tools, webhook, tRPC router)
+================================================================================
+
+WHAT WAS BUILT:
+  packages/db/src/schema/enums.ts:
+    - 5 new enums: whatsappProviderEnum (zapi, twilio, meta_cloud),
+      whatsappConnectionStatusEnum, whatsappMessageDirectionEnum,
+      whatsappMessageStatusEnum (pending, sent, delivered, read, failed),
+      whatsappTemplateStatusEnum
+
+  packages/db/src/schema/whatsapp.ts:
+    - whatsappConnections: one per project, provider, encrypted apiCredentials
+      (union type: plaintext | {encrypted: string}), phoneNumber, handlerAgentId,
+      status, unique index on projectId
+    - whatsappMessages: inbound + outbound, direction, status, contactPhone,
+      contactName, content, mediaUrl, providerMessageId, rawPayload, agentId,
+      4 indexes (project, contact, agent, sentAt)
+    - whatsappTemplates: templateName, language, content, status,
+      providerTemplateId, unique index on (projectId, templateName)
+
+  packages/ai/src/tools/whatsapp/client.ts — Provider abstraction:
+    - WhatsAppClient interface: sendMessage() + getConnectionStatus()
+    - ZApiClient: send-text/send-image endpoints, AbortSignal.timeout(15s)
+      NOTE: Z-API embeds token in URL path (provider design, logged in access logs)
+    - TwilioClient: Messages.json API with Basic auth, validates non-empty
+      fromNumber in constructor, AbortSignal.timeout(15s)
+    - MetaCloudClient: Graph API v21.0, Bearer auth, AbortSignal.timeout(15s)
+    - createWhatsAppClient() factory function
+
+  packages/ai/src/tools/whatsapp/send.ts:
+    - send_whatsapp_message tool (requiresApproval: true)
+    - E.164 phone validation, connection lookup, status check
+    - Inserts message with 'pending' status BEFORE sending
+    - Decrypts credentials if stored encrypted
+    - Provider call wrapped in try/catch: updates to 'failed' on error
+    - Updates to 'sent' on success with providerMessageId
+
+  packages/ai/src/tools/whatsapp/read.ts:
+    - read_whatsapp_messages tool (no approval needed)
+    - E.164 validation on contactPhone
+    - Returns messages in chronological order (oldest first)
+
+  apps/web/src/app/api/webhooks/whatsapp/route.ts:
+    - GET: Meta webhook verification challenge
+    - POST: Multi-provider webhook receiver with signature verification:
+      - Meta Cloud API: HMAC-SHA256 via x-hub-signature-256 header
+      - Twilio: HMAC-SHA1 via x-twilio-signature header
+      - Z-API: Bearer token via Authorization header
+      - All use timingSafeEqual to prevent timing attacks
+    - Provider detection from payload shape
+    - Multi-tenant connection matching: by businessPhone first (extracted
+      from Meta display_phone_number / Twilio To field), then by provider
+      type only if exactly one connection exists (no connections[0] fallback)
+    - Safe timestamp parsing (Unix epoch, ISO string, fallback to now)
+    - Inbound messages stored with 'delivered' status (not 'sent')
+    - DB insert wrapped in try/catch (returns 200 even on failure to
+      prevent infinite provider retries)
+    - Enqueues agent execution if handlerAgentId configured
+
+  packages/api/src/routers/whatsapp.ts — tRPC router (6 procedures):
+    - getConnection: projectProcedure, strips apiCredentials
+    - saveConnection: adminProcedure, encrypts credentials with AES-256-GCM
+      before storing, sanitizes response (no credentials returned)
+    - updateConnectionStatus: adminProcedure, verifies credentials work
+      via provider getConnectionStatus() before allowing 'connected' status,
+      sanitizes response
+    - listTemplates, createTemplate, updateTemplate, deleteTemplate
+    - listMessages: cursor-based pagination (fetches messages older than
+      cursor's sentAt timestamp)
+
+  packages/shared/src/utils/crypto.ts — NEW FILE:
+    - AES-256-GCM encrypt/decrypt using CREDENTIALS_ENCRYPTION_KEY env var
+    - Format: base64(iv[12B] + ciphertext + authTag[16B])
+    - Key validation: must be 64 hex chars (32 bytes)
+
+FILES CREATED (8 new, 11 modified):
+  New:
+    packages/db/src/schema/whatsapp.ts
+    packages/ai/src/tools/whatsapp/client.ts
+    packages/ai/src/tools/whatsapp/send.ts
+    packages/ai/src/tools/whatsapp/read.ts
+    packages/ai/src/tools/whatsapp/index.ts
+    apps/web/src/app/api/webhooks/whatsapp/route.ts
+    packages/api/src/routers/whatsapp.ts
+    packages/shared/src/utils/crypto.ts
+  Modified:
+    packages/db/src/schema/enums.ts (5 WhatsApp enums)
+    packages/db/src/schema/index.ts (whatsapp export)
+    packages/db/src/index.ts (added lt, gt, gte, lte operators)
+    packages/ai/src/tools/registry.ts (WhatsApp tools registered)
+    packages/ai/src/index.ts (WhatsApp barrel exports)
+    packages/api/src/root.ts (whatsapp router added)
+    packages/api/package.json (added @ai-office/ai dependency)
+    packages/shared/package.json (added @types/node)
+    packages/shared/tsconfig.json (added types: ["node"])
+    packages/shared/src/utils/index.ts (crypto exports)
+    apps/web/package.json (added @ai-office/queue dependency)
+
+REVIEW — ISSUES FOUND AND FIXED BEFORE COMMIT:
+  CRITICAL (4):
+    1. Webhook had NO signature verification — anyone could inject fake messages
+       → Added verifyMetaSignature (HMAC-SHA256), verifyTwilioSignature (HMAC-SHA1),
+         verifyZApiToken (Bearer header), all using timingSafeEqual
+    2. Multi-tenant connection matching broken — matched by provider type,
+       fell back to connections[0] (cross-tenant message injection)
+       → Match by businessPhone first (Meta display_phone_number, Twilio To),
+         then by provider only if single connection exists, no fallback
+    3. saveConnection returned full row including plaintext apiCredentials
+       → Added sanitizeConnection() helper, strips credentials from all responses
+    4. API credentials stored in plaintext in DB
+       → AES-256-GCM encryption via CREDENTIALS_ENCRYPTION_KEY env var,
+         new packages/shared/src/utils/crypto.ts
+
+  HIGH (8):
+    5. Send tool wrote status 'sent' BEFORE actually sending
+       → Insert with 'pending', update to 'sent'/'failed' after
+    6. No timeout on provider HTTP calls (hang forever)
+       → AbortSignal.timeout(15_000) on all fetch calls
+    7. updateConnectionStatus allowed 'connected' without credential verification
+       → Decrypts credentials, calls provider getConnectionStatus(), rejects if failed
+    8. Webhook timestamp parsing could produce Invalid Date
+       → safeParseTimestamp: handles Unix epoch, ISO string, fallback to now()
+    9. listMessages cursor pagination declared but not implemented
+       → Cursor-based pagination using lt(sentAt) from cursor message
+    10. Send tool didn't catch provider exceptions (network timeout, etc.)
+        → Wrapped in try/catch, updates message to 'failed' on any error
+    11. TwilioClient accepted empty string as fromNumber
+        → Constructor throws if phoneNumber is empty
+    12. Z-API token in URL path logged in access logs
+        → Added comment explaining Z-API design constraint (not fixable)
+
+  ALSO FIXED DURING CODING:
+    - Added @types/node to @ai-office/shared (crypto module)
+    - Added types: ["node"] to shared tsconfig.json
+    - Added @ai-office/ai dependency to @ai-office/api package
+    - Added lt, gt, gte, lte to @ai-office/db drizzle-orm re-exports
+    - Updated whatsapp schema $type to accept encrypted credentials union
+    - Send tool decrypts credentials if stored in encrypted format
+    - Fixed webhook self-comparison bug (c.phoneNumber === c.phoneNumber)
+    - Inbound messages default to 'delivered' status (not 'sent')
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - All 3 providers have signature verification (Meta, Twilio, Z-API)
+  - Credentials encrypted at rest with AES-256-GCM
+  - Connection matching uses phone number (multi-tenant safe)
+  - Provider calls have 15s timeout
+  - Send tool: pending → sent/failed state machine
+  - Cursor-based pagination implemented for listMessages
+  - DB insert failures in webhook don't cause 5xx (always return 200)
+
+
+================================================================================
