@@ -1553,3 +1553,70 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #9 — Task P1-2.2: read_email Tool (IMAP via imapflow)
+================================================================================
+Hash:     a7ea537
+Date:     2026-02-24
+Tasks:    P1-2.2 (1 task, Epic P1-2: Email, Sheets & CRM Tool Integrations)
+================================================================================
+
+WHAT WAS BUILT:
+  - read_email agent tool: IMAP inbox reading via imapflow library
+  - Agents can read recent emails with optional query, limit, and unread filter
+  - IMAP credentials fall back to existing SMTP host/user/pass with optional overrides
+  - Read-only tool — no approval required
+
+DETAILS:
+  packages/db/src/schema/email.ts (MODIFIED):
+    - Added imapHost?, imapPort?, imapSecure? to apiCredentials jsonb type
+    - TypeScript-only change on jsonb column — no migration needed
+
+  packages/ai/src/tools/email/client.ts (MODIFIED):
+    - Added ReadEmailParams, EmailMessage, ReadEmailResult interfaces
+    - Added readEmails() to EmailClient interface
+    - SmtpClient.readEmails(): connects to IMAP (defaults to SMTP host, port 993,
+      secure true), searches INBOX, fetches envelope + body part 1, returns
+      up to `limit` most recent emails in chronological order
+    - Added ImapFlow import, IMAP_DEFAULT_PORT (993), MAX_BODY_LENGTH (4000)
+    - SmtpCredentials extended with imapHost?, imapPort?, imapSecure?
+    - SendGridClient/AwsSesClient: stub readEmails() returning unsupported error
+    - SmtpClient stores credentials ref for IMAP reuse
+
+  packages/ai/src/tools/email/read.ts (NEW):
+    - Tool name: read_email, requiresApproval: false (read-only)
+    - Input: { query? (search subject/from/body), limit? (1-50, default 20),
+      unreadOnly? (boolean) }
+    - Looks up project emailConnection, decrypts credentials, creates client
+    - Returns { emailCount, emails: [{ from, subject, body, date, isRead, messageId }] }
+
+  packages/ai/src/tools/email/index.ts (MODIFIED):
+    - Added exports: readEmailTool, ReadEmailParams, ReadEmailResult, EmailMessage
+
+  packages/ai/src/tools/registry.ts (MODIFIED):
+    - Imported and registered readEmailTool
+
+  packages/ai/src/index.ts (MODIFIED):
+    - Added barrel exports for readEmailTool and read-related types
+
+  packages/ai/package.json (MODIFIED):
+    - Added imapflow@^1.0.0 dependency
+
+FILES CREATED (1 new, 6 modified):
+  New:
+    packages/ai/src/tools/email/read.ts
+  Modified:
+    packages/db/src/schema/email.ts
+    packages/ai/src/tools/email/client.ts
+    packages/ai/src/tools/email/index.ts
+    packages/ai/src/tools/registry.ts
+    packages/ai/src/index.ts
+    packages/ai/package.json
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - Tool registered in toolRegistry
+  - No new DB migration needed (TypeScript type change on jsonb column)
+  - IMAP connection uses same credentials as SMTP with optional overrides
+
+
+================================================================================
