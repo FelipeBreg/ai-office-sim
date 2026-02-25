@@ -38,10 +38,16 @@ function isAllowedAttachmentUrl(url: string): boolean {
     const host = parsed.hostname.toLowerCase();
     if (
       host === 'localhost' ||
+      host === '0.0.0.0' ||
+      host === '[::1]' ||
       host.startsWith('127.') ||
       host.startsWith('10.') ||
       host.startsWith('192.168.') ||
-      host === '169.254.169.254' ||
+      host.startsWith('169.254.') ||
+      host.startsWith('[fe80:') ||
+      host.startsWith('[fd') ||
+      // 172.16.0.0 - 172.31.255.255
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
       host.endsWith('.internal') ||
       host.endsWith('.local')
     ) {
@@ -168,30 +174,42 @@ export const sendEmailTool: ToolDefinition = {
     const bccRecipients = bcc ? [bcc] : undefined;
 
     // Insert message with 'pending' status (audit trail before sending)
-    const [messageRecord] = await db
-      .insert(emailMessages)
-      .values({
-        projectId: context.projectId,
-        connectionId: connection.id,
-        status: 'pending',
-        messageType,
-        fromEmail: connection.fromEmail,
-        fromName: connection.fromName,
-        toRecipients,
-        ccRecipients,
-        bccRecipients,
-        subject,
-        bodyHtml: body,
-        bodyText: htmlToPlaintext(body),
-        headers: Object.keys(customHeaders).length > 0 ? customHeaders : undefined,
-        attachments: attachments?.map((a) => ({
-          filename: a.filename,
-          url: a.url,
-          contentType: a.contentType,
-        })),
-        agentId: context.agentId,
-      })
-      .returning();
+    let messageRecord: { id: string } | undefined;
+    try {
+      [messageRecord] = await db
+        .insert(emailMessages)
+        .values({
+          projectId: context.projectId,
+          connectionId: connection.id,
+          status: 'pending',
+          messageType,
+          fromEmail: connection.fromEmail,
+          fromName: connection.fromName,
+          toRecipients,
+          ccRecipients,
+          bccRecipients,
+          subject,
+          bodyHtml: body,
+          bodyText: htmlToPlaintext(body),
+          headers: Object.keys(customHeaders).length > 0 ? customHeaders : undefined,
+          attachments: attachments?.map((a) => ({
+            filename: a.filename,
+            url: a.url,
+            contentType: a.contentType,
+          })),
+          agentId: context.agentId,
+        })
+        .returning();
+    } catch (err) {
+      return {
+        success: false,
+        error: `Failed to create audit record: ${err instanceof Error ? err.message : 'DB error'}`,
+      };
+    }
+
+    if (!messageRecord) {
+      return { success: false, error: 'Failed to create audit record' };
+    }
 
     // Send via provider
     try {
@@ -239,19 +257,19 @@ export const sendEmailTool: ToolDefinition = {
           error: result.error,
           sentAt: result.status === 'sent' ? new Date() : undefined,
         })
-        .where(eq(emailMessages.id, messageRecord!.id));
+        .where(eq(emailMessages.id, messageRecord.id));
 
       if (result.status === 'failed') {
         return {
           success: false,
           error: result.error ?? 'Failed to send email',
-          messageId: messageRecord!.id,
+          messageId: messageRecord.id,
         };
       }
 
       return {
         success: true,
-        messageId: messageRecord!.id,
+        messageId: messageRecord.id,
         providerMessageId: result.providerMessageId,
         to,
         subject,
@@ -263,12 +281,12 @@ export const sendEmailTool: ToolDefinition = {
       await db
         .update(emailMessages)
         .set({ status: 'failed', error: errorMessage })
-        .where(eq(emailMessages.id, messageRecord!.id));
+        .where(eq(emailMessages.id, messageRecord.id));
 
       return {
         success: false,
         error: `Provider error: ${errorMessage}`,
-        messageId: messageRecord!.id,
+        messageId: messageRecord.id,
       };
     }
   },

@@ -56,19 +56,31 @@ export const sendWhatsAppMessageTool: ToolDefinition = {
     }
 
     // Insert message with 'pending' status (audit trail before sending)
-    const [messageRecord] = await db
-      .insert(whatsappMessages)
-      .values({
-        projectId: context.projectId,
-        connectionId: connection.id,
-        direction: 'outbound',
-        status: 'pending',
-        contactPhone: to,
-        content: message,
-        mediaUrl,
-        agentId: context.agentId,
-      })
-      .returning();
+    let messageRecord: { id: string } | undefined;
+    try {
+      [messageRecord] = await db
+        .insert(whatsappMessages)
+        .values({
+          projectId: context.projectId,
+          connectionId: connection.id,
+          direction: 'outbound',
+          status: 'pending',
+          contactPhone: to,
+          content: message,
+          mediaUrl,
+          agentId: context.agentId,
+        })
+        .returning();
+    } catch (err) {
+      return {
+        success: false,
+        error: `Failed to create audit record: ${err instanceof Error ? err.message : 'DB error'}`,
+      };
+    }
+
+    if (!messageRecord) {
+      return { success: false, error: 'Failed to create audit record' };
+    }
 
     // Send via provider (wrapped in try/catch for network errors)
     try {
@@ -94,19 +106,19 @@ export const sendWhatsAppMessageTool: ToolDefinition = {
           providerMessageId: result.providerMessageId || undefined,
           status: result.status === 'sent' ? 'sent' : 'failed',
         })
-        .where(eq(whatsappMessages.id, messageRecord!.id));
+        .where(eq(whatsappMessages.id, messageRecord.id));
 
       if (result.status === 'failed') {
         return {
           success: false,
           error: result.error ?? 'Failed to send message',
-          messageId: messageRecord!.id,
+          messageId: messageRecord.id,
         };
       }
 
       return {
         success: true,
-        messageId: messageRecord!.id,
+        messageId: messageRecord.id,
         providerMessageId: result.providerMessageId,
         to,
         messageSent: message.slice(0, 200) + (message.length > 200 ? '...' : ''),
@@ -116,13 +128,13 @@ export const sendWhatsAppMessageTool: ToolDefinition = {
       await db
         .update(whatsappMessages)
         .set({ status: 'failed' })
-        .where(eq(whatsappMessages.id, messageRecord!.id));
+        .where(eq(whatsappMessages.id, messageRecord.id));
 
       const errorMessage = err instanceof Error ? err.message : 'Unknown provider error';
       return {
         success: false,
         error: `Provider error: ${errorMessage}`,
-        messageId: messageRecord!.id,
+        messageId: messageRecord.id,
       };
     }
   },

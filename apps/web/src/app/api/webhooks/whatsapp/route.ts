@@ -71,7 +71,14 @@ export async function GET(req: Request): Promise<Response> {
   const token = url.searchParams.get('hub.verify_token');
   const challenge = url.searchParams.get('hub.challenge');
 
-  if (mode === 'subscribe' && token === process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN) {
+  const secret = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
+  if (
+    mode === 'subscribe' &&
+    secret &&
+    token &&
+    token.length === secret.length &&
+    timingSafeEqual(Buffer.from(token), Buffer.from(secret))
+  ) {
     return new Response(challenge ?? '', { status: 200 });
   }
 
@@ -287,24 +294,28 @@ export async function POST(req: Request): Promise<Response> {
     const queue = getAgentExecutionQueue();
     const sessionId = randomUUID();
 
-    await queue.add(`whatsapp-${messageRecord.id}`, {
-      agentId: connection.handlerAgentId,
-      projectId: connection.projectId,
-      sessionId,
-      triggerPayload: {
-        trigger_type: 'event',
-        event: 'whatsapp:message_received',
-        contactPhone: parsed.contactPhone,
-        contactName: parsed.contactName,
-        messageContent: parsed.content,
-        messageId: messageRecord.id,
-        mediaUrl: parsed.mediaUrl,
-      },
-    });
+    try {
+      await queue.add(`whatsapp-${messageRecord.id}`, {
+        agentId: connection.handlerAgentId,
+        projectId: connection.projectId,
+        sessionId,
+        triggerPayload: {
+          trigger_type: 'event',
+          event: 'whatsapp:message_received',
+          contactPhone: parsed.contactPhone,
+          contactName: parsed.contactName,
+          messageContent: parsed.content,
+          messageId: messageRecord.id,
+          mediaUrl: parsed.mediaUrl,
+        },
+      });
 
-    console.log(
-      `[whatsapp-webhook] Enqueued agent execution: agent=${connection.handlerAgentId} session=${sessionId}`,
-    );
+      console.log(
+        `[whatsapp-webhook] Enqueued agent execution: agent=${connection.handlerAgentId} session=${sessionId}`,
+      );
+    } catch (err) {
+      console.error('[whatsapp-webhook] Failed to enqueue agent execution:', err);
+    }
   }
 
   return new Response('OK', { status: 200 });

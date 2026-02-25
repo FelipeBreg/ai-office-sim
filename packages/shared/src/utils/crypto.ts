@@ -39,6 +39,10 @@ export function decryptCredentials(encoded: string): string {
   const key = getKey();
   const buf = Buffer.from(encoded, 'base64');
 
+  if (buf.length < IV_LENGTH + TAG_LENGTH + 1) {
+    throw new Error('Encrypted credential data is corrupted or truncated');
+  }
+
   const iv = buf.subarray(0, IV_LENGTH);
   const tag = buf.subarray(buf.length - TAG_LENGTH);
   const ciphertext = buf.subarray(IV_LENGTH, buf.length - TAG_LENGTH);
@@ -46,5 +50,6 @@ export function decryptCredentials(encoded: string): string {
   const decipher = createDecipheriv(ALGORITHM, key, iv);
   decipher.setAuthTag(tag);
 
-  return decipher.update(ciphertext) + decipher.final('utf8');
+  const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  return decrypted.toString('utf8');
 }

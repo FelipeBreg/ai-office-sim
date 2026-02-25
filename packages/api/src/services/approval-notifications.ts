@@ -14,6 +14,16 @@ import { db, users, projects, eq } from '@ai-office/db';
 const RATE_LIMIT_MS = 60_000;
 const rateLimitMap = new Map<string, number>();
 
+/** Escape HTML special characters to prevent XSS in email templates */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 interface ApprovalNotificationPayload {
   approvalId: string;
   projectId: string;
@@ -51,6 +61,9 @@ function buildApprovalEmailBody(payload: ApprovalNotificationPayload): {
     critical: 'Crítico',
   };
 
+  const safeName = escapeHtml(payload.agentName);
+  const safeAction = escapeHtml(payload.actionDescription);
+
   const subject = `[Aprovação Pendente] ${payload.agentName} - ${payload.actionDescription}`;
   const body = `
 <div style="font-family: 'IBM Plex Mono', monospace; background: #0A0E14; color: #E0E0E0; padding: 24px;">
@@ -58,11 +71,11 @@ function buildApprovalEmailBody(payload: ApprovalNotificationPayload): {
   <table style="border-collapse: collapse; width: 100%;">
     <tr>
       <td style="padding: 8px 12px; color: #888;">Agente:</td>
-      <td style="padding: 8px 12px; color: #E0E0E0;">${payload.agentName}</td>
+      <td style="padding: 8px 12px; color: #E0E0E0;">${safeName}</td>
     </tr>
     <tr>
       <td style="padding: 8px 12px; color: #888;">Ação:</td>
-      <td style="padding: 8px 12px; color: #E0E0E0;">${payload.actionDescription}</td>
+      <td style="padding: 8px 12px; color: #E0E0E0;">${safeAction}</td>
     </tr>
     <tr>
       <td style="padding: 8px 12px; color: #888;">Risco:</td>

@@ -93,6 +93,9 @@ export function useSocketEvent<E extends keyof ServerToClientEvents>(
   const handlerRef = useRef(handler);
   handlerRef.current = handler;
 
+  // Track which socket we are currently subscribed to
+  const subscribedSocketRef = useRef<TypedSocket | null>(null);
+
   useEffect(() => {
     // Use any cast to work around socket.io-client's complex generic types
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -101,44 +104,37 @@ export function useSocketEvent<E extends keyof ServerToClientEvents>(
     };
 
     function subscribe(socket: TypedSocket) {
+      // Unsubscribe from previous socket if different
+      if (subscribedSocketRef.current && subscribedSocketRef.current !== socket) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        subscribedSocketRef.current.off(event as any, wrappedHandler);
+      }
+      subscribedSocketRef.current = socket;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       socket.on(event as any, wrappedHandler);
-    }
-
-    function unsubscribe(socket: TypedSocket) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      socket.off(event as any, wrappedHandler);
     }
 
     // Subscribe immediately if socket exists
     const socket = globalSocket;
     if (socket) {
       subscribe(socket);
-
-      // Also re-subscribe on reconnect to handle missed events
-      const onConnect = () => subscribe(socket);
-      socket.on('connect', onConnect);
-
-      return () => {
-        unsubscribe(socket);
-        socket.off('connect', onConnect);
-      };
     }
 
-    // If socket not yet created, poll briefly for it
+    // Poll for socket creation or reconnection (new socket instance)
     const interval = setInterval(() => {
       const s = globalSocket;
-      if (s) {
-        clearInterval(interval);
+      if (s && s !== subscribedSocketRef.current) {
         subscribe(s);
       }
     }, 100);
 
     return () => {
       clearInterval(interval);
-      const s = globalSocket;
-      if (s) {
-        unsubscribe(s);
+      // Always clean up from whatever socket we actually subscribed to
+      if (subscribedSocketRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        subscribedSocketRef.current.off(event as any, wrappedHandler);
+        subscribedSocketRef.current = null;
       }
     };
   }, [event]);

@@ -53,6 +53,9 @@ const AGENT_ROOM_MAP: Record<string, { roomKey: string; slotIndex: number }> = {
   'agent-4': { roomKey: 'openWorkspace', slotIndex: 4 },
 };
 
+// ── Stable constants for R3F props (avoid new references per render) ──
+const ORBIT_TARGET: [number, number, number] = [9.5, 0, 4];
+
 // ── Post-processing (memo'd to avoid heavy re-creation) ──────────────
 const PostProcessing = memo(function PostProcessing() {
   return (
@@ -102,7 +105,7 @@ const Scene = memo(function Scene({
         maxZoom={120}
         minPolarAngle={Math.PI / 6}
         maxPolarAngle={Math.PI / 3}
-        target={[9.5, 0, 4]}
+        target={ORBIT_TARGET}
         enablePan
         panSpeed={0.8}
         screenSpacePanning={false}

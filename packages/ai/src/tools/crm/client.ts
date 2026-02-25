@@ -45,9 +45,10 @@ class RdStationCrmClient implements CrmClient {
   }
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const url = `${RDSTATION_CRM_BASE}${path}?token=${this.token}`;
+    const url = new URL(`${RDSTATION_CRM_BASE}${path}`);
+    url.searchParams.set('token', this.token);
 
-    const res = await fetch(url, {
+    const res = await fetch(url.toString(), {
       method,
       headers: { 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
@@ -66,7 +67,7 @@ class RdStationCrmClient implements CrmClient {
     try {
       const data = await this.request<{ contacts: Array<Record<string, unknown>> }>(
         'GET',
-        `/contacts?query=${encodeURIComponent(query)}&limit=${limit}`,
+        `/contacts?query=${encodeURIComponent(query)}&limit=${String(limit)}`,
       );
 
       const contacts: RdStationContact[] = (data.contacts ?? []).map((c) => ({
