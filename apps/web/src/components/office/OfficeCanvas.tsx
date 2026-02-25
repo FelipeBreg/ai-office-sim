@@ -1,10 +1,11 @@
 'use client';
 
-import { Suspense, useCallback, useMemo, useState } from 'react';
+import { memo, Suspense, useCallback, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrthographicCamera, OrbitControls } from '@react-three/drei';
 import { ACESFilmicToneMapping, SRGBColorSpace } from 'three';
 import { useTranslations } from 'next-intl';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { OfficeLighting } from './OfficeLighting';
 import { FloorSystem } from './FloorSystem';
 import { FloorCameraController } from './FloorCameraController';
@@ -15,6 +16,9 @@ import { TeamRoster } from './TeamRoster';
 import { DataFlowLayer } from './DataFlowLayer';
 import type { DataFlowAgent } from './DataFlowLayer';
 import { AmbientParticles } from './AmbientParticles';
+import { PerformanceMonitor, DevStats } from './PerformanceMonitor';
+import { HeaderOverlay } from './HeaderOverlay';
+import { NavControls } from './NavControls';
 import type { AgentStatus } from './AgentAvatar';
 import { useAgentStatuses } from './useAgentStatuses';
 
@@ -49,18 +53,35 @@ const AGENT_ROOM_MAP: Record<string, { roomKey: string; slotIndex: number }> = {
   'agent-4': { roomKey: 'openWorkspace', slotIndex: 4 },
 };
 
+// ── Post-processing (memo'd to avoid heavy re-creation) ──────────────
+const PostProcessing = memo(function PostProcessing() {
+  return (
+    <EffectComposer>
+      <Bloom
+        intensity={0.5}
+        luminanceThreshold={0.6}
+        luminanceSmoothing={0.9}
+        mipmapBlur
+      />
+    </EffectComposer>
+  );
+});
+PostProcessing.displayName = 'PostProcessing';
+
 // ── Scene (inside r3f Canvas) ────────────────────────────────────────
-function Scene({
-  roomLabels,
-  selectedAgentId,
-  onSelectAgent,
-  dataFlowAgents,
-}: {
+interface SceneProps {
   roomLabels: Record<string, string>;
   selectedAgentId: string | null;
   onSelectAgent: (agentId: string) => void;
   dataFlowAgents: DataFlowAgent[];
-}) {
+}
+
+const Scene = memo(function Scene({
+  roomLabels,
+  selectedAgentId,
+  onSelectAgent,
+  dataFlowAgents,
+}: SceneProps) {
   return (
     <>
       <OrthographicCamera
@@ -98,9 +119,17 @@ function Scene({
 
       {/* Ambient background particle field */}
       <AmbientParticles />
+
+      {/* Performance monitoring: FPS detection + dev stats overlay */}
+      <PerformanceMonitor />
+      <DevStats />
+
+      {/* Post-processing: bloom for emissive glow */}
+      <PostProcessing />
     </>
   );
-}
+});
+Scene.displayName = 'Scene';
 
 // ── OfficeCanvas ─────────────────────────────────────────────────────
 export function OfficeCanvas() {
@@ -195,6 +224,8 @@ export function OfficeCanvas() {
         </Canvas>
 
         {/* DOM overlays — siblings to Canvas, absolute positioned */}
+        <HeaderOverlay />
+        <NavControls />
         <FloorSelector />
         <TeamRoster
           agents={ALL_MOCK_AGENTS}

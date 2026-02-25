@@ -208,6 +208,17 @@
     "marketing": "Marketing",
     "sales": "Vendas",
     "datacenter": "Datacenter",
+    "header": {
+      "title": "PROJECT A: AI OFFICE SIM",
+      "noProject": "Nenhum projeto selecionado",
+      "activeAgents": "{count} agentes ativos"
+    },
+    "nav": {
+      "panUp": "Mover para cima",
+      "panDown": "Mover para baixo",
+      "panLeft": "Mover para esquerda",
+      "panRight": "Mover para direita"
+    },
     "floors": {
       "basement": "Subsolo — Servidores",
       "floor1": "1F — Operações",
