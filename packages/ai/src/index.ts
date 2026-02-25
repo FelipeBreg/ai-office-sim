@@ -59,5 +59,19 @@ export type {
   EmailMessage,
 } from './tools/email/index.js';
 
+// CRM (RD Station)
+export {
+  createCrmClient,
+  searchContactsTool,
+  createContactTool,
+  updateContactTool,
+  listDealsTool,
+  createDealTool,
+} from './tools/crm/index.js';
+export type { CrmClient, RdStationContact, RdStationDeal } from './tools/crm/index.js';
+
+// OAuth2 Helper
+export { getValidAccessToken } from './tools/oauth2-helper.js';
+
 // Memory
 export { loadMemory, saveMemory, searchMemory } from './memory/individual.js';

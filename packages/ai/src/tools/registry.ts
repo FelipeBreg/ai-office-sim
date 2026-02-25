@@ -6,6 +6,11 @@ import { readWhatsAppMessagesTool } from './whatsapp/read.js';
 import { searchWebTool } from './web-search/index.js';
 import { sendEmailTool } from './email/send.js';
 import { readEmailTool } from './email/read.js';
+import { searchContactsTool } from './crm/search-contacts.js';
+import { createContactTool } from './crm/create-contact.js';
+import { updateContactTool } from './crm/update-contact.js';
+import { listDealsTool } from './crm/list-deals.js';
+import { createDealTool } from './crm/create-deal.js';
 
 // Convert Zod schema to JSON Schema for Anthropic tool format
 function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
@@ -139,3 +144,10 @@ toolRegistry.register(searchWebTool);
 // ── Email ──
 toolRegistry.register(sendEmailTool);
 toolRegistry.register(readEmailTool);
+
+// ── CRM (RD Station) ──
+toolRegistry.register(searchContactsTool);
+toolRegistry.register(createContactTool);
+toolRegistry.register(updateContactTool);
+toolRegistry.register(listDealsTool);
+toolRegistry.register(createDealTool);
