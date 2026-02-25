@@ -506,13 +506,13 @@ function StepMemoryConfig({
                 }`}
               >
                 <div
-                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-none border transition-colors ${
                     isSelected
                       ? 'border-accent-cyan'
                       : 'border-border-default'
                   }`}
                 >
-                  {isSelected && <div className="h-2 w-2 rounded-full bg-accent-cyan" />}
+                  {isSelected && <div className="h-2 w-2 rounded-none bg-accent-cyan" />}
                 </div>
                 <div>
                   <span className={`block text-[10px] font-medium ${isSelected ? 'text-accent-cyan' : 'text-text-primary'}`}>
@@ -596,11 +596,11 @@ function StepTriggerConfig({
                 }`}
               >
                 <div
-                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-none border transition-colors ${
                     isSelected ? 'border-accent-cyan' : 'border-border-default'
                   }`}
                 >
-                  {isSelected && <div className="h-2 w-2 rounded-full bg-accent-cyan" />}
+                  {isSelected && <div className="h-2 w-2 rounded-none bg-accent-cyan" />}
                 </div>
                 <div>
                   <span className={`block text-[10px] font-medium ${isSelected ? 'text-accent-cyan' : 'text-text-primary'}`}>

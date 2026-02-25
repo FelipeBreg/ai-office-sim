@@ -186,7 +186,7 @@ export const whatsappRouter = createTRPCRouter({
           ...input,
         })
         .returning();
-      return template;
+      return template!;
     }),
 
   updateTemplate: adminProcedure

@@ -138,7 +138,7 @@ export const approvalsRouter = createTRPCRouter({
           .set({ action: input.action, createdBy: ctx.user!.id })
           .where(eq(approvalRules.id, existing.id))
           .returning();
-        return updated;
+        return updated!;
       }
 
       const [created] = await db
@@ -151,7 +151,7 @@ export const approvalsRouter = createTRPCRouter({
           createdBy: ctx.user!.id,
         })
         .returning();
-      return created;
+      return created!;
     }),
 
   deleteRule: adminProcedure

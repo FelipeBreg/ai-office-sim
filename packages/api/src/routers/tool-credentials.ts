@@ -8,6 +8,7 @@ import {
   exchangeCodeForTokens,
   refreshAccessToken,
   GOOGLE_SCOPES,
+  RDSTATION_SCOPES,
   type OAuth2Config,
   type OAuth2Provider,
 } from '@ai-office/shared';
@@ -62,7 +63,7 @@ function getOAuth2Config(provider: OAuth2Provider): OAuth2Config {
 
 /** Get scopes for a tool type */
 function getScopes(toolType: ToolType): string[] {
-  return GOOGLE_SCOPES[toolType] ?? [];
+  return GOOGLE_SCOPES[toolType] ?? RDSTATION_SCOPES[toolType] ?? [];
 }
 
 export const toolCredentialsRouter = createTRPCRouter({

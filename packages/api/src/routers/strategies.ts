@@ -55,7 +55,7 @@ export const strategiesRouter = createTRPCRouter({
           ...input,
         })
         .returning();
-      return strategy;
+      return strategy!;
     }),
 
   update: adminProcedure
@@ -127,6 +127,6 @@ export const strategiesRouter = createTRPCRouter({
           confidence: confidence != null ? String(confidence) : undefined,
         })
         .returning();
-      return learning;
+      return learning!;
     }),
 });

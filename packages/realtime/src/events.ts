@@ -11,7 +11,7 @@ export interface AgentActionEvent {
   sessionId: string;
   actionType: 'tool_call' | 'llm_response' | 'approval_request';
   toolName?: string;
-  status: 'pending' | 'completed' | 'failed';
+  status: 'pending' | 'completed' | 'failed' | 'cancelled';
   timestamp: string;
 }
 

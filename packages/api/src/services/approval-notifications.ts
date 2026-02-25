@@ -9,7 +9,7 @@
  * Rate-limited: max 1 notification batch per minute per user.
  */
 
-import { db, users, projects, eq, and } from '@ai-office/db';
+import { db, users, projects, eq } from '@ai-office/db';
 
 const RATE_LIMIT_MS = 60_000;
 const rateLimitMap = new Map<string, number>();

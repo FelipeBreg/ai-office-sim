@@ -47,7 +47,7 @@ export const agentMemoryRouter = createTRPCRouter({
           .set({ value: input.value })
           .where(eq(agentMemory.id, existing.id))
           .returning();
-        return updated;
+        return updated!;
       }
 
       const [created] = await db
@@ -59,7 +59,7 @@ export const agentMemoryRouter = createTRPCRouter({
           value: input.value,
         })
         .returning();
-      return created;
+      return created!;
     }),
 
   delete: adminProcedure

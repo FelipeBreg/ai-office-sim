@@ -44,7 +44,7 @@ export const workflowsRouter = createTRPCRouter({
           ...input,
         })
         .returning();
-      return workflow;
+      return workflow!;
     }),
 
   update: adminProcedure
@@ -110,6 +110,6 @@ export const workflowsRouter = createTRPCRouter({
         .returning();
 
       // TODO: Enqueue workflow execution via BullMQ
-      return run;
+      return run!;
     }),
 });

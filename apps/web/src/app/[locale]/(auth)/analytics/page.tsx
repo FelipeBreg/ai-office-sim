@@ -26,7 +26,7 @@ import { Button, Badge, Skeleton, Separator } from '@/components/ui';
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type ActionStatus = 'pending' | 'completed' | 'failed' | 'cancelled';
-type ActionType = 'tool_call' | 'llm_response' | 'approval_request';
+type _ActionType = 'tool_call' | 'llm_response' | 'approval_request';
 
 interface ActionLog {
   id: string;
@@ -532,10 +532,12 @@ function SessionTimeline({
                   </div>
 
                   {/* Node content */}
-                  <button
-                    type="button"
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => onSelectLog(log)}
-                    className="w-full border border-border-default bg-bg-base p-2.5 text-left transition-colors hover:border-accent-cyan/40"
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectLog(log); }}
+                    className="w-full border border-border-default bg-bg-base p-2.5 text-left transition-colors hover:border-accent-cyan/40 cursor-pointer"
                   >
                     <div className="flex items-center gap-2">
                       <Badge variant="default">
@@ -586,7 +588,7 @@ function SessionTimeline({
                         )}
                       </div>
                     )}
-                  </button>
+                  </div>
                 </div>
               );
             })}
@@ -629,8 +631,6 @@ function CollapsiblePayload({ label, payload }: { label: string; payload: unknow
 
 export default function ActivityLogPage() {
   const t = useTranslations('activity');
-  const tCommon = useTranslations('common');
-
   // View state
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);

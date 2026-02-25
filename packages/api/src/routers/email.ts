@@ -190,7 +190,7 @@ export const emailRouter = createTRPCRouter({
           ...input,
         })
         .returning();
-      return template;
+      return template!;
     }),
 
   updateTemplate: adminProcedure

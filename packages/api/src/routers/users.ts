@@ -15,7 +15,7 @@ export const usersRouter = createTRPCRouter({
         .set({ locale: input.locale })
         .where(eq(users.id, ctx.user!.id))
         .returning();
-      return updated;
+      return updated!;
     }),
 
   updateTimezone: protectedProcedure
@@ -26,6 +26,6 @@ export const usersRouter = createTRPCRouter({
         .set({ timezone: input.timezone })
         .where(eq(users.id, ctx.user!.id))
         .returning();
-      return updated;
+      return updated!;
     }),
 });

@@ -4,6 +4,7 @@ import {
   text,
   timestamp,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { agentArchetypeEnum, triggerTypeEnum } from './enums.js';
 
@@ -26,6 +27,6 @@ export const agentArchetypes = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index('archetype_type_idx').on(table.archetype),
+    uniqueIndex('archetype_unique_idx').on(table.archetype),
   ],
 );

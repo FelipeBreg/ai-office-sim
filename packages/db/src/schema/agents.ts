@@ -88,5 +88,6 @@ export const agentMemory = pgTable(
   (table) => [
     index('agent_memory_agent_id_idx').on(table.agentId),
     index('agent_memory_project_id_idx').on(table.projectId),
+    uniqueIndex('agent_memory_agent_project_key_idx').on(table.agentId, table.projectId, table.key),
   ],
 );

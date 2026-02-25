@@ -45,7 +45,7 @@ export const projectsRouter = createTRPCRouter({
           ...input,
         })
         .returning();
-      return project;
+      return project!;
     }),
 
   update: adminProcedure
