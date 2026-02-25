@@ -88,3 +88,6 @@ export { ingestDocument, deleteDocument, splitIntoChunks } from './memory/ingest
 export type { IngestDocumentParams, IngestResult, DocumentSourceType } from './memory/ingest.js';
 export { ragSearch } from './memory/rag-search.js';
 export type { RagSearchParams, RagSearchResult } from './memory/rag-search.js';
+export { extractMemories, autoExtractAndSave } from './memory/auto-extract.js';
+export type { MemoryEntry } from './memory/auto-extract.js';
+export { autoIngestRecentSessions } from './memory/auto-ingest.js';
