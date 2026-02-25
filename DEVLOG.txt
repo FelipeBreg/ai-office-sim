@@ -2085,8 +2085,58 @@ VERIFICATION:
 
 ================================================================================
   EPIC P1-3 COMPLETE — All tasks done (P1-3.1–P1-3.7) including Company Wiki
-  EPIC P1-9 IN PROGRESS — P1-9.2 (Onboarding) + P1-9.4 (Feedback) done
-    Remaining: P1-9.1 (Staging env — needs cloud accounts), P1-9.3 (Alpha playbook)
+================================================================================
+
+
+================================================================================
+COMMIT #23 — P1-9.1, P1-9.3: Staging Config + Alpha Help Page
+================================================================================
+Hash:     918204f
+Date:     2026-02-25
+Tasks:    P1-9.1, P1-9.3
+================================================================================
+
+WHAT WAS BUILT:
+  apps/web/.env.staging.example (NEW):
+    - Full env template for Vercel staging: DB, Redis, Clerk, WhatsApp, LLM keys, observability
+  apps/worker/.env.staging.example (NEW):
+    - Worker env template for Railway: shared DB/Redis + BULLMQ_REDIS_URL, WORKER_CONCURRENCY
+  packages/db/src/seed/staging-demo.ts (NEW):
+    - Idempotent seed (onConflictDoUpdate) creating:
+      - "Acme Demo Ltda" org (growth plan)
+      - "Demo Admin" user (owner, pt-BR)
+      - "Suporte & Vendas" project
+      - 3 agents: Ana (support), Carlos (sales), Julia (content_writer)
+      - 5 WhatsApp templates (welcome, follow_up, sales_outreach, appointment, support)
+      - Wiki category "Políticas da Empresa" + full customer service policy article
+  scripts/deploy-staging.sh (NEW):
+    - Checks required env vars, builds, db:push, seeds, optional Vercel/Railway CLI deploy
+  apps/web/src/app/[locale]/(auth)/help/page.tsx (NEW):
+    - Alpha testing playbook with 8 accordion sections:
+      Início Rápido, WhatsApp, Agentes, Aprovações, Monitoramento, Memória, Limitações, Bugs
+    - Left sidebar navigation, scroll-to-section, expand/collapse all
+    - Full PT-BR content via next-intl useTranslations('help')
+  apps/web/messages/en-US.json + pt-BR.json (MODIFIED):
+    - Added ~100 'help' namespace translation keys
+    - Fixed all PT-BR diacritics in help namespace and staging seed
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+  *** PHASE 1 COMPLETE ***
+  All 40 tasks across 9 epics done:
+    P1-1: WhatsApp Business API (6 tasks)
+    P1-2: External Tools — Email, Sheets, CRM, Search, OAuth2 (6 tasks)
+    P1-3: Knowledge Base — Documents, RAG, Memory, Wiki (7 tasks)
+    P1-4: Agent Configuration UI (5 tasks)
+    P1-5: BR Agent Archetypes (5 tasks)
+    P1-6: Approval System (4 tasks)
+    P1-7: Finance Tools — Pix, NFe (2 tasks)
+    P1-8: Activity Log UI (3 tasks)
+    P1-9: Alpha Launch — Staging, Onboarding, Playbook, Feedback (4 tasks)
+  Next: Phase 2 — Multi-Agent Collaboration & Workflow Engine
 ================================================================================
 
 
