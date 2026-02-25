@@ -2925,7 +2925,82 @@ FILES: 12 changed, 1915 insertions, 17 deletions
 VERIFICATION:
   - turbo typecheck --force: 8/8 pass
 
-PHASE 3 STATUS: IN PROGRESS (4/9 epics done — P3-1, P3-2, P3-3, P3-4)
+================================================================================
+COMMIT #41 — Epic P3-5: Company Templates & Onboarding
+================================================================================
+DATE: 2026-02-25
+HASH: 2bb9a6b
+PHASE: 3 — Workflow Builder & Brazil Launch
+
+WHAT WAS BUILT:
+  P3-5.1: Company Templates DB Table
+    - company_templates Drizzle table with slug (unique), name_en, name_pt_br,
+      description_en, description_pt_br, sector, market_focus (pgEnum),
+      default_agents (jsonb), default_workflows (jsonb), icon, sort_order
+    - marketFocusEnum added to enums.ts: 'br', 'global', 'both'
+    - MarketFocus type added to shared types
+
+  P3-5.2 + P3-5.3: Template Definitions (7 templates)
+    - 3 Brazil-focused: Agência de Marketing (5 agents), E-Commerce BR (4 agents),
+      Escritório de Advocacia (4 agents)
+    - 3 Global: Marketing Agency (5 agents), Software Startup (4 agents),
+      E-Commerce Global (4 agents)
+    - 1 Universal: Blank Canvas (0 agents)
+    - Each template has: bilingual names/descriptions, sector, market_focus,
+      icon, agent specs (archetype, tools), workflow specs (trigger, steps)
+    - getTemplatesForLocale() filters by market focus based on locale
+    - getTemplateBySlug() lookup helper
+
+  P3-5.4a: companyTemplates tRPC Router
+    - list: returns all templates from shared constants
+    - listForLocale: filters templates by pt-BR/en-US
+    - getBySlug: lookup with input validation (.min(1).max(100))
+    - provision: creates agents in project from template spec
+      - enforceResourceLimit for plan agent quota
+      - onConflictDoNothing for idempotent provisioning (no duplicate slug errors)
+      - TRPCError NOT_FOUND for invalid slugs
+    - Registered in root router as companyTemplates
+
+  P3-5.4b: Onboarding Template Selector
+    - Rewrote Step 2 from 2-option (blank/demo) to full template grid
+    - Templates filtered by locale (BR templates for pt-BR, Global for en-US)
+    - Each card: icon, bilingual name, description, agent count badge
+    - Safe locale fallback (unknown locales default to en-US)
+
+  P3-5.4c: New Project Wizard Template Step
+    - Added Step 2 (Template) to wizard: Name → Template → Details → Review
+    - Same template grid UI as onboarding
+    - After project creation, provisions template agents via tRPC mutation
+    - Fix: set active project BEFORE provision call (correct x-project-id header)
+
+  AgentArchetype Type Fix
+    - Updated shared AgentArchetype type from 10 to 21 values
+    - Now matches all DB enum values (social_media, email_campaign_manager, etc.)
+
+  i18n Keys (both locales):
+    - Onboarding: replaced templateBlank/templateDemo with templateAgentCount,
+      templateNoAgents, templateSector
+    - Project Wizard: added stepTemplate, templateTitle, templateDescription,
+      templateAgentCount, templateNoAgents
+
+  Review Fixes (7 findings):
+    1. CRITICAL: Provision was calling wrong project — reordered setCurrentProject
+    2. HIGH: AgentArchetype missing 11 archetypes — added all 21
+    3. HIGH: Unique constraint violation on slug — added onConflictDoNothing
+    4. MEDIUM: Slug inputs lacked validation — added .min(1).max(100)
+    5. MEDIUM: Invalid template slug returned silent success — throws NOT_FOUND
+    6. MEDIUM: Provision ignored plan limits — added enforceResourceLimit
+    7. MEDIUM: Unsafe locale cast — added explicit fallback to en-US
+
+FILES: 12 changed, 565 insertions, 51 deletions
+  NEW: packages/db/src/schema/company-templates.ts
+  NEW: packages/shared/src/constants/company-templates.ts
+  NEW: packages/api/src/routers/company-templates.ts
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+PHASE 3 STATUS: IN PROGRESS (5/9 epics done — P3-1 through P3-5; P3-6 & P3-8 deferred)
 
 
 ================================================================================
