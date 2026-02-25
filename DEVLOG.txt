@@ -3047,3 +3047,70 @@ PHASE 3 STATUS: IN PROGRESS (6/9 done — P3-1..P3-5, P3-7; P3-6 & P3-8 deferred
 
 
 ================================================================================
+COMMIT #43 — Epic P3-9: DevOps Board & Human Tasks
+================================================================================
+DATE: 2026-02-25
+HASH: 7d794ee
+PHASE: 3 — Workflow Builder & Brazil Launch
+
+WHAT WAS BUILT:
+  P3-9.4: DevOps Data Model
+    - devops_requests table: uuid PK, projectId, agentId, type enum
+      (deploy/pr_review/rollback/infra_change), priority, status (6 states),
+      metadata jsonb (branch, commitSha, prUrl, environment), review fields
+    - human_tasks table: uuid PK, projectId, agentId, assignedTo,
+      status (todo/in_progress/done), priority (low/medium/high/urgent),
+      context, devopsRequestId FK, dueAt, completedAt
+    - 5 new pgEnums: devops_request_type, devops_request_status,
+      devops_priority, human_task_status, human_task_priority
+    - Proper indexes on projectId, agentId, status, type
+
+  P3-9.5: tRPC Router (12 procedures)
+    - listRequests, getRequest, createRequest, reviewRequest,
+      markDeployed, markFailed (devops requests)
+    - listTasks, createTask, updateTaskStatus, assignTask, deleteTask
+      (human tasks)
+    - Status guards: reviewRequest only for pending/in_review,
+      markFailed only for approved/deployed
+    - FK validation: agentId checked against project, assignedTo
+      checked against org
+
+  P3-9.1-3: DevOps Board UI (Kanban + Human Tasks)
+    - Two-tab layout: Board (Kanban) + Human Tasks
+    - Kanban: 3 columns (Pending / In Review / Deployed) with count badges
+    - DevOps cards: type icon, priority badge, branch info, approve/reject
+      buttons, mark deployed action
+    - Human Tasks: 3 columns (To Do / In Progress / Done) with status
+      transition buttons
+    - Task cards: agent attribution, priority badges, due dates,
+      expandable descriptions
+    - Loading skeletons, empty states, error feedback
+    - Dark DOS aesthetic throughout
+
+  P3-9.6: Agent Tools (3 tools)
+    - create_deploy_request: deploy/rollback/infra_change with metadata
+    - create_pr_review_request: PR URL, branch, priority
+    - create_human_task: title, description, context, priority
+    - All tools registered in tool registry
+    - requiresApproval: true for deploy requests
+
+  Review Fixes (7 of 15 findings fixed):
+    1. HIGH: reviewRequest lacked status guard — added pending/in_review check
+    2. MEDIUM: markFailed lacked status guard — added approved/deployed check
+    3. MEDIUM: createRequest agentId cross-project injection — added FK validation
+    4. MEDIUM: createTask FK validation for agentId, assignedTo, devopsRequestId
+    5. MEDIUM: assignTask no org check on assignedTo — added org validation
+    6. MEDIUM: relativeTime NaN/future date handling — added guards
+    7. LOW: approve/reject buttons only for pending — extended to in_review
+    8. LOW: variable shadow `t` in filter → renamed to `task`
+
+FILES: 14 changed, 1496 insertions, 2 deletions
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+PHASE 3 STATUS: COMPLETE (7/9 done — P3-1..P3-5, P3-7, P3-9; P3-6 & P3-8 deferred)
+  Ready for deployment and testing.
+
+
+================================================================================
