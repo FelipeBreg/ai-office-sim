@@ -2375,3 +2375,65 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #29 — Epic P2-5: Team Roster Panel
+================================================================================
+DATE: 2026-02-25
+HASH: fa2f786
+PHASE: 2 — The Visualization
+EPIC: P2-5 (3 tasks: P2-5.1 through P2-5.3)
+
+WHAT WAS BUILT:
+  Team roster sidebar (DOM overlay, left side) showing all agents with
+  status dots, names, and current actions. Three modes: expanded, collapsed
+  (dots only), hidden. Zustand store with localStorage persistence.
+
+FILES CREATED (2):
+  apps/web/src/components/office/TeamRoster.tsx — Roster sidebar component
+  apps/web/src/stores/roster-store.ts — Zustand store with persist
+
+FILES MODIFIED (4):
+  OfficeCanvas.tsx — Render TeamRoster, pass agents/statuses/actions
+  index.ts — Export TeamRoster + types
+  en-US.json — teamRoster namespace
+  pt-BR.json — teamRoster namespace (fixed Unicode escapes → literal UTF-8)
+
+REVIEW — ISSUES FOUND AND FIXED:
+  MEDIUM (1):
+    1. PT-BR translations used \u2014 and \u00e7\u00e3o Unicode escapes →
+       Replaced with literal — and ção for consistency
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+COMMIT #30 — Epic P2-6: Data Flow Particle Animations
+================================================================================
+DATE: 2026-02-25
+HASH: 21409a3
+PHASE: 2 — The Visualization
+EPIC: P2-6 (3 tasks: P2-6.1 through P2-6.3)
+
+WHAT WAS BUILT:
+  Particle animation system: data flow streams between agents and server
+  room, plus ambient background particle field for atmosphere.
+
+FILES CREATED (3):
+  apps/web/src/components/office/DataFlow.tsx — 15-particle stream component
+  apps/web/src/components/office/DataFlowLayer.tsx — Renders flows for active agents
+  apps/web/src/components/office/AmbientParticles.tsx — 200 ambient particles
+
+REVIEW — ISSUES FOUND AND FIXED:
+  HIGH (1):
+    1. AmbientParticles drift was frame-rate dependent (0.005/frame, not
+       multiplied by delta) → Changed to 0.3 units/sec * delta
+
+  MEDIUM (1):
+    2. Oscillation was additive per frame, accumulating X/Z drift over time
+       → Changed to absolute offset from base position (no drift)
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
