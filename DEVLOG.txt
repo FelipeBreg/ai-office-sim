@@ -2000,13 +2000,93 @@ VERIFICATION:
 
 
 ================================================================================
-  EPIC P1-3 COMPLETE — All backend + UI tasks done (P1-3.1–P1-3.6)
-  (P1-3.7 Company Wiki deferred to post-alpha)
   EPIC P1-4 COMPLETE — All tasks done (P1-4.1–P1-4.5)
   EPIC P1-5 COMPLETE — All 5 archetypes seeded
   EPIC P1-6 COMPLETE — All tasks done (P1-6.1–P1-6.4)
   EPIC P1-7 COMPLETE — Both finance tools done
   EPIC P1-8 COMPLETE — All 3 activity log views done
+================================================================================
+
+
+================================================================================
+COMMIT #21 — Audit Fixes
+================================================================================
+Hash:     a98027e
+Date:     2026-02-25
+Tasks:    N/A (repo-wide audit)
+================================================================================
+
+WHAT WAS FIXED:
+  packages/api/src/routers/action-logs.ts:
+    - Changed direct drizzle-orm imports to @ai-office/db
+    - Added ! non-null assertions on ctx.project.id
+  packages/api/src/trpc.ts:
+    - Changed direct drizzle-orm imports to @ai-office/db
+  packages/api/src/services/approval-notifications.ts:
+    - Fixed projectId used where orgId needed — now queries project→org join
+  apps/web/package.json:
+    - Fixed workspace:^ → workspace:*
+  apps/web/messages/en-US.json + pt-BR.json:
+    - Added 13 missing approvals translation keys
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+COMMIT #22 — P1-3.7, P1-9.2, P1-9.4: Wiki, Onboarding, Feedback
+================================================================================
+Hash:     6213c92
+Date:     2026-02-25
+Tasks:    P1-3.7, P1-9.2, P1-9.4
+================================================================================
+
+WHAT WAS BUILT:
+  packages/db/src/schema/wiki.ts (NEW):
+    - wikiCategories: hierarchical (max 3 levels), self-ref FK with onDelete set null
+    - wikiArticles: title, slug, summary, content, tags, authorId, attachedDocumentIds
+  packages/db/src/schema/feedback.ts (NEW):
+    - feedback: rating (1-5), category (bug/feature/confusion/praise), description
+  packages/api/src/routers/wiki.ts (NEW):
+    - 8 procedures: listCategories, createCategory, deleteCategory (reassigns children),
+      listArticles, getArticle, createArticle, updateArticle, deleteArticle
+    - ILIKE search with wildcard escaping
+  packages/api/src/routers/feedback.ts (NEW):
+    - submit, list (with category filter), stats (avg rating + by-category counts)
+  apps/web/src/app/[locale]/(auth)/memory/page.tsx (MODIFIED):
+    - Added Wiki tab with category tree sidebar, article detail view, new article/category forms
+    - Fixed nested <button> HTML accessibility issue
+    - Removed unused rootCategories variable
+  apps/web/src/app/[locale]/(auth)/onboarding/page.tsx (NEW):
+    - 6-step onboarding wizard: Welcome → Company → Template → Integration → Agent → Done
+    - Framer Motion page transitions, typewriter effect, CSS confetti on completion
+    - UI-only scaffold (no backend persistence yet — intentional for P1)
+  apps/web/src/components/feedback-widget.tsx (NEW):
+    - Floating feedback button (bottom-right), expandable form with star rating
+    - Category selector, description textarea, submit with loading state
+  apps/web/src/app/[locale]/(auth)/layout.tsx (MODIFIED):
+    - Added FeedbackWidget to auth layout
+  apps/web/messages/en-US.json + pt-BR.json (MODIFIED):
+    - Added wiki, feedback, onboarding translation namespaces
+    - Fixed all PT-BR diacritics (título, conteúdo, configuração, etc.)
+
+REVIEW FIXES APPLIED:
+  - wiki.ts schema: Added self-referencing FK on parentId with onDelete: 'set null'
+  - wiki.ts router: Escape SQL wildcards (%, _) in ILIKE search
+  - wiki.ts router: deleteCategory now reassigns children + unsets articles before delete
+  - feedback.ts: Added ! assertion on submit return, fixed sql<string> for AVG()
+  - memory/page.tsx: Fixed nested <button> → div+button siblings
+  - memory/page.tsx: Removed unused rootCategories variable
+  - pt-BR.json: Fixed 35+ missing diacritics across wiki/feedback/onboarding namespaces
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+  EPIC P1-3 COMPLETE — All tasks done (P1-3.1–P1-3.7) including Company Wiki
+  EPIC P1-9 IN PROGRESS — P1-9.2 (Onboarding) + P1-9.4 (Feedback) done
+    Remaining: P1-9.1 (Staging env — needs cloud accounts), P1-9.3 (Alpha playbook)
 ================================================================================
 
 
