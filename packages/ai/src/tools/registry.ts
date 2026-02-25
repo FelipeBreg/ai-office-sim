@@ -11,6 +11,9 @@ import { createContactTool } from './crm/create-contact.js';
 import { updateContactTool } from './crm/update-contact.js';
 import { listDealsTool } from './crm/list-deals.js';
 import { createDealTool } from './crm/create-deal.js';
+import { readSpreadsheetTool } from './sheets/read.js';
+import { writeSpreadsheetTool } from './sheets/write.js';
+import { appendToSpreadsheetTool } from './sheets/append.js';
 
 // Convert Zod schema to JSON Schema for Anthropic tool format
 function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
@@ -151,3 +154,8 @@ toolRegistry.register(createContactTool);
 toolRegistry.register(updateContactTool);
 toolRegistry.register(listDealsTool);
 toolRegistry.register(createDealTool);
+
+// ── Google Sheets ──
+toolRegistry.register(readSpreadsheetTool);
+toolRegistry.register(writeSpreadsheetTool);
+toolRegistry.register(appendToSpreadsheetTool);

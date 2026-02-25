@@ -70,6 +70,15 @@ export {
 } from './tools/crm/index.js';
 export type { CrmClient, RdStationContact, RdStationDeal } from './tools/crm/index.js';
 
+// Google Sheets
+export {
+  createSheetsClient,
+  readSpreadsheetTool,
+  writeSpreadsheetTool,
+  appendToSpreadsheetTool,
+} from './tools/sheets/index.js';
+export type { SheetsClient } from './tools/sheets/index.js';
+
 // OAuth2 Helper
 export { getValidAccessToken } from './tools/oauth2-helper.js';
 
