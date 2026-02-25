@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure } from '../trpc.js';
-import { db, actionLogs, eq, and, desc, count } from '@ai-office/db';
+import { db, actionLogs, eq, and, desc, count, gte, lte } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
-import { gte, lte } from 'drizzle-orm';
 
 export const actionLogsRouter = createTRPCRouter({
   list: projectProcedure
@@ -18,7 +17,7 @@ export const actionLogsRouter = createTRPCRouter({
       }).default({}),
     )
     .query(async ({ ctx, input }) => {
-      const conditions = [eq(actionLogs.projectId, ctx.project.id)];
+      const conditions = [eq(actionLogs.projectId, ctx.project!.id)];
 
       if (input.agentId) conditions.push(eq(actionLogs.agentId, input.agentId));
       if (input.sessionId) conditions.push(eq(actionLogs.sessionId, input.sessionId));
@@ -49,7 +48,7 @@ export const actionLogsRouter = createTRPCRouter({
       const [log] = await db
         .select()
         .from(actionLogs)
-        .where(and(eq(actionLogs.id, input.id), eq(actionLogs.projectId, ctx.project.id)))
+        .where(and(eq(actionLogs.id, input.id), eq(actionLogs.projectId, ctx.project!.id)))
         .limit(1);
 
       if (!log) {

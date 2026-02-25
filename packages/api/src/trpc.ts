@@ -2,7 +2,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import { db } from '@ai-office/db';
 import { users, projects, organizations } from '@ai-office/db';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql } from '@ai-office/db';
 
 export interface TRPCContext {
   clerkUserId: string | null;

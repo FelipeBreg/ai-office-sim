@@ -9,7 +9,7 @@
  * Rate-limited: max 1 notification batch per minute per user.
  */
 
-import { db, users, eq, and } from '@ai-office/db';
+import { db, users, projects, eq, and } from '@ai-office/db';
 
 const RATE_LIMIT_MS = 60_000;
 const rateLimitMap = new Map<string, number>();
@@ -113,15 +113,19 @@ export async function notifyApprovalRequested(
 
   // 2. Email notifications to project admins (rate-limited)
   if (options?.sendEmail) {
-    const admins = await db
-      .select({ id: users.id, email: users.email })
-      .from(users)
-      .where(
-        and(
-          eq(users.orgId, payload.projectId),
-          // In practice, we'd join with project members. For now, send to all org users.
-        ),
-      );
+    // Look up the org that owns this project
+    const [project] = await db
+      .select({ orgId: projects.orgId })
+      .from(projects)
+      .where(eq(projects.id, payload.projectId))
+      .limit(1);
+
+    const admins = project
+      ? await db
+          .select({ id: users.id, email: users.email })
+          .from(users)
+          .where(eq(users.orgId, project.orgId))
+      : [];
 
     const { subject, body } = buildApprovalEmailBody(payload);
 

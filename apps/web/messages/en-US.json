@@ -193,6 +193,9 @@
   },
   "approvals": {
     "title": "Approvals",
+    "subtitle": "review and manage agent actions",
+    "tabPending": "Pending",
+    "tabAll": "All",
     "pending": "Pending",
     "approved": "Approved",
     "rejected": "Rejected",
@@ -205,8 +208,19 @@
     "high": "High",
     "critical": "Critical",
     "noApprovals": "No pending approvals.",
+    "emptyPending": "No pending approvals.",
+    "emptyAll": "No approval history.",
+    "errorLoading": "Failed to load approvals.",
     "requestedBy": "Requested by",
-    "requestedAt": "Requested at"
+    "requestedAt": "Requested at",
+    "wants": "requests to",
+    "payload": "Payload",
+    "unknownAgent": "Unknown Agent",
+    "addComment": "Add comment",
+    "hideComment": "Hide comment",
+    "commentPlaceholder": "Add a review comment...",
+    "approveError": "Failed to approve.",
+    "rejectError": "Failed to reject."
   },
   "workflows": {
     "title": "Workflows",

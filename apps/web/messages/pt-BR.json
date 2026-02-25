@@ -193,6 +193,9 @@
   },
   "approvals": {
     "title": "Aprovações",
+    "subtitle": "revise e gerencie ações dos agentes",
+    "tabPending": "Pendentes",
+    "tabAll": "Todas",
     "pending": "Pendentes",
     "approved": "Aprovadas",
     "rejected": "Rejeitadas",
@@ -205,8 +208,19 @@
     "high": "Alto",
     "critical": "Crítico",
     "noApprovals": "Nenhuma aprovação pendente.",
+    "emptyPending": "Nenhuma aprovação pendente.",
+    "emptyAll": "Nenhum histórico de aprovações.",
+    "errorLoading": "Falha ao carregar aprovações.",
     "requestedBy": "Solicitado por",
-    "requestedAt": "Solicitado em"
+    "requestedAt": "Solicitado em",
+    "wants": "solicita",
+    "payload": "Dados",
+    "unknownAgent": "Agente Desconhecido",
+    "addComment": "Adicionar comentário",
+    "hideComment": "Ocultar comentário",
+    "commentPlaceholder": "Adicione um comentário de revisão...",
+    "approveError": "Falha ao aprovar.",
+    "rejectError": "Falha ao rejeitar."
   },
   "workflows": {
     "title": "Workflows",
