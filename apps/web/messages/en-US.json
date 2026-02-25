@@ -134,6 +134,7 @@
   },
   "settings": {
     "title": "Settings",
+    "subtitle": "project and account settings",
     "general": "General",
     "team": "Team",
     "billing": "Billing",
@@ -151,6 +152,38 @@
     "owner": "Owner",
     "admin": "Admin",
     "manager": "Manager",
-    "viewer": "Viewer"
+    "viewer": "Viewer",
+    "whatsapp": {
+      "title": "WhatsApp Business API",
+      "description": "Configure WhatsApp integration for sending and receiving messages.",
+      "provider": "Provider",
+      "zapi": "Z-API",
+      "twilio": "Twilio",
+      "metaCloud": "Meta Cloud API",
+      "instanceId": "Instance ID",
+      "token": "Token",
+      "accountSid": "Account SID",
+      "authToken": "Auth Token",
+      "phoneNumberId": "Phone Number ID",
+      "accessToken": "Access Token",
+      "phoneNumber": "Phone Number (E.164)",
+      "phoneNumberHint": "+5511999999999",
+      "handlerAgent": "Handler Agent",
+      "handlerAgentPlaceholder": "Select an agent...",
+      "noAgent": "None (no auto-response)",
+      "save": "Save Connection",
+      "verify": "Verify Connection",
+      "disconnect": "Disconnect",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "pending": "Pending",
+      "notConfigured": "No WhatsApp connection configured yet.",
+      "saveSuccess": "Connection saved successfully.",
+      "verifySuccess": "Connection verified — WhatsApp is active.",
+      "verifyFailed": "Verification failed",
+      "saving": "Saving...",
+      "verifying": "Verifying...",
+      "credentialsHint": "Fill in to update"
+    }
   }
 }

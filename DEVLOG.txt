@@ -1353,3 +1353,59 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #19 — Epic P1-1.6: WhatsApp Connection Setup UI
+================================================================================
+Hash:     (pending)
+Date:     2026-02-25 ~03:00 -0300
+Tasks:    P1-1.6 (WhatsApp settings UI)
+================================================================================
+
+WHAT WAS BUILT:
+  apps/web/src/app/[locale]/(auth)/settings/page.tsx — REWRITTEN:
+    - Tabbed layout matching prototype DOS aesthetic
+    - Left sidebar (w-44) with 3 tabs: General, Team, Integrations
+    - Tab icons: Building2, Users, Puzzle (lucide-react)
+    - Active tab: left cyan border + cyan bg/text; inactive: transparent/muted
+    - General + Team tabs render ComingSoon component (Phase 3)
+    - Integrations tab renders WhatsAppPanel
+
+  apps/web/src/app/[locale]/(auth)/settings/_components/whatsapp-panel.tsx — NEW:
+    - Header row: WhatsApp icon box + title/description + status Badge + phone
+    - Provider toggle: 3-button group (Z-API | Twilio | Meta Cloud API)
+    - Conditional credential fields per provider:
+      - Z-API: Instance ID + Token (password)
+      - Twilio: Account SID + Auth Token (password)
+      - Meta Cloud: Phone Number ID + Access Token (password)
+    - Phone number input (E.164 format placeholder)
+    - Handler agent <select> populated from trpc.agents.list
+    - Action buttons: Save Connection (primary), Verify Connection (secondary,
+      hidden when connected), Disconnect (danger, shown when connected)
+    - Inline feedback: success/error messages below buttons
+    - Loading: Skeleton components during initial query
+    - Mutation states: buttons disabled + "Saving..."/"Verifying..." text
+    - tRPC calls: getConnection, saveConnection, updateConnectionStatus, agents.list
+    - Cache invalidation on mutation success via trpc.useUtils()
+
+  apps/web/messages/pt-BR.json + en-US.json:
+    - Added settings.subtitle key
+    - Added settings.whatsapp.* namespace (28 keys each):
+      title, description, provider labels, credential labels, phone number,
+      handler agent, action buttons, status labels, feedback messages
+
+FILES CREATED (1 new, 3 modified):
+  New:
+    apps/web/src/app/[locale]/(auth)/settings/_components/whatsapp-panel.tsx
+  Modified:
+    apps/web/src/app/[locale]/(auth)/settings/page.tsx (tabbed layout rewrite)
+    apps/web/messages/pt-BR.json (settings.whatsapp namespace)
+    apps/web/messages/en-US.json (settings.whatsapp namespace)
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 packages pass, zero type errors
+  - Settings page renders tabbed layout with sidebar
+  - Integrations tab shows WhatsApp config panel
+  - Provider toggle switches credential fields
+  - Save/Verify/Disconnect flow calls correct tRPC mutations
+
+
+================================================================================
