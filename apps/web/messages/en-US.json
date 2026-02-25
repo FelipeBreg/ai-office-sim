@@ -273,7 +273,9 @@
   },
   "workflows": {
     "title": "Workflows",
+    "subtitle": "automate agent pipelines",
     "createWorkflow": "Create Workflow",
+    "newWorkflow": "New Workflow",
     "editWorkflow": "Edit Workflow",
     "deleteWorkflow": "Delete Workflow",
     "workflowName": "Workflow Name",
@@ -284,7 +286,15 @@
     "running": "Running",
     "completed": "Completed",
     "failed": "Failed",
-    "noWorkflows": "No workflows created yet."
+    "noWorkflows": "No workflows created yet.",
+    "noWorkflowsDescription": "Create your first workflow to automate agent tasks.",
+    "loadError": "Failed to load workflows.",
+    "active": "Active",
+    "inactive": "Inactive",
+    "nodes": "{count} nodes",
+    "runs": "{count} runs",
+    "lastRun": "Last run",
+    "never": "Never"
   },
   "strategy": {
     "title": "Strategy Command Center",

@@ -273,7 +273,9 @@
   },
   "workflows": {
     "title": "Workflows",
+    "subtitle": "automatize pipelines de agentes",
     "createWorkflow": "Criar Workflow",
+    "newWorkflow": "Novo Workflow",
     "editWorkflow": "Editar Workflow",
     "deleteWorkflow": "Excluir Workflow",
     "workflowName": "Nome do Workflow",
@@ -284,7 +286,15 @@
     "running": "Executando",
     "completed": "Concluído",
     "failed": "Falhou",
-    "noWorkflows": "Nenhum workflow criado ainda."
+    "noWorkflows": "Nenhum workflow criado ainda.",
+    "noWorkflowsDescription": "Crie seu primeiro workflow para automatizar tarefas de agentes.",
+    "loadError": "Falha ao carregar workflows.",
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "nodes": "{count} nodos",
+    "runs": "{count} execuções",
+    "lastRun": "Última execução",
+    "never": "Nunca"
   },
   "strategy": {
     "title": "Central de Estratégia",
