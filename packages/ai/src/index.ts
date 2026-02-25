@@ -81,6 +81,12 @@ export {
 } from './tools/sheets/index.js';
 export type { SheetsClient } from './tools/sheets/index.js';
 
+// Finance (Pix + NFe)
+export {
+  monitorPixTransactionsTool,
+  checkNfeStatusTool,
+} from './tools/finance/index.js';
+
 // OAuth2 Helper
 export { getValidAccessToken } from './tools/oauth2-helper.js';
 

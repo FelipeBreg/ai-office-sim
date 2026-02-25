@@ -15,6 +15,8 @@ import { createDealTool } from './crm/create-deal.js';
 import { readSpreadsheetTool } from './sheets/read.js';
 import { writeSpreadsheetTool } from './sheets/write.js';
 import { appendToSpreadsheetTool } from './sheets/append.js';
+import { monitorPixTransactionsTool } from './finance/pix.js';
+import { checkNfeStatusTool } from './finance/nfe.js';
 
 // Convert Zod schema to JSON Schema for Anthropic tool format
 function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
@@ -189,3 +191,7 @@ toolRegistry.register(createDealTool);
 toolRegistry.register(readSpreadsheetTool);
 toolRegistry.register(writeSpreadsheetTool);
 toolRegistry.register(appendToSpreadsheetTool);
+
+// ── Finance (Pix + NFe) ──
+toolRegistry.register(monitorPixTransactionsTool);
+toolRegistry.register(checkNfeStatusTool);
