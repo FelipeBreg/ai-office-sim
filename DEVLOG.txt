@@ -2524,3 +2524,59 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #33 — Epic P2-9: ATLAS Voice Interface (P2-9.1 through P2-9.5)
+================================================================================
+DATE: 2026-02-25
+HASH: 0804842
+PHASE: 2 — The Visualization
+EPIC: P2-9 (5 of 9 tasks: P2-9.1 through P2-9.5; P2-9.6-P2-9.9 deferred to Phase 3)
+
+WHAT WAS BUILT:
+  ATLAS (Agent Tracking & Live Advisory System) voice interface. Canvas 2D
+  animated orb with 4 visual states (idle/listening/thinking/speaking),
+  each with distinct pulse speed, wave distortion, particle count, and
+  color. Transcript panel with conversation history, suggestion buttons,
+  and text input. Web Speech API STT and SpeechSynthesis TTS hooks.
+  Zustand store for ATLAS state. Full PT-BR + EN-US translations.
+
+FILES CREATED (7):
+  apps/web/src/stores/atlas-store.ts — AtlasState + messages + intensity
+  apps/web/src/components/atlas/OrbVisualization.tsx — Canvas 2D orb (memo'd)
+  apps/web/src/components/atlas/TranscriptPanel.tsx — Conversation panel
+  apps/web/src/components/atlas/index.ts — Barrel exports
+  apps/web/src/hooks/use-speech-recognition.ts — Web Speech API STT hook
+  apps/web/src/hooks/use-speech-synthesis.ts — SpeechSynthesis TTS hook
+  apps/web/src/hooks/index.ts — Hooks barrel exports
+
+FILES MODIFIED (3):
+  apps/web/src/app/[locale]/(auth)/atlas/page.tsx — Full ATLAS page
+  apps/web/messages/pt-BR.json — 23 atlas translation keys
+  apps/web/messages/en-US.json — 23 atlas translation keys
+
+REVIEW — ISSUES FOUND AND FIXED:
+  HIGH (4):
+    1. OrbVisualization effect re-ran on every intensity change (100ms) causing
+       canvas teardown/setup stutter → Moved state+intensity into refs, effect
+       runs once on mount only
+    2. simulateResponse timer leak: rapid sends caused interleaved state
+       transitions → Added clearTimeout at start of simulateResponse
+    3. useSpeechRecognition isSupported caused hydration mismatch (server=false,
+       client=true) → Deferred to useState+useEffect after mount
+    4. useSpeechSynthesis same hydration mismatch → Same fix
+
+  MEDIUM (4):
+    5. Missing displayName on OrbVisualization memo → Added
+    6. Mock response text missing PT-BR diacritics (relacao→relação, esta→está,
+       critico→crítico, estavel→estável, etc.) → Fixed all
+    7. Button title attributes hardcoded English → Using t('mute')/t('reset')
+    8. Message ID collision risk with Date.now() → Added counter suffix
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+NOTE: P2-9.6 (context aggregation), P2-9.7 (conversational Q&A), P2-9.8
+(command parsing), P2-9.9 (command execution) are deferred to Phase 3 as
+they depend on backend systems (tRPC routers, agent execution, LLM wrapper).
+
+
+================================================================================
