@@ -2659,3 +2659,60 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #36 — P1+P2 Comprehensive Security & Reliability Audit
+================================================================================
+DATE: 2026-02-25
+HASH: 2eda868
+PHASE: Cross-phase audit (P1 backend + P2 visualization)
+
+WHAT WAS DONE:
+  Ran 4 parallel audit agents across ALL project files: DB schemas, AI tools,
+  tRPC routers, webhooks, shared utils, all R3F components, stores, and hooks.
+  Total: 63 issues found (3 critical, 13 high, 29 medium, 18 low).
+  Fixed 12 most impactful issues across 9 files.
+
+SECURITY FIXES:
+  1. CRITICAL: Vector custom type toDriver — validated numeric input to prevent
+     SQL injection via crafted array values
+  2. CRITICAL: Vector fromDriver — added runtime type guard (was casting
+     unknown to string unsafely)
+  3. HIGH: Webhook GET verify token — switched from === to timingSafeEqual
+     to prevent timing attacks
+  4. HIGH: Approval email template — HTML-escapes agentName and
+     actionDescription to prevent XSS in email clients
+  5. HIGH: CRM client double query-string — request() used string concat
+     producing malformed URLs; switched to URL() constructor
+  6. MEDIUM: SSRF attachment URL validator — expanded blocklist to include
+     172.16.0.0/12, 0.0.0.0, ::1, fe80::, fd00:: private ranges
+
+RELIABILITY FIXES:
+  7. HIGH: email/send.ts DB audit insert — wrapped in try/catch (was
+     unhandled, crashed the entire tool on DB failure)
+  8. HIGH: whatsapp/send.ts same fix — wrapped DB insert in try/catch
+  9. CRITICAL: useSocketEvent subscription leak — tracked subscribed socket
+     in ref; polling now detects socket replacement and cleans up properly
+  10. MEDIUM: Webhook queue.add() — wrapped in try/catch to prevent 5xx
+     on Redis downtime (which causes provider retries + duplicate messages)
+  11. MEDIUM: decryptCredentials — added minimum buffer length check and
+     fixed Buffer concat for consistent UTF-8 decoding
+
+PERFORMANCE:
+  12. HIGH: OrbitControls target array — hoisted to module constant
+     (inline array caused new reference every 5s, potential camera jitter)
+
+REMAINING ITEMS (documented, deferred):
+  - DB: Missing Drizzle relations() (needed for relational query API, Phase 3)
+  - DB: toolCredentials plaintext columns (encryption enforcement, Phase 3)
+  - DB: Missing indexes on workflowRuns.status, workflowNodeRuns.projectId
+  - API: OAuth2 state parameter CSRF verification (Phase 3 OAuth epic)
+  - API: TOCTOU race conditions in upsert patterns (5+ routers)
+  - API: Wiki deleteCategory not in transaction
+  - AI: Tool execute functions cast input without re-parsing (safe because
+    executor validates via Zod before calling)
+  - P2: Scene memo defeated by Map reference (acceptable for demo mode)
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
