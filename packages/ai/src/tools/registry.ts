@@ -6,6 +6,7 @@ import { readWhatsAppMessagesTool } from './whatsapp/read.js';
 import { searchWebTool } from './web-search/index.js';
 import { sendEmailTool } from './email/send.js';
 import { readEmailTool } from './email/read.js';
+import { ragSearch } from '../memory/rag-search.js';
 import { searchContactsTool } from './crm/search-contacts.js';
 import { createContactTool } from './crm/create-contact.js';
 import { updateContactTool } from './crm/update-contact.js';
@@ -98,20 +99,49 @@ toolRegistry.register({
 
 toolRegistry.register({
   name: 'search_company_memory',
-  description: 'Search the company knowledge base for relevant information.',
+  description:
+    'Search the company knowledge base using semantic similarity. ' +
+    'Returns relevant document chunks ranked by relevance with source citations. ' +
+    'Optionally filter by source type or date range.',
   inputSchema: z.object({
-    query: z.string().describe('The search query'),
-    topK: z.number().optional().describe('Number of results to return (default: 5)'),
+    query: z.string().describe('The search query (natural language)'),
+    topK: z.number().int().min(1).max(20).optional().describe('Number of results to return (default: 5)'),
+    sourceType: z.enum(['upload', 'web', 'api', 'agent']).optional().describe('Filter by document source type'),
   }),
   requiresApproval: false,
-  execute: async (input: unknown) => {
-    const { query } = input as { query: string; topK?: number };
-    // Stub: returns placeholder results. Real implementation uses vector search.
-    return {
-      results: [],
-      query,
-      message: 'Memory search not yet implemented. No results found.',
+  execute: async (input: unknown, context: ToolExecutionContext) => {
+    const { query, topK = 5, sourceType } = input as {
+      query: string;
+      topK?: number;
+      sourceType?: string;
     };
+
+    try {
+      const results = await ragSearch({
+        projectId: context.projectId,
+        query,
+        topK,
+        filters: sourceType ? { sourceType } : undefined,
+      });
+
+      return {
+        query,
+        resultCount: results.length,
+        results: results.map((r) => ({
+          content: r.content,
+          source: r.documentTitle,
+          sourceType: r.sourceType,
+          relevanceScore: Math.round(r.score * 100) / 100,
+        })),
+      };
+    } catch (err) {
+      return {
+        query,
+        resultCount: 0,
+        results: [],
+        error: err instanceof Error ? err.message : 'Search failed',
+      };
+    }
   },
 });
 
