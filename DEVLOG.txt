@@ -2580,3 +2580,43 @@ they depend on backend systems (tRPC routers, agent execution, LLM wrapper).
 
 
 ================================================================================
+COMMIT #34 — Phase 2 Comprehensive Audit Fixes
+================================================================================
+DATE: 2026-02-25
+HASH: 0d669f8
+PHASE: 2 — The Visualization (audit)
+
+WHAT WAS FIXED:
+  Full-phase audit covering all 9 epics (P2-1 through P2-9). Reviewed
+  cross-cutting patterns, barrel exports, translation completeness,
+  design consistency, memory leaks, and SSR safety.
+
+  CRITICAL (1):
+    1. OrbVisualization hardcoded 0.016 delta (assumed 60fps) — now uses
+       requestAnimationFrame timestamp for real delta computation
+
+  HIGH (1):
+    2. AgentLayer called useAgentStatuses inside R3F Canvas, causing React
+       re-renders in the scene graph — removed duplicate call, statuses now
+       passed as props from OfficeCanvas through FloorSystem
+
+  MEDIUM (2):
+    3. 5 R3F scene-graph components missing React.memo + displayName
+       (AgentLayer, DataFlow, DataFlowLayer, OfficeRooms) → Added
+    4. AgentStatusMap type not exported from barrel → Added
+
+  KNOWN ITEMS DEFERRED (not bugs, acceptable for Phase 2):
+    - Hardcoded mock Portuguese strings in OfficeCanvas/AtlasPage (will be
+      replaced by real data in Phase 3)
+    - Inline JSX materials in furniture (R3F auto-disposes, acceptable)
+    - useLODLevel useState in useFrame (infrequent LOD changes, acceptable)
+    - Error messages in STT hook hardcoded English (will be replaced by
+      translation keys when real STT integration lands)
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+PHASE 2 STATUS: COMPLETE (9 epics, 34 commits, all pushed)
+
+
+================================================================================
