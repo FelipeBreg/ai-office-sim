@@ -189,7 +189,12 @@
     "agentIdle": "Agent idle",
     "agentError": "Agent error",
     "viewDetails": "View Details",
-    "assignTask": "Assign Task"
+    "assignTask": "Assign Task",
+    "openWorkspace": "Open Workspace",
+    "meetingPod": "Meeting Pod",
+    "breakroom": "Breakroom",
+    "serverRack": "Server Rack",
+    "loading": "LOADING OFFICE..."
   },
   "approvals": {
     "title": "Approvals",

@@ -189,7 +189,12 @@
     "agentIdle": "Agente ocioso",
     "agentError": "Agente com erro",
     "viewDetails": "Ver Detalhes",
-    "assignTask": "Atribuir Tarefa"
+    "assignTask": "Atribuir Tarefa",
+    "openWorkspace": "Escritório Aberto",
+    "meetingPod": "Sala de Reunião",
+    "breakroom": "Copa",
+    "serverRack": "Rack de Servidores",
+    "loading": "CARREGANDO ESCRITÓRIO..."
   },
   "approvals": {
     "title": "Aprovações",
