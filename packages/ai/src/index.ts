@@ -16,6 +16,8 @@ export type {
   SafetyLimits,
 } from './engine/types.js';
 export { DEFAULT_SAFETY_LIMITS } from './engine/types.js';
+export { checkApprovalRule } from './engine/approval-check.js';
+export type { ApprovalAction } from './engine/approval-check.js';
 
 // Tools
 export { toolRegistry } from './tools/registry.js';
