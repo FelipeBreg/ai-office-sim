@@ -34,7 +34,10 @@ export const agentsRouter = createTRPCRouter({
         slug: z.string().min(1).max(50),
         archetype: z.enum([
           'support', 'sales', 'marketing', 'data_analyst', 'content_writer',
-          'developer', 'project_manager', 'hr', 'finance', 'custom',
+          'developer', 'project_manager', 'hr', 'finance',
+          'email_campaign_manager', 'research', 'recruiter', 'social_media',
+          'mercado_livre', 'inventory_monitor', 'legal_research', 'ad_analyst',
+          'account_manager', 'deployment_monitor', 'custom',
         ]),
         systemPromptEn: z.string().optional(),
         systemPromptPtBr: z.string().optional(),

@@ -18,6 +18,16 @@ export const agentArchetypeEnum = pgEnum('agent_archetype', [
   'project_manager',
   'hr',
   'finance',
+  'email_campaign_manager',
+  'research',
+  'recruiter',
+  'social_media',
+  'mercado_livre',
+  'inventory_monitor',
+  'legal_research',
+  'ad_analyst',
+  'account_manager',
+  'deployment_monitor',
   'custom',
 ]);
 export const agentStatusEnum = pgEnum('agent_status', [

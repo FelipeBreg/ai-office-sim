@@ -35,6 +35,16 @@ const ARCHETYPE_KEY: Record<string, string> = {
   project_manager: 'archetypeProjectManager',
   hr: 'archetypeHr',
   finance: 'archetypeFinance',
+  email_campaign_manager: 'archetypeEmailCampaign',
+  research: 'archetypeResearch',
+  recruiter: 'archetypeRecruiter',
+  social_media: 'archetypeSocialMedia',
+  mercado_livre: 'archetypeMercadoLivre',
+  inventory_monitor: 'archetypeInventory',
+  legal_research: 'archetypeLegalResearch',
+  ad_analyst: 'archetypeAdAnalyst',
+  account_manager: 'archetypeAccountManager',
+  deployment_monitor: 'archetypeDeploymentMonitor',
   custom: 'archetypeCustom',
 };
 

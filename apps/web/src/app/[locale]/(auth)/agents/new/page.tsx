@@ -19,6 +19,16 @@ import {
   ArrowRight,
   Loader2,
   Sparkles,
+  Mail,
+  Search,
+  UserCheck,
+  Share2,
+  ShoppingCart,
+  Package,
+  Scale,
+  BarChart4,
+  Handshake,
+  Rocket,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
@@ -40,6 +50,16 @@ type Archetype =
   | 'project_manager'
   | 'hr'
   | 'finance'
+  | 'email_campaign_manager'
+  | 'research'
+  | 'recruiter'
+  | 'social_media'
+  | 'mercado_livre'
+  | 'inventory_monitor'
+  | 'legal_research'
+  | 'ad_analyst'
+  | 'account_manager'
+  | 'deployment_monitor'
   | 'custom';
 
 type TriggerType = 'always_on' | 'scheduled' | 'event' | 'manual' | 'agent';
@@ -87,6 +107,16 @@ const ARCHETYPES: {
   { id: 'project_manager', icon: ClipboardList, nameKey: 'archetypeProjectManager', descKey: 'archetypeProjectManagerDesc' },
   { id: 'hr', icon: Users, nameKey: 'archetypeHr', descKey: 'archetypeHrDesc' },
   { id: 'finance', icon: Wallet, nameKey: 'archetypeFinance', descKey: 'archetypeFinanceDesc' },
+  { id: 'email_campaign_manager', icon: Mail, nameKey: 'archetypeEmailCampaign', descKey: 'archetypeEmailCampaignDesc' },
+  { id: 'research', icon: Search, nameKey: 'archetypeResearch', descKey: 'archetypeResearchDesc' },
+  { id: 'recruiter', icon: UserCheck, nameKey: 'archetypeRecruiter', descKey: 'archetypeRecruiterDesc' },
+  { id: 'social_media', icon: Share2, nameKey: 'archetypeSocialMedia', descKey: 'archetypeSocialMediaDesc' },
+  { id: 'mercado_livre', icon: ShoppingCart, nameKey: 'archetypeMercadoLivre', descKey: 'archetypeMercadoLivreDesc' },
+  { id: 'inventory_monitor', icon: Package, nameKey: 'archetypeInventory', descKey: 'archetypeInventoryDesc' },
+  { id: 'legal_research', icon: Scale, nameKey: 'archetypeLegalResearch', descKey: 'archetypeLegalResearchDesc' },
+  { id: 'ad_analyst', icon: BarChart4, nameKey: 'archetypeAdAnalyst', descKey: 'archetypeAdAnalystDesc' },
+  { id: 'account_manager', icon: Handshake, nameKey: 'archetypeAccountManager', descKey: 'archetypeAccountManagerDesc' },
+  { id: 'deployment_monitor', icon: Rocket, nameKey: 'archetypeDeploymentMonitor', descKey: 'archetypeDeploymentMonitorDesc' },
   { id: 'custom', icon: Sparkles, nameKey: 'archetypeCustom', descKey: 'archetypeCustomDesc' },
 ];
 
@@ -146,6 +176,16 @@ const ARCHETYPE_DEFAULT_TOOLS: Record<Archetype, string[]> = {
   project_manager: ['send_email', 'search_contacts', 'list_deals', 'read_spreadsheet', 'search_company_memory'],
   hr: ['send_email', 'search_contacts', 'create_contact', 'update_contact', 'search_company_memory'],
   finance: ['read_spreadsheet', 'write_spreadsheet', 'append_to_spreadsheet', 'monitor_pix_transactions', 'check_nfe_status'],
+  email_campaign_manager: ['send_email', 'read_email', 'read_spreadsheet', 'search_company_memory', 'search_contacts'],
+  research: ['search_web', 'search_company_memory', 'write_spreadsheet', 'read_spreadsheet'],
+  recruiter: ['send_email', 'read_email', 'search_web', 'search_contacts', 'create_contact'],
+  social_media: ['search_web', 'write_spreadsheet', 'search_company_memory', 'read_spreadsheet'],
+  mercado_livre: ['search_company_memory', 'send_whatsapp_message', 'read_spreadsheet'],
+  inventory_monitor: ['read_spreadsheet', 'search_company_memory', 'send_email', 'append_to_spreadsheet'],
+  legal_research: ['search_web', 'search_company_memory', 'write_spreadsheet'],
+  ad_analyst: ['read_spreadsheet', 'search_web', 'search_company_memory', 'write_spreadsheet'],
+  account_manager: ['search_contacts', 'update_contact', 'send_email', 'send_whatsapp_message', 'search_company_memory'],
+  deployment_monitor: ['search_web', 'send_email', 'search_company_memory', 'read_spreadsheet'],
   custom: [],
 };
 
@@ -159,6 +199,16 @@ const ARCHETYPE_DEFAULT_PROMPTS_EN: Record<Archetype, string> = {
   project_manager: 'You are a project manager agent. Track tasks, coordinate team activities, and ensure projects stay on schedule.',
   hr: 'You are an HR agent. Assist with hiring, onboarding, and employee support processes.',
   finance: 'You are a finance agent. Handle invoicing, payment tracking, and financial reporting tasks.',
+  email_campaign_manager: 'You are an email campaign manager agent. Draft email campaigns, schedule sends, monitor open/click rates, and generate performance reports.',
+  research: 'You are a research agent. Gather intelligence on companies, markets, and competitors. Summarize findings into structured reports with actionable insights.',
+  recruiter: 'You are an HR recruiter agent. Screen resumes, draft interview scheduling emails, and generate candidate comparison reports.',
+  social_media: 'You are a social media agent. Draft social media posts, suggest posting schedules, monitor brand mentions, and generate weekly social performance summaries.',
+  mercado_livre: 'You are a Mercado Livre agent. Monitor product listings, respond to buyer questions, track order status, and flag inventory low stock alerts.',
+  inventory_monitor: 'You are an inventory monitor agent. Monitor inventory levels from spreadsheets and ERP data, flag items below reorder threshold, generate weekly stock reports, and send critical alerts.',
+  legal_research: 'You are a legal research agent specializing in Brazilian law. Research legal topics, summarize legislation including LGPD, and draft legal document outlines.',
+  ad_analyst: 'You are an ad campaign analyst agent. Analyze ad campaign data from Google Ads and Meta Ads exports, identify top and bottom performers, recommend budget reallocation, and generate weekly reports.',
+  account_manager: 'You are an account manager agent. Manage existing client relationships, send periodic check-in messages, flag churn-risk clients, and schedule review meetings.',
+  deployment_monitor: 'You are a deployment monitor agent. Monitor GitHub for PRs and deployments, summarize changes, flag potential issues, and generate weekly deployment reports.',
   custom: '',
 };
 
@@ -172,6 +222,16 @@ const ARCHETYPE_DEFAULT_PROMPTS_PTBR: Record<Archetype, string> = {
   project_manager: 'Voce e um agente gerente de projetos. Acompanhe tarefas, coordene atividades da equipe e garanta que os projetos sigam o cronograma.',
   hr: 'Voce e um agente de RH. Auxilie com processos de contratacao, onboarding e suporte a funcionarios.',
   finance: 'Voce e um agente financeiro. Cuide de faturamento, rastreamento de pagamentos e tarefas de relatorios financeiros.',
+  email_campaign_manager: 'Voce e um agente gestor de campanhas de email. Crie campanhas de email, agende envios, monitore taxas de abertura/clique e gere relatorios de desempenho.',
+  research: 'Voce e um agente de pesquisa. Colete inteligencia sobre empresas, mercados e concorrentes. Resuma descobertas em relatorios estruturados com insights acionaveis.',
+  recruiter: 'Voce e um agente recrutador de RH. Analise curriculos, redija emails de agendamento de entrevistas e gere relatorios comparativos de candidatos.',
+  social_media: 'Voce e um agente de redes sociais. Crie posts para midias sociais, sugira cronogramas de publicacao, monitore mencoes da marca e gere resumos semanais de desempenho social.',
+  mercado_livre: 'Voce e um agente do Mercado Livre. Monitore anuncios de produtos, responda perguntas de compradores, acompanhe status de pedidos e alerte sobre estoque baixo.',
+  inventory_monitor: 'Voce e um agente monitor de estoque. Monitore niveis de inventario de planilhas e dados de ERP, sinalize itens abaixo do limite de reposicao, gere relatorios semanais de estoque e envie alertas criticos.',
+  legal_research: 'Voce e um agente de pesquisa juridica especializado em direito brasileiro. Pesquise topicos legais, resuma legislacao incluindo LGPD e redija esbocos de documentos juridicos.',
+  ad_analyst: 'Voce e um agente analista de campanhas publicitarias. Analise dados de campanhas do Google Ads e Meta Ads, identifique melhores e piores desempenhos, recomende realocacao de orcamento e gere relatorios semanais.',
+  account_manager: 'Voce e um agente gestor de contas. Gerencie relacionamentos com clientes existentes, envie mensagens periodicas de acompanhamento, sinalize clientes com risco de churn e agende reunioes de revisao.',
+  deployment_monitor: 'Voce e um agente monitor de deploys. Monitore o GitHub para PRs e deployments, resuma mudancas, sinalize problemas potenciais e gere relatorios semanais de deployment.',
   custom: '',
 };
 
