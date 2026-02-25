@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
-import { Building2, Users, CreditCard, Bell, Puzzle, Trash2, Plus, Send } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
+import { Building2, Users, CreditCard, Bell, Puzzle, Trash2, Plus, Send, Check, ExternalLink, Download, FileText } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { WhatsAppPanel } from './_components/whatsapp-panel';
 import { trpc } from '@/lib/trpc/client';
@@ -10,6 +10,7 @@ import { useActiveProject, useActiveOrg, useProjectStore } from '@/stores/projec
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { PLAN_PRICING, PLAN_FEATURES, formatPrice, type PlanPricing } from '@ai-office/shared';
 
 // ---------------------------------------------------------------------------
 // Plan limits fallback (shared package may not export this yet)
@@ -409,18 +410,28 @@ function MembersTab() {
 // ===========================================================================
 // Tab: Billing
 // ===========================================================================
+
+const PLAN_TIERS = ['starter', 'growth', 'pro', 'enterprise'] as const;
+
 function BillingTab() {
   const t = useTranslations('settings');
+  const locale = useLocale();
   const activeOrg = useActiveOrg();
   const projectsQuery = trpc.projects.list.useQuery();
   const agentsQuery = trpc.agents.list.useQuery();
+  const subscriptionQuery = trpc.billing.currentSubscription.useQuery();
+  const invoicesQuery = trpc.billing.invoiceHistory.useQuery({ limit: 10 });
+
+  const [interval, setInterval] = useState<'monthly' | 'annual'>('monthly');
+  const currency = locale === 'pt-BR' ? 'brl' : 'usd';
 
   const planKey = ((activeOrg?.plan ?? 'starter') as string).toLowerCase() as PlanKey;
   const limits = PLAN_LIMITS_FALLBACK[planKey] ?? PLAN_LIMITS_FALLBACK.starter;
+  const subscription = subscriptionQuery.data;
 
   const projectCount = projectsQuery.data?.length ?? 0;
   const agentCount = agentsQuery.data?.length ?? 0;
-  const workflowCount = 0; // No workflow query yet
+  const workflowCount = 0;
 
   const bars: { labelKey: string; used: number; max: number }[] = [
     { labelKey: 'projects', used: projectCount, max: limits.maxProjects },
@@ -430,19 +441,38 @@ function BillingTab() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Plan card */}
+      {/* Current plan + subscription status */}
       <div className="border border-border-default p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
-            {t('currentPlan')}
-          </span>
-          <Badge variant="cyan">
-            {(activeOrg?.plan ?? 'starter').toUpperCase()}
-          </Badge>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
+              {t('currentPlan')}
+            </span>
+            <Badge variant="cyan">{planKey.toUpperCase()}</Badge>
+          </div>
+          {subscription && (
+            <span className={`text-[9px] ${
+              subscription.status === 'active' ? 'text-status-success' :
+              subscription.status === 'past_due' ? 'text-status-warning' :
+              'text-text-muted'
+            }`}>
+              {t(
+                subscription.status === 'active' ? 'subscriptionActive' :
+                subscription.status === 'past_due' ? 'subscriptionPastDue' :
+                subscription.status === 'canceled' ? 'subscriptionCanceled' :
+                'subscriptionTrialing'
+              )}
+            </span>
+          )}
         </div>
+        {subscription?.currentPeriodEnd && (
+          <p className="mt-2 text-[9px] text-text-muted">
+            {t('nextBilling')}: {new Date(subscription.currentPeriodEnd).toLocaleDateString(locale)}
+          </p>
+        )}
       </div>
 
-      {/* Usage */}
+      {/* Usage meters */}
       <div>
         <h3 className="mb-3 text-[8px] uppercase tracking-[0.15em] text-text-muted">
           {t('usage')}
@@ -471,10 +501,181 @@ function BillingTab() {
         </div>
       </div>
 
-      {/* Upgrade */}
+      {/* Plan comparison + interval toggle */}
       <div>
-        <Button size="sm">{t('upgradePlan')}</Button>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
+            {t('upgradePlan')}
+          </h3>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setInterval('monthly')}
+              className={`px-2 py-0.5 text-[9px] transition-colors ${
+                interval === 'monthly'
+                  ? 'bg-accent-cyan/10 text-accent-cyan'
+                  : 'text-text-muted hover:text-text-secondary'
+              }`}
+            >
+              {t('monthly')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setInterval('annual')}
+              className={`px-2 py-0.5 text-[9px] transition-colors ${
+                interval === 'annual'
+                  ? 'bg-accent-cyan/10 text-accent-cyan'
+                  : 'text-text-muted hover:text-text-secondary'
+              }`}
+            >
+              {t('annual')}
+              <span className="ml-1 text-[7px] text-status-success">{t('savePercent')}</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          {PLAN_TIERS.map((tier) => {
+            const pricing = PLAN_PRICING[tier];
+            const features = PLAN_FEATURES[tier] ?? [];
+            const isCurrent = planKey === tier;
+            const isEnterprise = tier === 'enterprise';
+            const price = pricing ? pricing[interval][currency] : 0;
+
+            return (
+              <div
+                key={tier}
+                className={`flex flex-col border p-3 ${
+                  isCurrent ? 'border-accent-cyan bg-accent-cyan/5' : 'border-border-default bg-bg-base'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold uppercase text-text-primary">{tier}</span>
+                  {isCurrent && (
+                    <span className="bg-accent-cyan px-1.5 py-0.5 text-[7px] font-bold text-bg-deepest">
+                      {t('currentPlanBadge')}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2">
+                  <span className="text-sm font-bold text-text-primary">
+                    {isEnterprise ? t('contactSales') : formatPrice(price, currency as 'brl' | 'usd')}
+                  </span>
+                  {!isEnterprise && price > 0 && (
+                    <span className="text-[8px] text-text-muted">
+                      {interval === 'monthly' ? t('perMonth') : t('perYear')}
+                    </span>
+                  )}
+                </div>
+                <ul className="mt-2 flex flex-col gap-1">
+                  {features.slice(0, 4).map((f) => (
+                    <li key={f} className="flex items-start gap-1 text-[8px] text-text-muted">
+                      <Check size={8} strokeWidth={2} className="mt-0.5 shrink-0 text-accent-cyan" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                {!isCurrent && (
+                  <Button
+                    variant={isEnterprise ? 'secondary' : 'primary'}
+                    size="sm"
+                    className="mt-3"
+                    disabled
+                  >
+                    {isEnterprise ? t('contactSales') : t('subscribe')}
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
+
+      {/* Payment methods (BR gets Pix + Boleto) */}
+      {locale === 'pt-BR' && (
+        <div>
+          <h3 className="mb-2 text-[8px] uppercase tracking-[0.15em] text-text-muted">
+            {t('paymentMethods')}
+          </h3>
+          <div className="flex gap-2">
+            <div className="flex items-center gap-1.5 border border-border-default px-3 py-2 text-[9px] text-text-secondary">
+              <CreditCard size={12} strokeWidth={1.2} />
+              {t('creditCard')}
+            </div>
+            <div className="flex items-center gap-1.5 border border-border-default px-3 py-2 text-[9px] text-text-secondary">
+              <FileText size={12} strokeWidth={1.2} />
+              {t('pix')}
+            </div>
+            <div className="flex flex-col items-start gap-0.5 border border-border-default px-3 py-2">
+              <span className="flex items-center gap-1.5 text-[9px] text-text-secondary">
+                <FileText size={12} strokeWidth={1.2} />
+                {t('boleto')}
+              </span>
+              <span className="text-[7px] text-text-muted">{t('boletoAnnualOnly')}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invoice history */}
+      <div>
+        <h3 className="mb-2 text-[8px] uppercase tracking-[0.15em] text-text-muted">
+          {t('invoiceHistory')}
+        </h3>
+        {invoicesQuery.data && invoicesQuery.data.length > 0 ? (
+          <div className="flex flex-col gap-0">
+            {/* Header */}
+            <div className="flex items-center border border-border-default bg-bg-overlay px-3 py-1.5">
+              <span className="flex-1 text-[8px] uppercase tracking-[0.1em] text-text-muted">{t('invoiceDate')}</span>
+              <span className="w-24 text-[8px] uppercase tracking-[0.1em] text-text-muted">{t('invoiceAmount')}</span>
+              <span className="w-16 text-[8px] uppercase tracking-[0.1em] text-text-muted">{t('invoiceStatus')}</span>
+              <span className="w-16 text-right text-[8px] uppercase tracking-[0.1em] text-text-muted">{t('invoiceDownload')}</span>
+            </div>
+            {invoicesQuery.data.map((inv) => (
+              <div
+                key={inv.id}
+                className="flex items-center border border-t-0 border-border-default px-3 py-2"
+              >
+                <span className="flex-1 text-[10px] text-text-primary">
+                  {new Date(inv.createdAt).toLocaleDateString(locale)}
+                </span>
+                <span className="w-24 text-[10px] text-text-primary">
+                  {formatPrice(inv.amountPaid, inv.currency as 'brl' | 'usd')}
+                </span>
+                <span className={`w-16 text-[9px] ${
+                  inv.status === 'paid' ? 'text-status-success' : 'text-text-muted'
+                }`}>
+                  {inv.status}
+                </span>
+                <span className="w-16 text-right">
+                  {inv.invoicePdf && (
+                    <a
+                      href={inv.invoicePdf}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent-cyan hover:underline"
+                    >
+                      <Download size={10} strokeWidth={1.5} />
+                    </a>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[10px] text-text-muted">{t('noInvoices')}</p>
+        )}
+      </div>
+
+      {/* Manage subscription link (Stripe Portal) */}
+      {subscription && (
+        <div>
+          <Button variant="secondary" size="sm" disabled>
+            <ExternalLink size={10} strokeWidth={1.5} className="mr-1" />
+            {t('manageSubscription')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

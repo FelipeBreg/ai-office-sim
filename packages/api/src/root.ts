@@ -14,6 +14,7 @@ import { agentMemoryRouter } from './routers/agent-memory.js';
 import { wikiRouter } from './routers/wiki.js';
 import { feedbackRouter } from './routers/feedback.js';
 import { companyTemplatesRouter } from './routers/company-templates.js';
+import { billingRouter } from './routers/billing.js';
 
 export const appRouter = createTRPCRouter({
   agents: agentsRouter,
@@ -31,6 +32,7 @@ export const appRouter = createTRPCRouter({
   wiki: wikiRouter,
   feedback: feedbackRouter,
   companyTemplates: companyTemplatesRouter,
+  billing: billingRouter,
 });
 
 export type AppRouter = typeof appRouter;

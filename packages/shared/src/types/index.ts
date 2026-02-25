@@ -53,3 +53,8 @@ export type DocumentSourceType = 'upload' | 'web' | 'api' | 'agent';
 
 // Company Templates
 export type MarketFocus = 'br' | 'global' | 'both';
+
+// Billing
+export type SubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'trialing' | 'unpaid';
+export type PaymentMethodType = 'credit_card' | 'pix' | 'boleto';
+export type InvoiceStatus = 'draft' | 'open' | 'paid' | 'void' | 'uncollectible';

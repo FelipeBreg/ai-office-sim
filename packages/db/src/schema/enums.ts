@@ -165,6 +165,27 @@ export const feedbackCategoryEnum = pgEnum('feedback_category', [
 // Company Templates
 export const marketFocusEnum = pgEnum('market_focus', ['br', 'global', 'both']);
 
+// Billing
+export const subscriptionStatusEnum = pgEnum('subscription_status', [
+  'active',
+  'past_due',
+  'canceled',
+  'trialing',
+  'unpaid',
+]);
+export const paymentMethodTypeEnum = pgEnum('payment_method_type', [
+  'credit_card',
+  'pix',
+  'boleto',
+]);
+export const invoiceStatusEnum = pgEnum('invoice_status', [
+  'draft',
+  'open',
+  'paid',
+  'void',
+  'uncollectible',
+]);
+
 // Tool Credentials (OAuth2)
 export const toolTypeEnum = pgEnum('tool_type', [
   'google_gmail',
