@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, type DragEvent, type ChangeEvent } from 'react';
+import { useState, useRef, useCallback, useMemo, type DragEvent, type ChangeEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Search,
@@ -14,8 +14,14 @@ import {
   Check,
   X,
   ChevronDown,
+  ChevronRight,
   Database,
   Brain,
+  BookOpen,
+  Plus,
+  FolderOpen,
+  Tag,
+  ArrowLeft,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button, Input, Badge, Skeleton, Separator } from '@/components/ui';
@@ -24,7 +30,7 @@ import { Button, Input, Badge, Skeleton, Separator } from '@/components/ui';
 // Types
 // ---------------------------------------------------------------------------
 
-type Tab = 'documents' | 'agentMemory';
+type Tab = 'documents' | 'agentMemory' | 'wiki';
 
 type SourceType = 'upload' | 'web' | 'api' | 'agent';
 
@@ -46,6 +52,29 @@ interface Document {
 interface MemoryEntry {
   key: string;
   value: unknown;
+  updatedAt: Date;
+}
+
+interface WikiCategory {
+  id: string;
+  parentId: string | null;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon: string | null;
+  sortOrder: number;
+}
+
+interface WikiArticle {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string | null;
+  content?: string;
+  categoryId: string | null;
+  tags: string[];
+  authorId: string | null;
+  createdAt: Date;
   updatedAt: Date;
 }
 
@@ -90,8 +119,15 @@ function formatJson(value: unknown): string {
   }
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 // ---------------------------------------------------------------------------
-// Sub-components
+// Sub-components (Documents + Agent Memory)
 // ---------------------------------------------------------------------------
 
 function SearchResultCard({ result, t }: { result: SearchResult; t: (key: string) => string }) {
@@ -305,7 +341,6 @@ function CompanyDocumentsTab() {
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // tRPC hooks — these call hypothetical routers (will error at runtime until routers exist)
   const documentsQuery = trpc.documents.list.useQuery(undefined, {
     retry: false,
   });
@@ -333,8 +368,6 @@ function CompanyDocumentsTab() {
 
   const handleFiles = useCallback(
     (files: FileList) => {
-      // Placeholder: In a real implementation this would use FormData or presigned URLs.
-      // For now we call the mutation with file metadata only.
       Array.from(files).forEach((file) => {
         uploadMutation.mutate({
           fileName: file.name,
@@ -558,12 +591,758 @@ function AgentMemoryTab() {
 }
 
 // ---------------------------------------------------------------------------
+// Wiki: Category tree sidebar
+// ---------------------------------------------------------------------------
+
+function CategoryTreeNode({
+  category,
+  categories,
+  selectedCategoryId,
+  onSelect,
+  depth,
+}: {
+  category: WikiCategory;
+  categories: WikiCategory[];
+  selectedCategoryId: string | null;
+  onSelect: (id: string | null) => void;
+  depth: number;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const children = categories.filter((c) => c.parentId === category.id);
+  const isSelected = selectedCategoryId === category.id;
+  const hasChildren = children.length > 0;
+
+  return (
+    <div>
+      <div
+        className={`flex w-full items-center gap-1 py-1 text-left text-[10px] transition-colors ${
+          isSelected
+            ? 'text-accent-cyan'
+            : 'text-text-secondary hover:text-text-primary'
+        }`}
+        style={{ paddingLeft: `${depth * 12}px` }}
+      >
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded(!expanded);
+            }}
+            className="flex shrink-0 items-center justify-center"
+          >
+            <ChevronRight
+              size={10}
+              strokeWidth={1.5}
+              className={`transition-transform ${expanded ? 'rotate-90' : ''}`}
+            />
+          </button>
+        ) : (
+          <span className="w-[10px]" />
+        )}
+        <button
+          type="button"
+          onClick={() => onSelect(isSelected ? null : category.id)}
+          className="flex items-center gap-1 text-left"
+        >
+          <FolderOpen size={10} strokeWidth={1.5} className="shrink-0" />
+          <span className={depth === 0 ? 'font-semibold' : ''}>{category.name}</span>
+        </button>
+      </div>
+      {expanded && hasChildren && (
+        <div>
+          {children.map((child) => (
+            <CategoryTreeNode
+              key={child.id}
+              category={child}
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              onSelect={onSelect}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Wiki: New category form
+// ---------------------------------------------------------------------------
+
+function NewCategoryForm({
+  categories,
+  onCreated,
+  onCancel,
+}: {
+  categories: WikiCategory[];
+  onCreated: () => void;
+  onCancel: () => void;
+}) {
+  const tw = useTranslations('wiki');
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [description, setDescription] = useState('');
+  const [parentId, setParentId] = useState('');
+  const [autoSlug, setAutoSlug] = useState(true);
+
+  const createMutation = trpc.wiki.createCategory.useMutation({
+    onSuccess: () => {
+      onCreated();
+    },
+  });
+
+  // For parent dropdown, only show root + level-1 (not level-2) to enforce 3-level max
+  const parentOptions = categories.filter((c) => {
+    if (!c.parentId) return true; // root
+    const parent = categories.find((p) => p.id === c.parentId);
+    if (parent && !parent.parentId) return true; // level-1
+    return false;
+  });
+
+  const handleNameChange = (value: string) => {
+    setName(value);
+    if (autoSlug) {
+      setSlug(slugify(value));
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!name.trim() || !slug.trim()) return;
+    createMutation.mutate({
+      name: name.trim(),
+      slug: slug.trim(),
+      description: description.trim() || undefined,
+      parentId: parentId || undefined,
+    });
+  };
+
+  return (
+    <div className="border border-border-default bg-bg-raised p-3">
+      <div className="mb-2 text-[8px] uppercase tracking-[0.15em] text-text-muted">
+        {tw('newCategory')}
+      </div>
+      <div className="flex flex-col gap-2">
+        <div>
+          <label className="mb-0.5 block text-[9px] text-text-muted">{tw('categoryName')}</label>
+          <Input
+            value={name}
+            onChange={(e) => handleNameChange(e.target.value)}
+            placeholder={tw('categoryName')}
+          />
+        </div>
+        <div>
+          <label className="mb-0.5 block text-[9px] text-text-muted">{tw('categorySlug')}</label>
+          <Input
+            value={slug}
+            onChange={(e) => {
+              setSlug(e.target.value);
+              setAutoSlug(false);
+            }}
+            placeholder={tw('categorySlug')}
+          />
+        </div>
+        <div>
+          <label className="mb-0.5 block text-[9px] text-text-muted">{tw('categoryDescription')}</label>
+          <Input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={tw('categoryDescription')}
+          />
+        </div>
+        <div>
+          <label className="mb-0.5 block text-[9px] text-text-muted">{tw('categoryParent')}</label>
+          <div className="relative">
+            <select
+              value={parentId}
+              onChange={(e) => setParentId(e.target.value)}
+              className="w-full appearance-none border border-border-default bg-bg-base px-2.5 py-1.5 pr-8 text-xs text-text-primary transition-colors focus:border-accent-cyan focus:outline-none [&>option]:bg-bg-base [&>option]:text-text-primary"
+            >
+              <option value="">{tw('categoryNoParent')}</option>
+              {parentOptions.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.parentId ? `  -- ${cat.name}` : cat.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={12}
+              strokeWidth={1.5}
+              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-text-muted"
+            />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={createMutation.isPending || !name.trim() || !slug.trim()}
+            size="md"
+          >
+            {createMutation.isPending ? tw('creating') : tw('newCategory')}
+          </Button>
+          <Button variant="ghost" size="md" onClick={onCancel}>
+            <X size={12} strokeWidth={1.5} />
+          </Button>
+        </div>
+        {createMutation.isError && (
+          <p className="text-[10px] text-status-error">{tw('createError')}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Wiki: New article form
+// ---------------------------------------------------------------------------
+
+function NewArticleForm({
+  categories,
+  selectedCategoryId,
+  onCreated,
+  onCancel,
+}: {
+  categories: WikiCategory[];
+  selectedCategoryId: string | null;
+  onCreated: () => void;
+  onCancel: () => void;
+}) {
+  const tw = useTranslations('wiki');
+  const [title, setTitle] = useState('');
+  const [slug, setSlug] = useState('');
+  const [summary, setSummary] = useState('');
+  const [content, setContent] = useState('');
+  const [categoryId, setCategoryId] = useState(selectedCategoryId ?? '');
+  const [tagsInput, setTagsInput] = useState('');
+  const [autoSlug, setAutoSlug] = useState(true);
+
+  const createMutation = trpc.wiki.createArticle.useMutation({
+    onSuccess: () => {
+      onCreated();
+    },
+  });
+
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    if (autoSlug) {
+      setSlug(slugify(value));
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!title.trim() || !slug.trim() || !content.trim()) return;
+    const tags = tagsInput
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    createMutation.mutate({
+      title: title.trim(),
+      slug: slug.trim(),
+      summary: summary.trim() || undefined,
+      content: content.trim(),
+      categoryId: categoryId || undefined,
+      tags: tags.length > 0 ? tags : undefined,
+    });
+  };
+
+  return (
+    <div className="border border-border-default bg-bg-raised p-3">
+      <div className="mb-2 text-[8px] uppercase tracking-[0.15em] text-text-muted">
+        {tw('newArticle')}
+      </div>
+      <div className="flex flex-col gap-2">
+        <div>
+          <label className="mb-0.5 block text-[9px] text-text-muted">{tw('articleTitle')}</label>
+          <Input
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            placeholder={tw('articleTitle')}
+          />
+        </div>
+        <div>
+          <label className="mb-0.5 block text-[9px] text-text-muted">{tw('articleSlug')}</label>
+          <Input
+            value={slug}
+            onChange={(e) => {
+              setSlug(e.target.value);
+              setAutoSlug(false);
+            }}
+            placeholder={tw('articleSlug')}
+          />
+        </div>
+        <div>
+          <label className="mb-0.5 block text-[9px] text-text-muted">{tw('articleCategory')}</label>
+          <div className="relative">
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full appearance-none border border-border-default bg-bg-base px-2.5 py-1.5 pr-8 text-xs text-text-primary transition-colors focus:border-accent-cyan focus:outline-none [&>option]:bg-bg-base [&>option]:text-text-primary"
+            >
+              <option value="">{tw('noneCategory')}</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.parentId ? `  -- ${cat.name}` : cat.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={12}
+              strokeWidth={1.5}
+              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-text-muted"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="mb-0.5 block text-[9px] text-text-muted">{tw('articleSummary')}</label>
+          <Input
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+            placeholder={tw('articleSummary')}
+          />
+        </div>
+        <div>
+          <label className="mb-0.5 block text-[9px] text-text-muted">{tw('articleContent')}</label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={8}
+            placeholder={tw('articleContent')}
+            className="w-full border border-border-default bg-bg-deepest px-2.5 py-1.5 font-mono text-[10px] text-text-primary transition-colors focus:border-accent-cyan focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="mb-0.5 block text-[9px] text-text-muted">
+            {tw('articleTags')}
+            <span className="ml-1 text-text-muted">({tw('articleTagsHint')})</span>
+          </label>
+          <Input
+            value={tagsInput}
+            onChange={(e) => setTagsInput(e.target.value)}
+            placeholder="tag1, tag2, tag3"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={createMutation.isPending || !title.trim() || !slug.trim() || !content.trim()}
+            size="md"
+          >
+            {createMutation.isPending ? tw('creating') : tw('newArticle')}
+          </Button>
+          <Button variant="ghost" size="md" onClick={onCancel}>
+            <X size={12} strokeWidth={1.5} />
+          </Button>
+        </div>
+        {createMutation.isError && (
+          <p className="text-[10px] text-status-error">{tw('createError')}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Wiki: Article detail view
+// ---------------------------------------------------------------------------
+
+function ArticleDetail({
+  articleId,
+  onBack,
+  onDeleted,
+}: {
+  articleId: string;
+  onBack: () => void;
+  onDeleted: () => void;
+}) {
+  const tw = useTranslations('wiki');
+  const tCommon = useTranslations('common');
+
+  const articleQuery = trpc.wiki.getArticle.useQuery({ id: articleId });
+  const deleteMutation = trpc.wiki.deleteArticle.useMutation({
+    onSuccess: () => {
+      onDeleted();
+    },
+  });
+
+  const article = articleQuery.data as WikiArticle | undefined;
+
+  if (articleQuery.isLoading) {
+    return (
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-6 w-1/2" />
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
+
+  if (articleQuery.isError || !article) {
+    return <p className="text-[10px] text-status-error">{tCommon('error')}</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Back button */}
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1 text-[10px] text-text-muted transition-colors hover:text-accent-cyan"
+      >
+        <ArrowLeft size={10} strokeWidth={1.5} />
+        {tw('backToList')}
+      </button>
+
+      {/* Article header */}
+      <div className="border border-border-default bg-bg-base p-4">
+        <div className="flex items-start justify-between">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-xs font-semibold text-text-primary">{article.title}</h2>
+            {article.summary && (
+              <p className="mt-1 text-[10px] leading-relaxed text-text-secondary">{article.summary}</p>
+            )}
+            <div className="mt-2 flex items-center gap-3 text-[9px] text-text-muted">
+              <span>{tw('lastUpdated')}: {formatDate(article.updatedAt)}</span>
+            </div>
+            {article.tags && article.tags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {article.tags.map((tag) => (
+                  <Badge key={tag} variant="default">
+                    <Tag size={7} strokeWidth={1.5} className="mr-0.5" />
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (confirm(tw('confirmDeleteArticle'))) {
+                deleteMutation.mutate({ id: article.id });
+              }
+            }}
+            disabled={deleteMutation.isPending}
+            aria-label={tw('deleteArticle')}
+          >
+            <Trash2 size={12} strokeWidth={1.5} />
+          </Button>
+        </div>
+      </div>
+
+      {/* Article content */}
+      <div className="border border-border-default bg-bg-base p-4">
+        <pre className="whitespace-pre-wrap font-mono text-[10px] leading-relaxed text-text-secondary">
+          {article.content}
+        </pre>
+      </div>
+
+      {deleteMutation.isError && (
+        <p className="text-[10px] text-status-error">{tw('deleteError')}</p>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Wiki: Article card
+// ---------------------------------------------------------------------------
+
+function ArticleCard({
+  article,
+  categoryName,
+  onClick,
+}: {
+  article: WikiArticle;
+  categoryName: string | null;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full border border-border-default bg-bg-base p-3 text-left transition-colors hover:border-accent-cyan/30"
+    >
+      <div className="flex items-start justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] font-medium text-text-primary">{article.title}</div>
+          {article.summary && (
+            <p className="mt-0.5 line-clamp-2 text-[9px] leading-relaxed text-text-secondary">
+              {article.summary}
+            </p>
+          )}
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            {categoryName && (
+              <span className="text-[8px] text-accent-cyan">{categoryName}</span>
+            )}
+            {article.tags && article.tags.length > 0 && (
+              <div className="flex gap-1">
+                {article.tags.slice(0, 3).map((tag) => (
+                  <Badge key={tag} variant="default">
+                    {tag}
+                  </Badge>
+                ))}
+                {article.tags.length > 3 && (
+                  <span className="text-[8px] text-text-muted">+{article.tags.length - 3}</span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        <span className="ml-2 shrink-0 text-[8px] text-text-muted">
+          {formatDate(article.updatedAt)}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tab: Company Wiki
+// ---------------------------------------------------------------------------
+
+function CompanyWikiTab() {
+  const tw = useTranslations('wiki');
+  const tCommon = useTranslations('common');
+
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [showNewArticle, setShowNewArticle] = useState(false);
+  const [viewingArticleId, setViewingArticleId] = useState<string | null>(null);
+
+  const categoriesQuery = trpc.wiki.listCategories.useQuery(undefined, { retry: false });
+  const articlesQuery = trpc.wiki.listArticles.useQuery(
+    {
+      categoryId: selectedCategoryId ?? undefined,
+      search: searchQuery.trim() || undefined,
+    },
+    { retry: false },
+  );
+
+  const deleteCategoryMutation = trpc.wiki.deleteCategory.useMutation({
+    onSuccess: () => {
+      categoriesQuery.refetch();
+      setSelectedCategoryId(null);
+    },
+  });
+
+  const categories = (categoriesQuery.data ?? []) as WikiCategory[];
+  const articles = (articlesQuery.data ?? []) as WikiArticle[];
+
+  // Build category tree: root categories (no parent)
+  const rootCategories = useMemo(
+    () => categories.filter((c) => !c.parentId),
+    [categories],
+  );
+
+  // Category name lookup
+  const categoryNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    categories.forEach((c) => map.set(c.id, c.name));
+    return map;
+  }, [categories]);
+
+  // If viewing an article detail, show that instead
+  if (viewingArticleId) {
+    return (
+      <ArticleDetail
+        articleId={viewingArticleId}
+        onBack={() => setViewingArticleId(null)}
+        onDeleted={() => {
+          setViewingArticleId(null);
+          articlesQuery.refetch();
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="flex gap-4">
+      {/* Left sidebar: Category tree */}
+      <div className="w-52 shrink-0">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
+            {tw('categories')}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowNewCategory(!showNewCategory)}
+            aria-label={tw('newCategory')}
+          >
+            <Plus size={10} strokeWidth={1.5} />
+          </Button>
+        </div>
+
+        {/* "All" option */}
+        <button
+          onClick={() => setSelectedCategoryId(null)}
+          className={`mb-1 flex w-full items-center gap-1.5 py-1 text-left text-[10px] transition-colors ${
+            selectedCategoryId === null
+              ? 'text-accent-cyan'
+              : 'text-text-secondary hover:text-text-primary'
+          }`}
+        >
+          <BookOpen size={10} strokeWidth={1.5} />
+          <span className="font-semibold">{tw('allCategories')}</span>
+        </button>
+
+        <Separator />
+
+        {/* Category tree */}
+        {categoriesQuery.isLoading && (
+          <div className="mt-2 flex flex-col gap-1">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+        )}
+
+        {!categoriesQuery.isLoading && rootCategories.length === 0 && (
+          <p className="mt-2 text-[9px] text-text-muted">{tw('noCategories')}</p>
+        )}
+
+        <div className="mt-1 flex flex-col">
+          {rootCategories.map((cat) => (
+            <CategoryTreeNode
+              key={cat.id}
+              category={cat}
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              onSelect={setSelectedCategoryId}
+              depth={0}
+            />
+          ))}
+        </div>
+
+        {/* Delete selected category */}
+        {selectedCategoryId && (
+          <div className="mt-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (confirm(tw('confirmDeleteCategory'))) {
+                  deleteCategoryMutation.mutate({ id: selectedCategoryId });
+                }
+              }}
+              disabled={deleteCategoryMutation.isPending}
+            >
+              <Trash2 size={10} strokeWidth={1.5} className="mr-1" />
+              <span className="text-[9px]">{tCommon('delete')}</span>
+            </Button>
+          </div>
+        )}
+
+        {/* New category form */}
+        {showNewCategory && (
+          <div className="mt-3">
+            <NewCategoryForm
+              categories={categories}
+              onCreated={() => {
+                setShowNewCategory(false);
+                categoriesQuery.refetch();
+              }}
+              onCancel={() => setShowNewCategory(false)}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Right content: Articles */}
+      <div className="min-w-0 flex-1">
+        {/* Search + New Article bar */}
+        <div className="mb-3 flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search
+              size={12}
+              strokeWidth={1.5}
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted"
+            />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={tw('searchPlaceholder')}
+              className="w-full border border-border-default bg-bg-base py-1.5 pl-7 pr-2.5 text-[10px] text-text-primary transition-colors focus:border-accent-cyan focus:outline-none"
+            />
+          </div>
+          <Button
+            size="md"
+            onClick={() => setShowNewArticle(!showNewArticle)}
+          >
+            <Plus size={12} strokeWidth={1.5} className="mr-1" />
+            {tw('newArticle')}
+          </Button>
+        </div>
+
+        {/* New article form */}
+        {showNewArticle && (
+          <div className="mb-3">
+            <NewArticleForm
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              onCreated={() => {
+                setShowNewArticle(false);
+                articlesQuery.refetch();
+              }}
+              onCancel={() => setShowNewArticle(false)}
+            />
+          </div>
+        )}
+
+        {/* Article count */}
+        <div className="mb-2 text-[8px] uppercase tracking-[0.15em] text-text-muted">
+          {tw('articles')} {articles.length > 0 && `(${articles.length})`}
+        </div>
+
+        {/* Loading */}
+        {articlesQuery.isLoading && (
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+        )}
+
+        {/* Error */}
+        {articlesQuery.isError && (
+          <p className="text-[10px] text-status-error">{tCommon('error')}</p>
+        )}
+
+        {/* Empty */}
+        {!articlesQuery.isLoading && articles.length === 0 && !articlesQuery.isError && (
+          <div className="flex flex-col items-center justify-center py-12">
+            <BookOpen size={24} strokeWidth={1} className="text-text-muted" />
+            <p className="mt-2 text-[10px] text-text-muted">{tw('noArticles')}</p>
+          </div>
+        )}
+
+        {/* Article list */}
+        {articles.length > 0 && (
+          <div className="flex flex-col gap-1">
+            {articles.map((article) => (
+              <ArticleCard
+                key={article.id}
+                article={article}
+                categoryName={article.categoryId ? (categoryNameMap.get(article.categoryId) ?? null) : null}
+                onClick={() => setViewingArticleId(article.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Tabs config
 // ---------------------------------------------------------------------------
 
 const TABS: { id: Tab; labelKey: string; icon: typeof Database }[] = [
   { id: 'documents', labelKey: 'tabDocuments', icon: Database },
   { id: 'agentMemory', labelKey: 'tabAgentMemory', icon: Brain },
+  { id: 'wiki', labelKey: 'tabWiki', icon: BookOpen },
 ];
 
 // ---------------------------------------------------------------------------
@@ -616,9 +1395,10 @@ export default function MemoryPage() {
         role="tabpanel"
         id={`tabpanel-${activeTab}`}
       >
-        <div className="mx-auto max-w-2xl">
+        <div className={activeTab === 'wiki' ? 'mx-auto max-w-4xl' : 'mx-auto max-w-2xl'}>
           {activeTab === 'documents' && <CompanyDocumentsTab />}
           {activeTab === 'agentMemory' && <AgentMemoryTab />}
+          {activeTab === 'wiki' && <CompanyWikiTab />}
         </div>
       </div>
     </div>

@@ -11,6 +11,8 @@ import { emailRouter } from './routers/email.js';
 import { toolCredentialsRouter } from './routers/tool-credentials.js';
 import { documentsRouter } from './routers/documents.js';
 import { agentMemoryRouter } from './routers/agent-memory.js';
+import { wikiRouter } from './routers/wiki.js';
+import { feedbackRouter } from './routers/feedback.js';
 
 export const appRouter = createTRPCRouter({
   agents: agentsRouter,
@@ -25,6 +27,8 @@ export const appRouter = createTRPCRouter({
   toolCredentials: toolCredentialsRouter,
   documents: documentsRouter,
   agentMemory: agentMemoryRouter,
+  wiki: wikiRouter,
+  feedback: feedbackRouter,
 });
 
 export type AppRouter = typeof appRouter;

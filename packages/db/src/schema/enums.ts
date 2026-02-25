@@ -144,6 +144,14 @@ export const agentTeamEnum = pgEnum('agent_team', [
   'operations',
 ]);
 
+// Feedback
+export const feedbackCategoryEnum = pgEnum('feedback_category', [
+  'bug',
+  'feature',
+  'confusion',
+  'praise',
+]);
+
 // Tool Credentials (OAuth2)
 export const toolTypeEnum = pgEnum('tool_type', [
   'google_gmail',

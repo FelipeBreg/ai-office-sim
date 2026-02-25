@@ -14,3 +14,5 @@ export * from './email.js';
 export * from './tool-credentials.js';
 export * from './archetypes.js';
 export * from './approval-rules.js';
+export * from './wiki.js';
+export * from './feedback.js';
