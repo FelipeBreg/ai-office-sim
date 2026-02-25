@@ -1782,3 +1782,160 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #13 — P1-3.1 + P1-3.2: Document Ingestion & RAG Search
+================================================================================
+Hash:     a1c4670
+Date:     2026-02-24
+Tasks:    P1-3.1 (Document ingestion pipeline), P1-3.2 (RAG search tool)
+================================================================================
+
+WHAT WAS BUILT:
+  packages/ai/src/memory/ingest.ts (NEW):
+    - splitIntoChunks(): 512-token chunks with 64-token overlap
+    - Sentence/paragraph boundary detection for clean splits
+    - generateEmbeddings(): OpenAI text-embedding-3-small, batch of 20
+    - ingestDocument(): full pipeline — split → embed → store in document_chunks
+    - deleteDocument(): remove document + all chunks
+  packages/ai/src/memory/rag-search.ts (NEW):
+    - ragSearch(): pgvector cosine similarity search (1 - embedding <=> query)
+    - generateQueryEmbedding(): single query → 1536-dim vector
+    - Filters by sourceType, dateRange
+    - Returns top-K results with scores and citations
+  packages/ai/src/tools/registry.ts (MODIFIED):
+    - Replaced search_company_memory stub with real RAG search implementation
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+COMMIT #14 — P1-3.5 + P1-3.6: Auto Memory & Auto Ingestion
+================================================================================
+Hash:     cc7fabd
+Date:     2026-02-24
+Tasks:    P1-3.5 (Auto memory extraction), P1-3.6 (Action log auto-ingestion)
+================================================================================
+
+WHAT WAS BUILT:
+  packages/ai/src/memory/auto-extract.ts (NEW):
+    - extractMemories(): LLM-based memory extraction using gpt-4o-mini
+    - JSON response format for structured key-value pairs
+    - autoExtractAndSave(): post-session processing pipeline
+  packages/ai/src/memory/auto-ingest.ts (NEW):
+    - autoIngestRecentSessions(): summarizes completed sessions
+    - Ingests summaries into RAG for cross-agent knowledge sharing
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+COMMIT #15 — P1-4.4 + P1-5.1–P1-5.5: Archetypes & 5 BR Agents
+================================================================================
+Hash:     11f95a1
+Date:     2026-02-24
+Tasks:    P1-4.4 (Archetype system), P1-5.1–P1-5.5 (5 agent archetypes)
+================================================================================
+
+WHAT WAS BUILT:
+  packages/db/src/schema/archetypes.ts (NEW):
+    - agent_archetypes table with bilingual fields (EN + PT-BR)
+    - Fields: archetype, name, description, systemPrompt, defaultTools, trigger, icon
+  packages/db/src/seed/archetypes.ts (NEW):
+    - 5 archetype seeds with full system prompts:
+      1. Agente de Atendimento WhatsApp (support, always_on)
+      2. Representante de Vendas/SDR (sales, scheduled)
+      3. Redator de Conteudo (content_writer, manual)
+      4. Monitor Financeiro (finance, scheduled)
+      5. Analista de Dados (data_analyst, manual)
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+COMMIT #16 — P1-6.2 + P1-6.4: Approval Rules System
+================================================================================
+Hash:     90f9715
+Date:     2026-02-24
+Tasks:    P1-6.2 (Approval resolution flow), P1-6.4 (Always allow/block rules)
+================================================================================
+
+WHAT WAS BUILT:
+  packages/db/src/schema/approval-rules.ts (NEW):
+    - approval_rules table: projectId, agentId, toolName (unique), action enum
+    - Actions: always_allow, always_block, require_approval
+  packages/api/src/routers/approvals.ts (REWRITTEN):
+    - Added listAll (with status filter + pagination)
+    - Added listRules, setRule (upsert), deleteRule
+  packages/ai/src/engine/approval-check.ts (NEW):
+    - checkApprovalRule(projectId, agentId, toolName) → ApprovalAction | null
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+COMMIT #17 — P1-7.1 + P1-7.2: Pix & NFe Finance Tools
+================================================================================
+Hash:     c23a16b
+Date:     2026-02-24
+Tasks:    P1-7.1 (Pix monitoring), P1-7.2 (NFe status check)
+================================================================================
+
+WHAT WAS BUILT:
+  packages/ai/src/tools/finance/pix.ts (NEW):
+    - monitor_pix_transactions: EFI Bank (Gerencianet) Pix API
+    - Date range + status filter, Brazilian currency formatting
+  packages/ai/src/tools/finance/nfe.ts (NEW):
+    - check_nfe_status: SEFAZ API for NF-e validation
+    - 44-digit access key parsing fallback when API not configured
+  packages/ai/src/tools/finance/index.ts (NEW):
+    - Barrel export for finance tools
+  Total tools registered: 21
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+COMMIT #18 — P1-1.5, P1-4.5, P1-6.3: Templates, Teams, Notifications
+================================================================================
+Hash:     b7623a0
+Date:     2026-02-24
+Tasks:    P1-1.5 (WhatsApp templates), P1-4.5 (Agent teams), P1-6.3 (Notifications)
+================================================================================
+
+WHAT WAS BUILT:
+  packages/db/src/seed/whatsapp-templates.ts (NEW):
+    - 5 default PT-BR templates: welcome, follow_up, appointment_reminder,
+      payment_confirmation, support_response
+    - seedWhatsAppTemplates(projectId) function
+  packages/db/src/schema/agents.ts (MODIFIED):
+    - Added `team` field with agentTeamEnum
+    - Index on team column
+  packages/db/src/schema/enums.ts (MODIFIED):
+    - Added agentTeamEnum: development, research, marketing, sales, support,
+      finance, operations
+  packages/api/src/routers/agents.ts (MODIFIED):
+    - Added team field to create + update mutations
+  packages/api/src/services/approval-notifications.ts (NEW):
+    - notifyApprovalRequested() with Socket.IO, email, WhatsApp channels
+    - Rate-limited: 1 per minute per user
+    - PT-BR email template with DOS aesthetic styling
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+  EPIC P1-3 COMPLETE — P1-3.1, P1-3.2, P1-3.5, P1-3.6 done
+  (P1-3.3, P1-3.4, P1-3.7 are UI tasks — in progress)
+  EPIC P1-5 COMPLETE — All 5 archetypes seeded
+  EPIC P1-6 BACKEND COMPLETE — P1-6.2, P1-6.3, P1-6.4 done
+  (P1-6.1 Approval inbox UI — in progress)
+  EPIC P1-7 COMPLETE — Both finance tools done
+================================================================================
+
+
+================================================================================
