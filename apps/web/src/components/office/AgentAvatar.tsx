@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -69,22 +69,34 @@ const STATUS_CONFIG: Record<AgentStatus, StatusConfig> = {
 
 // ── Props ────────────────────────────────────────────────────────────
 export interface AgentAvatarProps {
+  agentId: string;
   name: string;
   status: AgentStatus;
   position: [number, number, number];
   animationOffset?: number;
+  selected?: boolean;
+  onSelect?: (agentId: string) => void;
 }
+
+// ── Hover intensity boost ────────────────────────────────────────────
+const HOVER_SCALE = 1.05;
+const HOVER_INTENSITY_BOOST = 0.3;
+const SELECTED_INTENSITY_BOOST = 0.4;
 
 // ── Component ────────────────────────────────────────────────────────
 export function AgentAvatar({
+  agentId,
   name,
   status,
   position,
   animationOffset = 0,
+  selected = false,
+  onSelect,
 }: AgentAvatarProps) {
   const groupRef = useRef<THREE.Group>(null);
   const bodyMatRef = useRef<THREE.MeshStandardMaterial>(null);
   const headMatRef = useRef<THREE.MeshStandardMaterial>(null);
+  const [hovered, setHovered] = useState(false);
 
   // ── Geometry (capsule body = cylinder + sphere head) ──────────────
   const geometries = useMemo(() => {
@@ -113,6 +125,39 @@ export function AgentAvatar({
   const posRef = useRef(position);
   posRef.current = position;
 
+  const hoveredRef = useRef(hovered);
+  hoveredRef.current = hovered;
+
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
+
+  // ── Pointer handlers ─────────────────────────────────────────────
+  const handlePointerOver = useCallback((e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    setHovered(true);
+    document.body.style.cursor = 'pointer';
+  }, []);
+
+  const handlePointerOut = useCallback(() => {
+    setHovered(false);
+    document.body.style.cursor = 'auto';
+  }, []);
+
+  const handleClick = useCallback(
+    (e: ThreeEvent<MouseEvent>) => {
+      e.stopPropagation();
+      onSelect?.(agentId);
+    },
+    [onSelect, agentId],
+  );
+
+  // Reset cursor on unmount
+  useEffect(() => {
+    return () => {
+      document.body.style.cursor = 'auto';
+    };
+  }, []);
+
   // ── useFrame: glow pulse + idle bob + breathing ──────────────────
   useFrame((_, delta) => {
     const group = groupRef.current;
@@ -120,6 +165,8 @@ export function AgentAvatar({
 
     const cfg = cfgRef.current;
     const pos = posRef.current;
+    const isHovered = hoveredRef.current;
+    const isSelected = selectedRef.current;
 
     // Accumulate time via group.userData
     const ud = group.userData as { t?: number };
@@ -131,6 +178,13 @@ export function AgentAvatar({
     if (cfg.pulse) {
       const wave = Math.sin(t * cfg.pulseSpeed) * 0.5 + 0.5; // 0..1
       intensity = cfg.baseIntensity * (0.5 + 0.5 * wave);
+    }
+
+    // Boost intensity on hover or selection
+    if (isSelected) {
+      intensity += SELECTED_INTENSITY_BOOST;
+    } else if (isHovered) {
+      intensity += HOVER_INTENSITY_BOOST;
     }
 
     // Apply material updates
@@ -153,13 +207,19 @@ export function AgentAvatar({
     // ── Subtle breathing scale pulse ───────────────────────────────
     // 3s period for breathing
     const breathe = 1 + Math.sin(t * 2.094) * 0.015;
-    group.scale.set(breathe, breathe, breathe);
+    // Apply hover/selected scale boost
+    const scaleMultiplier = isHovered || isSelected ? HOVER_SCALE : 1;
+    const finalScale = breathe * scaleMultiplier;
+    group.scale.set(finalScale, finalScale, finalScale);
   });
 
   return (
     <group
       ref={groupRef}
       position={[position[0], position[1], position[2]]}
+      onClick={handleClick}
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
     >
       {/* Body cylinder — center at y=0.4 (bottom at y=0) */}
       <mesh geometry={geometries.bodyGeo} position={[0, 0.55, 0]}>

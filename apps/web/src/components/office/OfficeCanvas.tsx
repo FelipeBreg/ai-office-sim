@@ -1,46 +1,51 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useCallback, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrthographicCamera, OrbitControls } from '@react-three/drei';
 import { ACESFilmicToneMapping, SRGBColorSpace } from 'three';
 import { useTranslations } from 'next-intl';
 import { OfficeLighting } from './OfficeLighting';
-import { OfficeFloor } from './OfficeFloor';
-import { OfficeRooms } from './OfficeRooms';
-import { OfficeLayout } from './OfficeLayout';
-import { AgentLayer } from './AgentLayer';
-import type { AgentData } from './AgentLayer';
+import { FloorSystem } from './FloorSystem';
+import { FloorCameraController } from './FloorCameraController';
+import { FloorSelector } from './FloorSelector';
+import { AgentInspectPanel } from './AgentInspectPanel';
+import type { InspectedAgent } from './AgentInspectPanel';
+import type { AgentStatus } from './AgentAvatar';
+import { useAgentStatuses } from './useAgentStatuses';
 
-// TODO: Replace with real agent data from tRPC query when API is wired
-const MOCK_AGENTS: AgentData[] = [
-  {
-    id: 'agent-1',
-    name: 'João Suporte',
-    roomKey: 'openWorkspace',
-    slotIndex: 0,
-  },
-  {
-    id: 'agent-2',
-    name: 'Maria Vendas',
-    roomKey: 'openWorkspace',
-    slotIndex: 1,
-  },
-  {
-    id: 'agent-3',
-    name: 'André Análise',
-    roomKey: 'openWorkspace',
-    slotIndex: 3,
-  },
-  {
-    id: 'agent-4',
-    name: 'Lúcia Redação',
-    roomKey: 'openWorkspace',
-    slotIndex: 4,
-  },
+// ── Extended agent data with archetype for inspection panel ──────────
+interface MockAgentExtended {
+  id: string;
+  name: string;
+  archetype: string;
+}
+
+// All known agents across all floors (for inspection panel lookup)
+const ALL_MOCK_AGENTS: MockAgentExtended[] = [
+  { id: 'agent-1', name: 'João Suporte', archetype: 'Support' },
+  { id: 'agent-2', name: 'Maria Vendas', archetype: 'Sales' },
+  { id: 'agent-3', name: 'André Análise', archetype: 'Data Analyst' },
+  { id: 'agent-4', name: 'Lúcia Redação', archetype: 'Content Writer' },
 ];
 
-function Scene({ roomLabels }: { roomLabels: Record<string, string> }) {
+// ── Mock current actions per status ──────────────────────────────────
+const MOCK_CURRENT_ACTIONS: Partial<Record<AgentStatus, string>> = {
+  working: 'Processando mensagem...',
+  awaiting_approval: 'Aguardando aprovação para envio',
+  error: 'Falha na conexão com API',
+};
+
+// ── Scene (inside r3f Canvas) ────────────────────────────────────────
+function Scene({
+  roomLabels,
+  selectedAgentId,
+  onSelectAgent,
+}: {
+  roomLabels: Record<string, string>;
+  selectedAgentId: string | null;
+  onSelectAgent: (agentId: string) => void;
+}) {
   return (
     <>
       <OrthographicCamera
@@ -48,14 +53,14 @@ function Scene({ roomLabels }: { roomLabels: Record<string, string> }) {
         position={[10, 10, 10]}
         zoom={50}
         near={0.1}
-        far={100}
+        far={200}
       />
 
       <OrbitControls
         makeDefault
         enableDamping
         dampingFactor={0.1}
-        minZoom={20}
+        minZoom={15}
         maxZoom={120}
         minPolarAngle={Math.PI / 6}
         maxPolarAngle={Math.PI / 3}
@@ -65,24 +70,65 @@ function Scene({ roomLabels }: { roomLabels: Record<string, string> }) {
         screenSpacePanning={false}
       />
 
+      <FloorCameraController />
       <OfficeLighting />
-      <OfficeFloor />
-      <OfficeRooms roomLabels={roomLabels} />
-      <OfficeLayout />
-      <AgentLayer agents={MOCK_AGENTS} />
+      <FloorSystem
+        roomLabels={roomLabels}
+        selectedAgentId={selectedAgentId}
+        onSelectAgent={onSelectAgent}
+      />
     </>
   );
 }
 
+// ── OfficeCanvas ─────────────────────────────────────────────────────
 export function OfficeCanvas() {
   const t = useTranslations('office');
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
-  const roomLabels: Record<string, string> = {
+  // Get live statuses for building inspected agent data
+  const agentIds = useMemo(() => ALL_MOCK_AGENTS.map((a) => a.id), []);
+  const statuses = useAgentStatuses(agentIds);
+
+  const roomLabels = useMemo<Record<string, string>>(() => ({
+    // Floor 1 — Operações
     openWorkspace: t('openWorkspace'),
     meetingPod: t('meetingPod'),
     breakroom: t('breakroom'),
     serverRack: t('serverRack'),
-  };
+    // Floor 2 — Inteligência
+    analysisRoom: t('analysisRoom'),
+    dataLab: t('dataLab'),
+    // Floor 3 — Comunicação
+    marketing: t('marketing'),
+    sales: t('sales'),
+    // Basement — Servidores
+    datacenter: t('datacenter'),
+  }), [t]);
+
+  const handleSelectAgent = useCallback((agentId: string) => {
+    setSelectedAgentId((prev) => (prev === agentId ? null : agentId));
+  }, []);
+
+  const handleDeselectAgent = useCallback(() => {
+    setSelectedAgentId(null);
+  }, []);
+
+  // Build inspected agent data for the panel
+  const inspectedAgent: InspectedAgent | null = useMemo(() => {
+    if (!selectedAgentId) return null;
+    const agent = ALL_MOCK_AGENTS.find((a) => a.id === selectedAgentId);
+    if (!agent) return null;
+
+    const status: AgentStatus = statuses.get(agent.id) ?? 'idle';
+    return {
+      id: agent.id,
+      name: agent.name,
+      archetype: agent.archetype,
+      status,
+      currentAction: MOCK_CURRENT_ACTIONS[status],
+    };
+  }, [selectedAgentId, statuses]);
 
   return (
     <div className="relative h-full w-full" style={{ background: '#0A0E14' }}>
@@ -104,9 +150,22 @@ export function OfficeCanvas() {
           dpr={[1, 2]}
           style={{ width: '100%', height: '100%' }}
         >
-          <Scene roomLabels={roomLabels} />
+          <Scene
+            roomLabels={roomLabels}
+            selectedAgentId={selectedAgentId}
+            onSelectAgent={handleSelectAgent}
+          />
         </Canvas>
+
+        {/* DOM overlays — siblings to Canvas, absolute positioned */}
+        <FloorSelector />
       </Suspense>
+
+      {/* Agent Inspection Panel — DOM overlay, outside Canvas */}
+      <AgentInspectPanel
+        agent={inspectedAgent}
+        onClose={handleDeselectAgent}
+      />
     </div>
   );
 }

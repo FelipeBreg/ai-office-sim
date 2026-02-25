@@ -16,10 +16,16 @@ export interface AgentData {
 
 export interface AgentLayerProps {
   agents: AgentData[];
+  selectedAgentId?: string | null;
+  onSelectAgent?: (agentId: string) => void;
 }
 
 // ── Component ────────────────────────────────────────────────────────
-export function AgentLayer({ agents }: AgentLayerProps) {
+export function AgentLayer({
+  agents,
+  selectedAgentId,
+  onSelectAgent,
+}: AgentLayerProps) {
   const agentIds = useMemo(() => agents.map((a) => a.id), [agents]);
   const statuses = useAgentStatuses(agentIds);
 
@@ -32,10 +38,13 @@ export function AgentLayer({ agents }: AgentLayerProps) {
         return (
           <AgentAvatar
             key={agent.id}
+            agentId={agent.id}
             name={agent.name}
             status={status}
             position={position}
             animationOffset={index * 1.3}
+            selected={selectedAgentId === agent.id}
+            onSelect={onSelectAgent}
           />
         );
       })}

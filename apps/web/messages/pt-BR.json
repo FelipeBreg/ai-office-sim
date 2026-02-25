@@ -202,7 +202,20 @@
     "statusWorking": "Trabalhando",
     "statusError": "Erro",
     "statusAwaitingApproval": "Aguardando Aprovação",
-    "statusOffline": "Offline"
+    "statusOffline": "Offline",
+    "analysisRoom": "Sala de Análise",
+    "dataLab": "Laboratório de Dados",
+    "marketing": "Marketing",
+    "sales": "Vendas",
+    "datacenter": "Datacenter",
+    "floors": {
+      "basement": "Subsolo — Servidores",
+      "floor1": "1F — Operações",
+      "floor2": "2F — Inteligência",
+      "floor3": "3F — Comunicação",
+      "explodedView": "Explodir",
+      "collapseView": "Recolher"
+    }
   },
   "approvals": {
     "title": "Aprovações",
@@ -792,5 +805,22 @@
     "expandAll": "Expandir tudo",
     "collapseAll": "Recolher tudo",
     "webhookUrlPlaceholder": "https://seu-dominio.com/api/webhooks/whatsapp"
+  },
+  "agentPanel": {
+    "title": "Inspetor do Agente",
+    "close": "Fechar",
+    "currentAction": "Ação Atual",
+    "liveActions": "Ações ao Vivo",
+    "recentActivity": "Atividade Recente",
+    "trigger": "Acionar",
+    "pause": "Pausar",
+    "viewConfig": "Ver Configuração",
+    "actionCompleted": "concluído",
+    "actionFailed": "falhou",
+    "status_idle": "Ocioso",
+    "status_working": "Trabalhando",
+    "status_error": "Erro",
+    "status_awaiting_approval": "Aguardando Aprovação",
+    "status_offline": "Offline"
   }
 }
