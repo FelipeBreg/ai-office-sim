@@ -2177,3 +2177,64 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #25 — Epic P2-1: Three.js Isometric Office — Scene Foundation
+================================================================================
+DATE: 2026-02-25
+HASH: 1787a4f
+PHASE: 2 — The Visualization
+EPIC: P2-1 (7 tasks: P2-1.1 through P2-1.7)
+
+WHAT WAS BUILT:
+  Three.js isometric office scene using @react-three/fiber + drei.
+  Dark DOS aesthetic with wireframe geometry, transparent fills, and cyan edge
+  lighting. OrthographicCamera at [10,10,10] with constrained OrbitControls.
+  4 rooms with 7 furniture types, grid floor, and floating PT-BR labels.
+
+FILES CREATED (16 new):
+  apps/web/src/components/office/OfficeCanvas.tsx — Main r3f Canvas, Suspense, next-intl
+  apps/web/src/components/office/OfficeLighting.tsx — Ambient + directional + hemisphere
+  apps/web/src/components/office/OfficeFloor.tsx — Floor slab with grid overlay
+  apps/web/src/components/office/OfficeRooms.tsx — 4 rooms with wireframe walls + labels
+  apps/web/src/components/office/OfficeLayout.tsx — Furniture placement from config
+  apps/web/src/components/office/layouts/default.ts — Layout data (rooms, furniture positions)
+  apps/web/src/components/office/index.ts — Barrel export
+  apps/web/src/components/office/furniture/Desk.tsx — Wireframe desk
+  apps/web/src/components/office/furniture/Monitor.tsx — Monitor with emissive screen
+  apps/web/src/components/office/furniture/Chair.tsx — Wireframe chair
+  apps/web/src/components/office/furniture/MeetingTable.tsx — Meeting table
+  apps/web/src/components/office/furniture/ServerRack.tsx — Server rack with shelves
+  apps/web/src/components/office/furniture/Couch.tsx — Wireframe couch
+  apps/web/src/components/office/furniture/CoffeeMachine.tsx — Coffee machine
+  apps/web/src/components/office/furniture/index.ts — Furniture barrel export
+  apps/web/public/fonts/IBMPlexMono-Medium.ttf — IBM Plex Mono for 3D text labels
+
+FILES MODIFIED (5):
+  apps/web/package.json — Added three, @react-three/fiber, @react-three/drei,
+    @react-three/postprocessing, @types/three, gsap
+  apps/web/src/app/[locale]/(auth)/office/page.tsx — Renders <OfficeCanvas />
+  apps/web/messages/en-US.json — office namespace (room labels, loading)
+  apps/web/messages/pt-BR.json — office namespace with proper diacritics
+  pnpm-lock.yaml — Updated lockfile
+
+REVIEW — ISSUES FOUND AND FIXED BEFORE COMMIT:
+  HIGH (4):
+    1. Font file missing — /fonts/IBMPlexMono-Medium.ttf did not exist in public/
+       → Downloaded from IBM Plex GitHub releases
+    2. PT-BR diacritics missing — "Escritorio Aberto", "Sala de Reuniao",
+       "CARREGANDO ESCRITORIO" → Fixed with proper accents (ó, ã, Ó)
+    3. <Text> characters prop excluded diacritic glyphs → Expanded to include
+       áàãâéêíóôõúçÁÀÃÂÉÊÍÓÔÕÚÇ
+    4. No geometry.dispose() on unmount — GPU memory leak on 9 files → Added
+       useEffect cleanup on all useMemo'd geometries
+
+  MEDIUM (3):
+    5. new THREE.Color() in JSX on every render → Hoisted to module constant
+    6. wallHeight/wallThickness as local vars in useMemo deps → Moved to
+       module-level constants (WALL_HEIGHT, WALL_THICKNESS, WALL_COLOR, EDGE_COLOR)
+    7. Dead LoadingFallback component (rendered null) → Removed
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
