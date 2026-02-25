@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { usePerfStore } from '@/stores/perf-store';
 
 // ── Module-level constants (hoisted, never recreated) ────────────────
 const PARTICLE_COUNT = 200;
@@ -27,9 +28,21 @@ function randomRange(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
+// Reduced particle count when low performance is detected
+const LOW_PERF_PARTICLE_COUNT = 80;
+
 // ── Component ────────────────────────────────────────────────────────
 export function AmbientParticles() {
   const pointsRef = useRef<THREE.Points>(null);
+
+  // Subscribe via ref to avoid React re-renders in the R3F scene graph
+  const lowPerfRef = useRef(usePerfStore.getState().lowPerformance);
+  useEffect(() => {
+    const unsub = usePerfStore.subscribe((s) => {
+      lowPerfRef.current = s.lowPerformance;
+    });
+    return unsub;
+  }, []);
 
   // Per-particle phase offsets + base X/Z positions for absolute oscillation
   const particleData = useMemo(() => {
@@ -97,7 +110,10 @@ export function AmbientParticles() {
 
     const { phases, baseX, baseZ } = particleData;
 
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
+    // In low-performance mode, only animate a subset of particles
+    const activeCount = lowPerfRef.current ? LOW_PERF_PARTICLE_COUNT : PARTICLE_COUNT;
+
+    for (let i = 0; i < activeCount; i++) {
       const i3 = i * 3;
       const phase = phases[i]!;
 
@@ -117,6 +133,11 @@ export function AmbientParticles() {
         baseX[i] = randomRange(BOUNDS_MIN_X, BOUNDS_MAX_X);
         baseZ[i] = randomRange(BOUNDS_MIN_Z, BOUNDS_MAX_Z);
       }
+    }
+
+    // Hide inactive particles off-screen when in low-performance mode
+    for (let i = activeCount; i < PARTICLE_COUNT; i++) {
+      positions[i * 3 + 1] = BOUNDS_MIN_Y - 100;
     }
 
     posAttr.needsUpdate = true;

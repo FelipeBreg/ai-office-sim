@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 
 const EDGE_COLOR = '#2288CC';
 const FILL_COLOR = '#0A1929';
 const FILL_OPACITY = 0.1;
 
-export function Couch() {
+export const Couch = memo(function Couch() {
   const geometries = useMemo(() => {
     const seatGeo = new THREE.BoxGeometry(1.2, 0.2, 0.5);
     const seatEdges = new THREE.EdgesGeometry(seatGeo);
@@ -83,4 +83,6 @@ export function Couch() {
       </lineSegments>
     </group>
   );
-}
+});
+
+Couch.displayName = 'Couch';

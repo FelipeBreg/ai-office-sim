@@ -1,6 +1,8 @@
 'use client';
 
-export function OfficeLighting() {
+import { memo } from 'react';
+
+export const OfficeLighting = memo(function OfficeLighting() {
   return (
     <>
       {/* Ambient fill — very dim cool tone */}
@@ -28,4 +30,6 @@ export function OfficeLighting() {
       />
     </>
   );
-}
+});
+
+OfficeLighting.displayName = 'OfficeLighting';

@@ -17,5 +17,8 @@ export type { DataFlowProps } from './DataFlow';
 export { DataFlowLayer } from './DataFlowLayer';
 export type { DataFlowAgent, DataFlowLayerProps } from './DataFlowLayer';
 export { AmbientParticles } from './AmbientParticles';
+export { LODWrapper, SimpleFurniture, useLODLevel } from './LODWrapper';
+export type { LODLevel } from './LODWrapper';
+export { PerformanceMonitor, DevStats } from './PerformanceMonitor';
 export type { FloorConfig, FurniturePlacement, RoomLayout, OfficeLayout } from './layouts/types';
 export { FLOOR_CONFIGS, DEFAULT_ACTIVE_FLOOR } from './layouts/floors';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 
 const EDGE_COLOR = '#2288CC';
@@ -9,7 +9,7 @@ const FILL_OPACITY = 0.1;
 const SCREEN_COLOR = '#0D1B2A';
 const SCREEN_EMISSIVE = new THREE.Color('#003355');
 
-export function Monitor() {
+export const Monitor = memo(function Monitor() {
   const geometries = useMemo(() => {
     const screenGeo = new THREE.BoxGeometry(0.4, 0.3, 0.02);
     const screenEdges = new THREE.EdgesGeometry(screenGeo);
@@ -75,4 +75,6 @@ export function Monitor() {
       </lineSegments>
     </group>
   );
-}
+});
+
+Monitor.displayName = 'Monitor';

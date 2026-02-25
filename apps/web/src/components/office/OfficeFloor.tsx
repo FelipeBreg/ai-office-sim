@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 
 const FLOOR_COLOR = '#0D1117';
 const GRID_COLOR = '#1a2a3a';
 
-export function OfficeFloor() {
+export const OfficeFloor = memo(function OfficeFloor() {
   const gridLines = useMemo(() => {
     const points: THREE.Vector3[] = [];
     const width = 20;
@@ -53,4 +53,6 @@ export function OfficeFloor() {
       </lineSegments>
     </group>
   );
-}
+});
+
+OfficeFloor.displayName = 'OfficeFloor';

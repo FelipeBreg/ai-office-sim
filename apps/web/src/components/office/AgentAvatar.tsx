@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
@@ -84,7 +84,7 @@ const HOVER_INTENSITY_BOOST = 0.3;
 const SELECTED_INTENSITY_BOOST = 0.4;
 
 // ── Component ────────────────────────────────────────────────────────
-export function AgentAvatar({
+export const AgentAvatar = memo(function AgentAvatar({
   agentId,
   name,
   status,
@@ -259,4 +259,15 @@ export function AgentAvatar({
       </Text>
     </group>
   );
-}
+}, (prev, next) =>
+  prev.agentId === next.agentId &&
+  prev.status === next.status &&
+  prev.selected === next.selected &&
+  prev.name === next.name &&
+  prev.position[0] === next.position[0] &&
+  prev.position[1] === next.position[1] &&
+  prev.position[2] === next.position[2] &&
+  prev.onSelect === next.onSelect
+);
+
+AgentAvatar.displayName = 'AgentAvatar';

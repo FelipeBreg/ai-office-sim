@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 
 const EDGE_COLOR = '#2288CC';
 const FILL_COLOR = '#0A1929';
 const FILL_OPACITY = 0.1;
 
-export function Desk() {
+export const Desk = memo(function Desk() {
   const geometries = useMemo(() => {
     const topGeo = new THREE.BoxGeometry(1.2, 0.04, 0.6);
     const topEdges = new THREE.EdgesGeometry(topGeo);
@@ -65,4 +65,6 @@ export function Desk() {
       ))}
     </group>
   );
-}
+});
+
+Desk.displayName = 'Desk';

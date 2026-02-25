@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OfficeFloor } from './OfficeFloor';
@@ -8,6 +8,8 @@ import { OfficeRooms } from './OfficeRooms';
 import { OfficeLayout } from './OfficeLayout';
 import { AgentLayer } from './AgentLayer';
 import type { AgentData } from './AgentLayer';
+import { useLODLevel } from './LODWrapper';
+import type { LODLevel } from './LODWrapper';
 import { useFloorStore } from '@/stores/floor-store';
 import {
   FLOOR_CONFIGS,
@@ -43,9 +45,10 @@ interface FloorLayerProps {
   roomLabels: Record<string, string>;
   selectedAgentId?: string | null;
   onSelectAgent?: (agentId: string) => void;
+  lodLevel: LODLevel;
 }
 
-function FloorLayer({ config, index, roomLabels, selectedAgentId, onSelectAgent }: FloorLayerProps) {
+const FloorLayer = memo(function FloorLayer({ config, index, roomLabels, selectedAgentId, onSelectAgent, lodLevel }: FloorLayerProps) {
   const groupRef = useRef<THREE.Group>(null);
 
   // Subscribe to store via refs to avoid re-renders of the R3F scene tree
@@ -152,7 +155,7 @@ function FloorLayer({ config, index, roomLabels, selectedAgentId, onSelectAgent 
         roomLabels={roomLabels}
         layout={config.layout}
       />
-      <OfficeLayout layout={config.layout} />
+      <OfficeLayout layout={config.layout} lodLevel={lodLevel} />
       {agents.length > 0 && (
         <AgentLayer
           agents={agents}
@@ -162,7 +165,8 @@ function FloorLayer({ config, index, roomLabels, selectedAgentId, onSelectAgent 
       )}
     </group>
   );
-}
+});
+FloorLayer.displayName = 'FloorLayer';
 
 // ── Floor System ────────────────────────────────────────────────────────
 interface FloorSystemProps {
@@ -172,6 +176,8 @@ interface FloorSystemProps {
 }
 
 export function FloorSystem({ roomLabels, selectedAgentId, onSelectAgent }: FloorSystemProps) {
+  const lodLevel = useLODLevel();
+
   return (
     <group>
       {FLOOR_CONFIGS.map((config, index) => (
@@ -182,6 +188,7 @@ export function FloorSystem({ roomLabels, selectedAgentId, onSelectAgent }: Floo
           roomLabels={roomLabels}
           selectedAgentId={selectedAgentId}
           onSelectAgent={onSelectAgent}
+          lodLevel={lodLevel}
         />
       ))}
     </group>

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import {
   Desk,
   Monitor,
@@ -11,6 +12,7 @@ import {
 } from './furniture';
 import { defaultLayout } from './layouts/default';
 import type { FurniturePlacement, OfficeLayout as OfficeLayoutType } from './layouts/default';
+import { LODWrapper, SimpleFurniture, type LODLevel } from './LODWrapper';
 
 const FURNITURE_COMPONENTS: Record<
   FurniturePlacement['type'],
@@ -27,9 +29,10 @@ const FURNITURE_COMPONENTS: Record<
 
 interface OfficeLayoutProps {
   layout?: OfficeLayoutType;
+  lodLevel?: LODLevel;
 }
 
-export function OfficeLayout({ layout }: OfficeLayoutProps) {
+export const OfficeLayout = memo(function OfficeLayout({ layout, lodLevel = 'medium' }: OfficeLayoutProps) {
   const activeLayout = layout ?? defaultLayout;
 
   return (
@@ -47,7 +50,11 @@ export function OfficeLayout({ layout }: OfficeLayoutProps) {
                 position={[item.position[0], item.position[1], item.position[2]]}
                 rotation={[0, item.rotation ?? 0, 0]}
               >
-                <Component />
+                <LODWrapper
+                  level={lodLevel}
+                  far={<SimpleFurniture furnitureType={item.type} />}
+                  medium={<Component />}
+                />
               </group>
             );
           })}
@@ -55,4 +62,5 @@ export function OfficeLayout({ layout }: OfficeLayoutProps) {
       ))}
     </group>
   );
-}
+});
+OfficeLayout.displayName = 'OfficeLayout';

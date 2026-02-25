@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 
 const EDGE_COLOR = '#2288CC';
 const FILL_COLOR = '#0A1929';
 const FILL_OPACITY = 0.1;
 
-export function ServerRack() {
+export const ServerRack = memo(function ServerRack() {
   const geometries = useMemo(() => {
     const cabinetGeo = new THREE.BoxGeometry(0.6, 2, 0.4);
     const cabinetEdges = new THREE.EdgesGeometry(cabinetGeo);
@@ -51,4 +51,6 @@ export function ServerRack() {
       ))}
     </group>
   );
-}
+});
+
+ServerRack.displayName = 'ServerRack';

@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 
 const EDGE_COLOR = '#2288CC';
 const FILL_COLOR = '#0A1929';
 const FILL_OPACITY = 0.1;
 
-export function MeetingTable() {
+export const MeetingTable = memo(function MeetingTable() {
   const geometries = useMemo(() => {
     const topGeo = new THREE.BoxGeometry(2, 0.05, 1);
     const topEdges = new THREE.EdgesGeometry(topGeo);
@@ -65,4 +65,6 @@ export function MeetingTable() {
       ))}
     </group>
   );
-}
+});
+
+MeetingTable.displayName = 'MeetingTable';
