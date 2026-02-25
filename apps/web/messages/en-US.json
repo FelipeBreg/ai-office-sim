@@ -1081,5 +1081,31 @@
     "upgradePrompt": "Upgrade your plan to create more projects.",
     "upgradePlan": "Upgrade Plan",
     "backToSettings": "Back to Settings"
+  },
+  "devops": {
+    "title": "DevOps Board",
+    "subtitle": "deploy requests, PR reviews, and human tasks",
+    "tabBoard": "Board",
+    "tabTasks": "Human Tasks",
+    "column_pending": "Pending",
+    "column_in_review": "In Review",
+    "column_deployed": "Deployed",
+    "type_deploy": "DEPLOY",
+    "type_pr_review": "PR REVIEW",
+    "type_rollback": "ROLLBACK",
+    "type_infra_change": "INFRA",
+    "approve": "Approve",
+    "reject": "Reject",
+    "markDeployed": "Mark Deployed",
+    "details": "Details",
+    "unknownAgent": "Unknown Agent",
+    "createdBy": "by",
+    "due": "due",
+    "emptyColumn": "No items",
+    "errorLoading": "Failed to load data",
+    "actionError": "Action failed",
+    "taskStatus_todo": "To Do",
+    "taskStatus_in_progress": "In Progress",
+    "taskStatus_done": "Done"
   }
 }

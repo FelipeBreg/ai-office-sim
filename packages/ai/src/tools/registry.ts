@@ -17,6 +17,9 @@ import { writeSpreadsheetTool } from './sheets/write.js';
 import { appendToSpreadsheetTool } from './sheets/append.js';
 import { monitorPixTransactionsTool } from './finance/pix.js';
 import { checkNfeStatusTool } from './finance/nfe.js';
+import { createDeployRequestTool } from './devops/create-deploy-request.js';
+import { createPrReviewRequestTool } from './devops/create-pr-review-request.js';
+import { createHumanTaskTool } from './devops/create-human-task.js';
 
 // Convert Zod schema to JSON Schema for Anthropic tool format
 function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
@@ -195,3 +198,8 @@ toolRegistry.register(appendToSpreadsheetTool);
 // ── Finance (Pix + NFe) ──
 toolRegistry.register(monitorPixTransactionsTool);
 toolRegistry.register(checkNfeStatusTool);
+
+// ── DevOps ──
+toolRegistry.register(createDeployRequestTool);
+toolRegistry.register(createPrReviewRequestTool);
+toolRegistry.register(createHumanTaskTool);

@@ -18,3 +18,4 @@ export * from './wiki.js';
 export * from './feedback.js';
 export * from './company-templates.js';
 export * from './billing.js';
+export * from './devops.js';

@@ -58,3 +58,12 @@ export type MarketFocus = 'br' | 'global' | 'both';
 export type SubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'trialing' | 'unpaid';
 export type PaymentMethodType = 'credit_card' | 'pix' | 'boleto';
 export type InvoiceStatus = 'draft' | 'open' | 'paid' | 'void' | 'uncollectible';
+
+// DevOps types
+export type DevopsRequestType = 'deploy' | 'pr_review' | 'rollback' | 'infra_change';
+export type DevopsRequestStatus = 'pending' | 'in_review' | 'approved' | 'rejected' | 'deployed' | 'failed';
+export type DevopsPriority = 'low' | 'medium' | 'high' | 'critical';
+
+// Human Task types
+export type HumanTaskStatus = 'todo' | 'in_progress' | 'done';
+export type HumanTaskPriority = 'low' | 'medium' | 'high' | 'urgent';

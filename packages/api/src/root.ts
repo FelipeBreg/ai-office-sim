@@ -15,6 +15,7 @@ import { wikiRouter } from './routers/wiki.js';
 import { feedbackRouter } from './routers/feedback.js';
 import { companyTemplatesRouter } from './routers/company-templates.js';
 import { billingRouter } from './routers/billing.js';
+import { devopsRouter } from './routers/devops.js';
 
 export const appRouter = createTRPCRouter({
   agents: agentsRouter,
@@ -33,6 +34,7 @@ export const appRouter = createTRPCRouter({
   feedback: feedbackRouter,
   companyTemplates: companyTemplatesRouter,
   billing: billingRouter,
+  devops: devopsRouter,
 });
 
 export type AppRouter = typeof appRouter;

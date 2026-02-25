@@ -1081,5 +1081,31 @@
     "upgradePrompt": "Atualize seu plano para criar mais projetos.",
     "upgradePlan": "Atualizar Plano",
     "backToSettings": "Voltar às Configurações"
+  },
+  "devops": {
+    "title": "Painel DevOps",
+    "subtitle": "deploys, revisões de PR e tarefas humanas",
+    "tabBoard": "Board",
+    "tabTasks": "Tarefas Humanas",
+    "column_pending": "Pendente",
+    "column_in_review": "Em Revisão",
+    "column_deployed": "Deployed",
+    "type_deploy": "DEPLOY",
+    "type_pr_review": "REVISÃO PR",
+    "type_rollback": "ROLLBACK",
+    "type_infra_change": "INFRA",
+    "approve": "Aprovar",
+    "reject": "Rejeitar",
+    "markDeployed": "Marcar Deployed",
+    "details": "Detalhes",
+    "unknownAgent": "Agente Desconhecido",
+    "createdBy": "por",
+    "due": "prazo",
+    "emptyColumn": "Sem itens",
+    "errorLoading": "Falha ao carregar dados",
+    "actionError": "Ação falhou",
+    "taskStatus_todo": "A Fazer",
+    "taskStatus_in_progress": "Em Progresso",
+    "taskStatus_done": "Concluído"
   }
 }

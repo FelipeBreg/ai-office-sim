@@ -186,6 +186,41 @@ export const invoiceStatusEnum = pgEnum('invoice_status', [
   'uncollectible',
 ]);
 
+// DevOps
+export const devopsRequestTypeEnum = pgEnum('devops_request_type', [
+  'deploy',
+  'pr_review',
+  'rollback',
+  'infra_change',
+]);
+export const devopsRequestStatusEnum = pgEnum('devops_request_status', [
+  'pending',
+  'in_review',
+  'approved',
+  'rejected',
+  'deployed',
+  'failed',
+]);
+export const devopsPriorityEnum = pgEnum('devops_priority', [
+  'low',
+  'medium',
+  'high',
+  'critical',
+]);
+
+// Human Tasks
+export const humanTaskStatusEnum = pgEnum('human_task_status', [
+  'todo',
+  'in_progress',
+  'done',
+]);
+export const humanTaskPriorityEnum = pgEnum('human_task_priority', [
+  'low',
+  'medium',
+  'high',
+  'urgent',
+]);
+
 // Tool Credentials (OAuth2)
 export const toolTypeEnum = pgEnum('tool_type', [
   'google_gmail',
