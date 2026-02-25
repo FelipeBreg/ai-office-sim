@@ -13,13 +13,13 @@ const nextConfig = {
   ],
 };
 
-export default withSentryConfig(withNextIntl(nextConfig), {
-  // Suppress source map upload logs during build
-  silent: true,
-  // Upload source maps for better stack traces
-  widenClientFileUpload: true,
-  // Hide source maps from client bundles
-  hideSourceMaps: true,
-  // Disable Sentry telemetry
-  disableLogger: true,
-});
+const sentryEnabled = !!process.env.SENTRY_AUTH_TOKEN;
+
+export default sentryEnabled
+  ? withSentryConfig(withNextIntl(nextConfig), {
+      silent: true,
+      widenClientFileUpload: true,
+      hideSourceMaps: true,
+      disableLogger: true,
+    })
+  : withNextIntl(nextConfig);
