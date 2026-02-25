@@ -2437,3 +2437,90 @@ VERIFICATION:
 
 
 ================================================================================
+COMMIT #31 — Epic P2-7: Visual Polish (Bloom, Header, Nav Controls)
+================================================================================
+DATE: 2026-02-25
+HASH: 86dde9b
+PHASE: 2 — The Visualization
+EPIC: P2-7 (3 tasks: P2-7.1 through P2-7.3)
+
+WHAT WAS BUILT:
+  Post-processing bloom for emissive glow on avatars, monitors, particles.
+  HeaderOverlay DOM panel (project title + active agent count).
+  NavControls DOM panel (zoom +/-, pan d-pad, reset) dispatching camera
+  actions through Zustand, consumed by FloorCameraController each frame.
+
+FILES CREATED (2):
+  apps/web/src/components/office/HeaderOverlay.tsx — DOM overlay top-left
+  apps/web/src/components/office/NavControls.tsx — DOM overlay bottom-left
+
+FILES MODIFIED (5):
+  OfficeCanvas.tsx — Added EffectComposer+Bloom, HeaderOverlay, NavControls
+  FloorCameraController.tsx — Extended with camera action consumption
+  floor-store.ts — Added CameraAction type + dispatchCamera/clearCameraAction
+  en-US.json / pt-BR.json — Added office.header and office.nav translations
+
+REVIEW — ISSUES FOUND AND FIXED:
+  HIGH (2):
+    1. FloorCameraController used Zustand selectors causing React re-renders
+       in R3F scene graph → Refactored to ref-based subscription pattern
+    2. Scene component not memo'd, causing full scene tree re-render on
+       every parent state change → Wrapped in React.memo, extracted
+       PostProcessing as separate memo'd component
+
+  MEDIUM (1):
+    3. camera.updateProjectionMatrix() called unconditionally every frame
+       → Added threshold check (only update when zoom delta > 0.01)
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
+COMMIT #32 — Epic P2-8: Performance Optimization
+================================================================================
+DATE: 2026-02-25
+HASH: cd03e0a
+PHASE: 2 — The Visualization
+EPIC: P2-8 (4 tasks: P2-8.1 through P2-8.4)
+
+WHAT WAS BUILT:
+  React.memo on all static R3F components (7 furniture, OfficeLighting,
+  OfficeFloor, AgentAvatar with custom comparator). LOD system with
+  zoom-based detail levels (SimpleFurniture boxes at far zoom).
+  PerformanceMonitor with FPS hysteresis + lowPerformance Zustand flag.
+  AmbientParticles responds to low-perf by reducing active particles.
+
+FILES CREATED (3):
+  apps/web/src/components/office/LODWrapper.tsx — useLODLevel + SimpleFurniture + LODWrapper
+  apps/web/src/components/office/PerformanceMonitor.tsx — FPS sampling + DevStats
+  apps/web/src/stores/perf-store.ts — lowPerformance + fps Zustand store
+
+FILES MODIFIED (14):
+  FloorSystem.tsx — Calls useLODLevel, passes lodLevel to OfficeLayout
+  OfficeLayout.tsx — Accepts lodLevel, wraps furniture in LODWrapper
+  AmbientParticles.tsx — Reads lowPerformance, hides inactive particles
+  AgentAvatar.tsx — React.memo with custom comparator
+  OfficeLighting.tsx — React.memo with displayName
+  OfficeFloor.tsx — React.memo with displayName
+  7x furniture/*.tsx — React.memo with displayName
+
+REVIEW — ISSUES FOUND AND FIXED:
+  HIGH (1):
+    1. AmbientParticles used Zustand selector causing React re-renders
+       in R3F scene graph → Refactored to ref-based subscription pattern
+
+  MEDIUM (4):
+    2. FloorLayer not memo'd; all floors re-rendered on any prop change
+       → Wrapped in React.memo with displayName
+    3. OfficeLayout not memo'd → Wrapped in React.memo with displayName
+    4. PerformanceMonitor setFps() fired every sample even when unchanged
+       → Added equality check before updating store
+    5. Frozen particles visible when lowPerformance kicks in
+       → Inactive particles moved off-screen (Y = -100)
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
