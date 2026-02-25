@@ -1,27 +1,5 @@
-export interface FurniturePlacement {
-  type:
-    | 'desk'
-    | 'monitor'
-    | 'chair'
-    | 'meetingTable'
-    | 'serverRack'
-    | 'couch'
-    | 'coffeeMachine';
-  position: [number, number, number];
-  rotation?: number; // y-axis rotation in radians
-}
-
-export interface RoomLayout {
-  name: string;
-  labelKey: string; // translation key
-  position: [number, number, number];
-  size: [number, number]; // width x depth
-  furniture: FurniturePlacement[];
-}
-
-export interface OfficeLayout {
-  rooms: RoomLayout[];
-}
+export type { FurniturePlacement, RoomLayout, OfficeLayout, FloorConfig } from './types';
+import type { OfficeLayout } from './types';
 
 export const defaultLayout: OfficeLayout = {
   rooms: [

@@ -1,14 +1,14 @@
 /**
  * Agent Positioning System
  *
- * Maps desk positions from the office layout so agents can be
- * assigned to specific slots within each room.
+ * Maps desk positions from ALL floor layouts so agents can be
+ * assigned to specific slots within each room across any floor.
  *
  * Position coordinates are in world-space (layout room offset + desk offset).
- * The agent avatar stands behind the desk chair (z + 0.3 offset).
+ * NOTE: computed once at import time from all floor configs.
  */
 
-import { defaultLayout } from './layouts/default';
+import { FLOOR_CONFIGS } from './layouts/floors';
 
 // ── Types ────────────────────────────────────────────────────────────
 export interface DeskSlot {
@@ -17,27 +17,27 @@ export interface DeskSlot {
   worldPosition: [number, number, number];
 }
 
-// ── Pre-computed desk positions per room ─────────────────────────────
-// We extract only 'desk' type furniture items and compute their world
-// position (room.position + desk.position). The agent stands at the
-// desk position with a small y offset (ground level = 0).
-
+// ── Pre-computed desk positions per room (all floors) ────────────────
 const deskSlotsByRoom: Map<string, [number, number, number][]> = new Map();
 
-for (const room of defaultLayout.rooms) {
-  const desks: [number, number, number][] = [];
+for (const floorConfig of FLOOR_CONFIGS) {
+  for (const room of floorConfig.layout.rooms) {
+    const desks: [number, number, number][] = [];
 
-  for (const item of room.furniture) {
-    if (item.type === 'desk') {
-      desks.push([
-        room.position[0] + item.position[0],
-        0, // ground level
-        room.position[2] + item.position[2],
-      ]);
+    for (const item of room.furniture) {
+      if (item.type === 'desk') {
+        desks.push([
+          room.position[0] + item.position[0],
+          0, // ground level (relative to floor group)
+          room.position[2] + item.position[2],
+        ]);
+      }
     }
-  }
 
-  deskSlotsByRoom.set(room.labelKey, desks);
+    // Merge with existing slots if room key already seen
+    const existing = deskSlotsByRoom.get(room.labelKey) ?? [];
+    deskSlotsByRoom.set(room.labelKey, [...existing, ...desks]);
+  }
 }
 
 // ── Public API ───────────────────────────────────────────────────────

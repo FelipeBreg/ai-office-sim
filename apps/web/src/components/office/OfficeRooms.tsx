@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
-import type { RoomLayout } from './layouts/default';
+import type { RoomLayout, OfficeLayout } from './layouts/default';
 import { defaultLayout } from './layouts/default';
 
 interface RoomProps {
@@ -109,12 +109,15 @@ function Room({ room, label }: RoomProps) {
 
 interface OfficeRoomsProps {
   roomLabels: Record<string, string>;
+  layout?: OfficeLayout;
 }
 
-export function OfficeRooms({ roomLabels }: OfficeRoomsProps) {
+export function OfficeRooms({ roomLabels, layout }: OfficeRoomsProps) {
+  const activeLayout = layout ?? defaultLayout;
+
   return (
     <group>
-      {defaultLayout.rooms.map((room) => (
+      {activeLayout.rooms.map((room) => (
         <Room
           key={room.labelKey}
           room={room}

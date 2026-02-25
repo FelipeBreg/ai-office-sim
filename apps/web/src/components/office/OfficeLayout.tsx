@@ -10,7 +10,7 @@ import {
   CoffeeMachine,
 } from './furniture';
 import { defaultLayout } from './layouts/default';
-import type { FurniturePlacement } from './layouts/default';
+import type { FurniturePlacement, OfficeLayout as OfficeLayoutType } from './layouts/default';
 
 const FURNITURE_COMPONENTS: Record<
   FurniturePlacement['type'],
@@ -25,10 +25,16 @@ const FURNITURE_COMPONENTS: Record<
   coffeeMachine: CoffeeMachine,
 };
 
-export function OfficeLayout() {
+interface OfficeLayoutProps {
+  layout?: OfficeLayoutType;
+}
+
+export function OfficeLayout({ layout }: OfficeLayoutProps) {
+  const activeLayout = layout ?? defaultLayout;
+
   return (
     <group>
-      {defaultLayout.rooms.map((room) => (
+      {activeLayout.rooms.map((room) => (
         <group
           key={room.labelKey}
           position={[room.position[0], room.position[1], room.position[2]]}
