@@ -41,8 +41,12 @@ function OrbVisualizationBase({ state, intensity }: OrbVisualizationProps) {
     const center = size / 2;
     const baseRadius = 90;
 
-    function draw() {
-      timeRef.current += 0.016;
+    let lastTimestamp = 0;
+
+    function draw(timestamp: number) {
+      const delta = lastTimestamp ? (timestamp - lastTimestamp) / 1000 : 0.016;
+      lastTimestamp = timestamp;
+      timeRef.current += delta;
       const t = timeRef.current;
       ctx!.clearRect(0, 0, size, size);
 
@@ -166,7 +170,7 @@ function OrbVisualizationBase({ state, intensity }: OrbVisualizationProps) {
       animFrame.current = requestAnimationFrame(draw);
     }
 
-    draw();
+    animFrame.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animFrame.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

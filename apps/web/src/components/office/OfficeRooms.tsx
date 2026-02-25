@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 import type { RoomLayout, OfficeLayout } from './layouts/default';
@@ -112,7 +112,7 @@ interface OfficeRoomsProps {
   layout?: OfficeLayout;
 }
 
-export function OfficeRooms({ roomLabels, layout }: OfficeRoomsProps) {
+export const OfficeRooms = memo(function OfficeRooms({ roomLabels, layout }: OfficeRoomsProps) {
   const activeLayout = layout ?? defaultLayout;
 
   return (
@@ -126,4 +126,5 @@ export function OfficeRooms({ roomLabels, layout }: OfficeRoomsProps) {
       ))}
     </group>
   );
-}
+});
+OfficeRooms.displayName = 'OfficeRooms';

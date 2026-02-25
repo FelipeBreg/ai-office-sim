@@ -7,7 +7,7 @@ import { OfficeFloor } from './OfficeFloor';
 import { OfficeRooms } from './OfficeRooms';
 import { OfficeLayout } from './OfficeLayout';
 import { AgentLayer } from './AgentLayer';
-import type { AgentData } from './AgentLayer';
+import type { AgentData, AgentStatusMap } from './AgentLayer';
 import { useLODLevel } from './LODWrapper';
 import type { LODLevel } from './LODWrapper';
 import { useFloorStore } from '@/stores/floor-store';
@@ -43,12 +43,13 @@ interface FloorLayerProps {
   config: FloorConfig;
   index: number;
   roomLabels: Record<string, string>;
+  agentStatuses: AgentStatusMap;
   selectedAgentId?: string | null;
   onSelectAgent?: (agentId: string) => void;
   lodLevel: LODLevel;
 }
 
-const FloorLayer = memo(function FloorLayer({ config, index, roomLabels, selectedAgentId, onSelectAgent, lodLevel }: FloorLayerProps) {
+const FloorLayer = memo(function FloorLayer({ config, index, roomLabels, agentStatuses, selectedAgentId, onSelectAgent, lodLevel }: FloorLayerProps) {
   const groupRef = useRef<THREE.Group>(null);
 
   // Subscribe to store via refs to avoid re-renders of the R3F scene tree
@@ -159,6 +160,7 @@ const FloorLayer = memo(function FloorLayer({ config, index, roomLabels, selecte
       {agents.length > 0 && (
         <AgentLayer
           agents={agents}
+          statuses={agentStatuses}
           selectedAgentId={selectedAgentId}
           onSelectAgent={onSelectAgent}
         />
@@ -171,11 +173,12 @@ FloorLayer.displayName = 'FloorLayer';
 // ── Floor System ────────────────────────────────────────────────────────
 interface FloorSystemProps {
   roomLabels: Record<string, string>;
+  agentStatuses: AgentStatusMap;
   selectedAgentId?: string | null;
   onSelectAgent?: (agentId: string) => void;
 }
 
-export function FloorSystem({ roomLabels, selectedAgentId, onSelectAgent }: FloorSystemProps) {
+export function FloorSystem({ roomLabels, agentStatuses, selectedAgentId, onSelectAgent }: FloorSystemProps) {
   const lodLevel = useLODLevel();
 
   return (
@@ -186,6 +189,7 @@ export function FloorSystem({ roomLabels, selectedAgentId, onSelectAgent }: Floo
           config={config}
           index={index}
           roomLabels={roomLabels}
+          agentStatuses={agentStatuses}
           selectedAgentId={selectedAgentId}
           onSelectAgent={onSelectAgent}
           lodLevel={lodLevel}

@@ -71,6 +71,7 @@ PostProcessing.displayName = 'PostProcessing';
 // ── Scene (inside r3f Canvas) ────────────────────────────────────────
 interface SceneProps {
   roomLabels: Record<string, string>;
+  agentStatuses: Map<string, AgentStatus>;
   selectedAgentId: string | null;
   onSelectAgent: (agentId: string) => void;
   dataFlowAgents: DataFlowAgent[];
@@ -78,6 +79,7 @@ interface SceneProps {
 
 const Scene = memo(function Scene({
   roomLabels,
+  agentStatuses,
   selectedAgentId,
   onSelectAgent,
   dataFlowAgents,
@@ -110,6 +112,7 @@ const Scene = memo(function Scene({
       <OfficeLighting />
       <FloorSystem
         roomLabels={roomLabels}
+        agentStatuses={agentStatuses}
         selectedAgentId={selectedAgentId}
         onSelectAgent={onSelectAgent}
       />
@@ -217,6 +220,7 @@ export function OfficeCanvas() {
         >
           <Scene
             roomLabels={roomLabels}
+            agentStatuses={statuses}
             selectedAgentId={selectedAgentId}
             onSelectAgent={handleSelectAgent}
             dataFlowAgents={dataFlowAgents}

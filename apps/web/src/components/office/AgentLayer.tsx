@@ -1,10 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
+import { memo } from 'react';
 import { AgentAvatar } from './AgentAvatar';
 import type { AgentStatus } from './AgentAvatar';
 import { getAgentPosition } from './AgentPositions';
-import { useAgentStatuses } from './useAgentStatuses';
 
 // ── Types ────────────────────────────────────────────────────────────
 export interface AgentData {
@@ -14,21 +13,22 @@ export interface AgentData {
   slotIndex: number;
 }
 
+export type AgentStatusMap = Map<string, AgentStatus>;
+
 export interface AgentLayerProps {
   agents: AgentData[];
+  statuses: AgentStatusMap;
   selectedAgentId?: string | null;
   onSelectAgent?: (agentId: string) => void;
 }
 
 // ── Component ────────────────────────────────────────────────────────
-export function AgentLayer({
+export const AgentLayer = memo(function AgentLayer({
   agents,
+  statuses,
   selectedAgentId,
   onSelectAgent,
 }: AgentLayerProps) {
-  const agentIds = useMemo(() => agents.map((a) => a.id), [agents]);
-  const statuses = useAgentStatuses(agentIds);
-
   return (
     <group>
       {agents.map((agent, index) => {
@@ -50,4 +50,5 @@ export function AgentLayer({
       })}
     </group>
   );
-}
+});
+AgentLayer.displayName = 'AgentLayer';

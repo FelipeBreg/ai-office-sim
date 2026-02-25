@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { DataFlow } from './DataFlow';
 import { getAgentPosition } from './AgentPositions';
 import type { AgentStatus } from './AgentAvatar';
@@ -27,7 +27,7 @@ const ACTIVE_STATUSES: Set<AgentStatus> = new Set([
 ]);
 
 // ── Component ────────────────────────────────────────────────────────
-export function DataFlowLayer({ agents }: DataFlowLayerProps) {
+export const DataFlowLayer = memo(function DataFlowLayer({ agents }: DataFlowLayerProps) {
   // Compute flow sources and active states
   const flows = useMemo(
     () =>
@@ -51,4 +51,5 @@ export function DataFlowLayer({ agents }: DataFlowLayerProps) {
       ))}
     </group>
   );
-}
+});
+DataFlowLayer.displayName = 'DataFlowLayer';

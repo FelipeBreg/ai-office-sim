@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -20,7 +20,7 @@ export interface DataFlowProps {
 }
 
 // ── Component ────────────────────────────────────────────────────────
-export function DataFlow({ source, destination, active }: DataFlowProps) {
+export const DataFlow = memo(function DataFlow({ source, destination, active }: DataFlowProps) {
   const pointsRef = useRef<THREE.Points>(null);
 
   // Refs for props (avoid stale closures in useFrame)
@@ -156,4 +156,5 @@ export function DataFlow({ source, destination, active }: DataFlowProps) {
   });
 
   return <points ref={pointsRef} geometry={geometry} material={material} />;
-}
+});
+DataFlow.displayName = 'DataFlow';
