@@ -2620,3 +2620,42 @@ PHASE 2 STATUS: COMPLETE (9 epics, 34 commits, all pushed)
 
 
 ================================================================================
+COMMIT #35 — Phase 2 Second-Pass Review Fixes
+================================================================================
+DATE: 2026-02-25
+HASH: 2c664c3
+PHASE: 2 — The Visualization (second-pass review)
+
+WHAT WAS FIXED:
+  Second comprehensive review of entire Phase 2 codebase. Found 1 critical,
+  6 high, 9 medium, 3 low issues. Fixed the impactful ones:
+
+  CRITICAL (1):
+    1. Room component (inside OfficeRooms) was not wrapped in React.memo —
+       caused R3F material recreation on parent re-renders → added React.memo
+
+  HIGH (2):
+    2. Atlas store messages array grew unboundedly — capped at 200
+    3. AgentAvatar inline material JSX props referenced STATUS_CONFIG[status]
+       which were immediately overwritten by useFrame every frame → changed
+       to static COLOR_IDLE defaults (useFrame sets actual values per-frame)
+
+  MEDIUM (2):
+    4. OrbVisualization large delta on tab-resume caused animation teleport
+       → clamped delta to max 0.1s
+    5. SimpleFurniture size[0]/size[1]/size[2] in useMemo deps → properly
+       destructured as [w, h, d]
+
+  ITEMS REVIEWED BUT ACCEPTABLE:
+    - useLODLevel setState in useFrame: only fires on LOD threshold crossings
+      (rare), and the re-render IS the mechanism for swapping LOD content
+    - useAgentStatuses Map reference: changes every 5s in demo mode, will be
+      Zustand-based when real Socket.IO integration lands in Phase 3
+    - Camera action single-value race: extremely unlikely (two clicks in one
+      frame), not worth queue complexity for demo mode
+
+VERIFICATION:
+  - turbo typecheck --force: 8/8 pass
+
+
+================================================================================
