@@ -190,7 +190,11 @@
     "working": "Trabalhando",
     "awaitingApproval": "Aguardando Aprovação",
     "error": "Erro",
-    "offline": "Offline"
+    "offline": "Offline",
+    "deleteAgent": "Excluir Agente",
+    "confirmDelete": "Clique novamente para confirmar",
+    "deleted": "Excluído",
+    "deleteFailed": "Falha ao excluir"
   },
   "office": {
     "title": "Escritório Virtual",
@@ -297,7 +301,13 @@
     "never": "Nunca",
     "creating": "CRIANDO WORKFLOW...",
     "createError": "Falha ao criar workflow.",
-    "backToWorkflows": "Voltar para workflows"
+    "backToWorkflows": "Voltar para workflows",
+    "confirmDelete": "Confirmar?",
+    "deleted": "Excluído",
+    "deleteFailed": "Falha ao excluir",
+    "triggerWorkflow": "Executar",
+    "triggerSuccess": "Workflow executado",
+    "triggerFailed": "Falha ao executar"
   },
   "toolsPage": {
     "title": "Ferramentas",
@@ -385,7 +395,11 @@
     "notRefinedYet": "Ainda não refinado",
     "close": "Fechar",
     "previousInsight": "Insight anterior",
-    "nextInsight": "Próximo insight"
+    "nextInsight": "Próximo insight",
+    "editing": "Editando...",
+    "saveStrategy": "Salvar",
+    "saved": "Salvo",
+    "saveFailed": "Falha ao salvar"
   },
   "memory": {
     "title": "Memória",

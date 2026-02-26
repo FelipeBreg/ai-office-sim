@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Pencil, Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
@@ -114,7 +114,18 @@ export function StrategyDetail({ strategyId, onClose }: StrategyDetailProps) {
     { enabled: !!strategyId },
   );
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editDraft, setEditDraft] = useState('');
+  const [editStatus, setEditStatus] = useState('');
+
   const utils = trpc.useUtils();
+  const updateMutation = trpc.strategies.update.useMutation({
+    onSuccess: () => {
+      setIsEditing(false);
+      void utils.strategies.getById.invalidate();
+      void utils.strategies.list.invalidate();
+    },
+  });
   const applyMutation = trpc.strategies.applyLearning.useMutation({
     onSuccess: () => {
       void utils.strategies.getById.invalidate();
@@ -179,21 +190,79 @@ export function StrategyDetail({ strategyId, onClose }: StrategyDetailProps) {
                 {/* ── Header ──────────────────────────────────────────── */}
                 <div className="flex items-center justify-between border-b border-border-default px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <Badge variant={STATUS_BADGE_VARIANT[data.status] ?? 'default'}>
-                      {t((STATUS_LABEL_KEY[data.status] ?? 'statusPlanned') as Parameters<typeof t>[0])}
-                    </Badge>
+                    {isEditing ? (
+                      <select
+                        value={editStatus}
+                        onChange={(e) => setEditStatus(e.target.value)}
+                        className="appearance-none border border-accent-cyan bg-bg-base px-2 py-0.5 text-[10px] text-text-primary focus:outline-none [&>option]:bg-bg-base [&>option]:text-text-primary"
+                      >
+                        {Object.entries(STATUS_LABEL_KEY).map(([value, labelKey]) => (
+                          <option key={value} value={value}>
+                            {t(labelKey as Parameters<typeof t>[0])}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Badge variant={STATUS_BADGE_VARIANT[data.status] ?? 'default'}>
+                        {t((STATUS_LABEL_KEY[data.status] ?? 'statusPlanned') as Parameters<typeof t>[0])}
+                      </Badge>
+                    )}
                     <Badge variant="cyan">
                       {t((TYPE_LABEL_KEY[data.type] ?? 'typeGrowth') as Parameters<typeof t>[0])}
                     </Badge>
                   </div>
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="flex h-6 w-6 items-center justify-center border border-border-default bg-transparent text-text-muted transition-colors hover:border-border-hover hover:text-text-primary"
-                    aria-label="Close panel"
-                  >
-                    <X size={12} strokeWidth={2} />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {isEditing ? (
+                      <>
+                        {updateMutation.isPending && (
+                          <span className="text-[8px] text-text-muted">{t('editing')}</span>
+                        )}
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          disabled={updateMutation.isPending}
+                          onClick={() => {
+                            updateMutation.mutate({
+                              id: data.id,
+                              userDraft: editDraft,
+                              status: editStatus as 'active' | 'at_risk' | 'planned' | 'completed',
+                            });
+                          }}
+                        >
+                          <Check size={10} strokeWidth={2} className="mr-1" />
+                          {t('saveStrategy')}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setIsEditing(false)}
+                        >
+                          <X size={10} strokeWidth={2} />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          setEditDraft(data.userDraft ?? '');
+                          setEditStatus(data.status);
+                          setIsEditing(true);
+                        }}
+                      >
+                        <Pencil size={10} strokeWidth={2} className="mr-1" />
+                        {t('editStrategy')}
+                      </Button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="flex h-6 w-6 items-center justify-center border border-border-default bg-transparent text-text-muted transition-colors hover:border-border-hover hover:text-text-primary"
+                      aria-label="Close panel"
+                    >
+                      <X size={12} strokeWidth={2} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* ── Definition ───────────────────────────────────────── */}
@@ -202,9 +271,18 @@ export function StrategyDetail({ strategyId, onClose }: StrategyDetailProps) {
                     <span className="block text-[8px] uppercase tracking-[0.12em] text-text-muted">
                       {t('detailDraft')}
                     </span>
-                    <p className="mt-1 text-[11px] leading-relaxed text-text-primary">
-                      {data.userDraft || '—'}
-                    </p>
+                    {isEditing ? (
+                      <textarea
+                        value={editDraft}
+                        onChange={(e) => setEditDraft(e.target.value)}
+                        rows={4}
+                        className="mt-1 w-full border border-border-default bg-bg-base px-2 py-1.5 text-[11px] leading-relaxed text-text-primary focus:border-accent-cyan focus:outline-none"
+                      />
+                    ) : (
+                      <p className="mt-1 text-[11px] leading-relaxed text-text-primary">
+                        {data.userDraft || '—'}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <span className="block text-[8px] uppercase tracking-[0.12em] text-accent-cyan">
@@ -257,7 +335,18 @@ export function StrategyDetail({ strategyId, onClose }: StrategyDetailProps) {
                   </div>
                 )}
 
-                {/* ── Learnings ────────────────────────────────────────── */}
+                {/* ── Save feedback ────────────────────────────────────── */}
+                {updateMutation.isSuccess && (
+                  <div className="border-b border-status-success/20 bg-status-success/5 px-4 py-1.5 text-[10px] text-status-success">
+                    {t('saved')}
+                  </div>
+                )}
+                {updateMutation.isError && (
+                  <div className="border-b border-status-error/20 bg-status-error/5 px-4 py-1.5 text-[10px] text-status-error">
+                    {t('saveFailed')}
+                  </div>
+                )}
+
                 {/* ── Learnings ────────────────────────────────────────── */}
                 <div className="px-4 py-4">
                   <span className="mb-2 block text-[8px] uppercase tracking-[0.12em] text-text-muted">

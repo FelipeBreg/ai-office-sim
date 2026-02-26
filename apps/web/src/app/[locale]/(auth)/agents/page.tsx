@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Plus, Bot, AlertTriangle, Wrench } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter, Link } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -298,11 +298,12 @@ export default function AgentsPage() {
         {!isLoading && !isError && agents && agents.length > 0 && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {agents.map((agent) => (
-              <AgentCard
-                key={agent.id}
-                agent={agent as unknown as Agent}
-                t={t}
-              />
+              <Link key={agent.id} href={`/agents/${agent.id}`} className="block">
+                <AgentCard
+                  agent={agent as unknown as Agent}
+                  t={t}
+                />
+              </Link>
             ))}
           </div>
         )}

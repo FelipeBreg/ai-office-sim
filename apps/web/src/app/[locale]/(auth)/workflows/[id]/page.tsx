@@ -1,13 +1,13 @@
 'use client';
 
-import { use, useCallback } from 'react';
+import { use, useCallback, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { trpc } from '@/lib/trpc/client';
 import { WorkflowEditor } from '@/components/workflows/WorkflowEditor';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
+import { ArrowLeft, Save, Trash2, Play } from 'lucide-react';
+import { Link, useRouter } from '@/i18n/navigation';
 import type { Node, Edge } from '@xyflow/react';
 
 interface PageProps {
@@ -17,7 +17,9 @@ interface PageProps {
 export default function WorkflowEditorPage({ params }: PageProps) {
   const { id } = use(params);
   const t = useTranslations('workflows');
+  const router = useRouter();
   const utils = trpc.useUtils();
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { data: workflow, isLoading } = trpc.workflows.getById.useQuery({ id });
   const updateMutation = trpc.workflows.update.useMutation({
@@ -25,6 +27,12 @@ export default function WorkflowEditorPage({ params }: PageProps) {
       void utils.workflows.getById.invalidate({ id });
     },
   });
+  const deleteMutation = trpc.workflows.delete.useMutation({
+    onSuccess: () => {
+      router.push('/workflows');
+    },
+  });
+  const triggerMutation = trpc.workflows.trigger.useMutation();
 
   const handleSave = useCallback(
     (nodes: Node[], edges: Edge[]) => {
@@ -35,6 +43,19 @@ export default function WorkflowEditorPage({ params }: PageProps) {
     },
     [id, updateMutation],
   );
+
+  const handleDelete = useCallback(() => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      setTimeout(() => setConfirmDelete(false), 3000);
+      return;
+    }
+    deleteMutation.mutate({ id });
+  }, [id, confirmDelete, deleteMutation]);
+
+  const handleTrigger = useCallback(() => {
+    triggerMutation.mutate({ id });
+  }, [id, triggerMutation]);
 
   if (isLoading) {
     return (
@@ -83,6 +104,30 @@ export default function WorkflowEditorPage({ params }: PageProps) {
           <span className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
             {updateMutation.isPending ? 'Saving...' : updateMutation.isSuccess ? 'Saved' : ''}
           </span>
+          {triggerMutation.isSuccess && (
+            <span className="text-[8px] text-status-success">{t('triggerSuccess')}</span>
+          )}
+          {triggerMutation.isError && (
+            <span className="text-[8px] text-status-error">{t('triggerFailed')}</span>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleTrigger}
+            disabled={triggerMutation.isPending}
+          >
+            <Play size={10} strokeWidth={2} className="mr-1" />
+            {t('triggerWorkflow')}
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={handleDelete}
+            disabled={deleteMutation.isPending}
+          >
+            <Trash2 size={10} strokeWidth={2} className="mr-1" />
+            {confirmDelete ? t('confirmDelete') : t('deleteWorkflow')}
+          </Button>
         </div>
       </div>
       <div className="flex-1">

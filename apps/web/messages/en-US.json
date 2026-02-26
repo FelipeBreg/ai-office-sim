@@ -190,7 +190,11 @@
     "working": "Working",
     "awaitingApproval": "Awaiting Approval",
     "error": "Error",
-    "offline": "Offline"
+    "offline": "Offline",
+    "deleteAgent": "Delete Agent",
+    "confirmDelete": "Click again to confirm",
+    "deleted": "Deleted",
+    "deleteFailed": "Delete failed"
   },
   "office": {
     "title": "Virtual Office",
@@ -297,7 +301,13 @@
     "never": "Never",
     "creating": "CREATING WORKFLOW...",
     "createError": "Failed to create workflow.",
-    "backToWorkflows": "Back to workflows"
+    "backToWorkflows": "Back to workflows",
+    "confirmDelete": "Confirm?",
+    "deleted": "Deleted",
+    "deleteFailed": "Delete failed",
+    "triggerWorkflow": "Run",
+    "triggerSuccess": "Workflow triggered",
+    "triggerFailed": "Trigger failed"
   },
   "toolsPage": {
     "title": "Tools",
@@ -385,7 +395,11 @@
     "notRefinedYet": "Not refined yet",
     "close": "Close",
     "previousInsight": "Previous insight",
-    "nextInsight": "Next insight"
+    "nextInsight": "Next insight",
+    "editing": "Editing...",
+    "saveStrategy": "Save",
+    "saved": "Saved",
+    "saveFailed": "Save failed"
   },
   "memory": {
     "title": "Memory",

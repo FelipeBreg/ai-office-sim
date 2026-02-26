@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, GitBranch, AlertTriangle } from 'lucide-react';
+import { Plus, GitBranch, AlertTriangle, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -112,12 +113,26 @@ interface Workflow {
 function WorkflowCard({
   workflow,
   t,
+  onDelete,
 }: {
   workflow: Workflow;
   t: ReturnType<typeof useTranslations<'workflows'>>;
+  onDelete: (id: string) => void;
 }) {
   const nodeCount = (workflow.definition as any)?.nodes?.length ?? 0;
   const runCount = 0; // TODO: wire up when run history is available
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      setTimeout(() => setConfirmDelete(false), 3000);
+      return;
+    }
+    onDelete(workflow.id);
+  };
 
   return (
     <Link href={`/workflows/${workflow.id}`} className="block">
@@ -159,9 +174,23 @@ function WorkflowCard({
           <span className="text-[10px] text-text-muted">
             {t('lastRun')}: {t('never')}
           </span>
-          <span className="text-[10px] text-text-muted opacity-0 transition-opacity group-hover:opacity-100">
-            {timeAgo(workflow.updatedAt)}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-text-muted opacity-0 transition-opacity group-hover:opacity-100">
+              {timeAgo(workflow.updatedAt)}
+            </span>
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="flex h-5 w-5 items-center justify-center text-text-muted opacity-0 transition-all hover:text-status-error group-hover:opacity-100"
+              aria-label={t('deleteWorkflow')}
+            >
+              {confirmDelete ? (
+                <span className="text-[8px] text-status-error">{t('confirmDelete')}</span>
+              ) : (
+                <Trash2 size={10} strokeWidth={1.5} />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </Link>
@@ -174,7 +203,17 @@ function WorkflowCard({
 
 export default function WorkflowsPage() {
   const t = useTranslations('workflows');
+  const utils = trpc.useUtils();
   const { data: workflows, isLoading, isError } = trpc.workflows.list.useQuery();
+  const deleteMutation = trpc.workflows.delete.useMutation({
+    onSuccess: () => {
+      void utils.workflows.list.invalidate();
+    },
+  });
+
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate({ id });
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -219,6 +258,7 @@ export default function WorkflowsPage() {
                 key={workflow.id}
                 workflow={workflow as unknown as Workflow}
                 t={t}
+                onDelete={handleDelete}
               />
             ))}
           </div>

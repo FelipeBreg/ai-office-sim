@@ -19,6 +19,7 @@ import {
   X,
   Pencil,
   ChevronDown,
+  Trash2,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
@@ -915,6 +916,7 @@ export default function AgentDetailPage({
   const t = useTranslations('agentDetail');
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const agentQuery = trpc.agents.getById.useQuery({ id });
   const agent = agentQuery.data as Agent | undefined;
@@ -923,6 +925,11 @@ export default function AgentDetailPage({
   const updateMutation = trpc.agents.update.useMutation({
     onSuccess: () => {
       agentQuery.refetch();
+    },
+  });
+  const deleteMutation = trpc.agents.delete.useMutation({
+    onSuccess: () => {
+      router.push('/agents');
     },
   });
 
@@ -938,6 +945,16 @@ export default function AgentDetailPage({
     if (!agent) return;
     triggerMutation.mutate({ id: agent.id });
   }, [agent, triggerMutation]);
+
+  const handleDelete = useCallback(() => {
+    if (!agent) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      setTimeout(() => setConfirmDelete(false), 3000);
+      return;
+    }
+    deleteMutation.mutate({ id: agent.id });
+  }, [agent, confirmDelete, deleteMutation]);
 
   const handleBack = useCallback(() => {
     router.push('/agents');
@@ -1025,6 +1042,17 @@ export default function AgentDetailPage({
             />
             {agent.isActive ? t('activeToggle') : t('inactiveToggle')}
           </button>
+
+          {/* Delete */}
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={handleDelete}
+            disabled={deleteMutation.isPending}
+          >
+            <Trash2 size={10} strokeWidth={2} className="mr-1" />
+            {confirmDelete ? t('confirmDelete') : t('deleteAgent')}
+          </Button>
         </div>
       </div>
 
