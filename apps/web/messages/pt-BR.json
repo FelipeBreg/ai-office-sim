@@ -299,6 +299,24 @@
     "createError": "Falha ao criar workflow.",
     "backToWorkflows": "Voltar para workflows"
   },
+  "toolsPage": {
+    "title": "Ferramentas",
+    "subtitle": "{count} ferramentas disponíveis",
+    "requiresApproval": "Requer aprovação antes da execução",
+    "approval": "Aprovação",
+    "connected": "Conectado",
+    "notConnected": "Não Conectado",
+    "categories": {
+      "builtin": "Integradas",
+      "whatsapp": "WhatsApp",
+      "email": "E-mail",
+      "webSearch": "Busca Web",
+      "crm": "CRM (RD Station)",
+      "sheets": "Google Sheets",
+      "finance": "Financeiro",
+      "devops": "DevOps"
+    }
+  },
   "strategy": {
     "title": "Central de Estratégia",
     "subtitle": "visão geral · métricas · timeline",

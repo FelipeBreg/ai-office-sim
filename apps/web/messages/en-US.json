@@ -299,6 +299,24 @@
     "createError": "Failed to create workflow.",
     "backToWorkflows": "Back to workflows"
   },
+  "toolsPage": {
+    "title": "Tools",
+    "subtitle": "{count} tools available",
+    "requiresApproval": "Requires approval before execution",
+    "approval": "Approval",
+    "connected": "Connected",
+    "notConnected": "Not Connected",
+    "categories": {
+      "builtin": "Built-in",
+      "whatsapp": "WhatsApp",
+      "email": "Email",
+      "webSearch": "Web Search",
+      "crm": "CRM (RD Station)",
+      "sheets": "Google Sheets",
+      "finance": "Finance",
+      "devops": "DevOps"
+    }
+  },
   "strategy": {
     "title": "Strategy Command Center",
     "subtitle": "overview · metrics · timeline",
