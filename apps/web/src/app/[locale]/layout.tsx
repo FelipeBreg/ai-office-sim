@@ -17,6 +17,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: 'AI Office Sim',
   description: 'AI-powered office simulation platform',
+  icons: { icon: '/favicon.svg' },
 };
 
 export function generateStaticParams() {
