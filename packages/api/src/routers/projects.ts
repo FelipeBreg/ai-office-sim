@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createTRPCRouter, protectedProcedure, projectProcedure, adminProcedure, enforceResourceLimit } from '../trpc.js';
+import { createTRPCRouter, protectedProcedure, projectProcedure, adminProcedure, requireRole, enforceResourceLimit } from '../trpc.js';
 import { db, projects, eq, and, desc } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 
@@ -27,7 +27,7 @@ export const projectsRouter = createTRPCRouter({
       return project;
     }),
 
-  create: adminProcedure
+  create: protectedProcedure.use(requireRole('admin'))
     .input(
       z.object({
         name: z.string().min(1).max(100),
