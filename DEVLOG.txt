@@ -7,6 +7,39 @@
 
 
 ================================================================================
+COMMIT #52 — Docs: Add 6 Undocumented Feature Sections
+================================================================================
+DATE: 2026-02-26
+HASH: c347540
+PHASE: Post-Phase 3 — Polish & Deployment Prep
+
+WHAT WAS BUILT:
+  - Added 6 new documentation sections for features that were built but not
+    documented in the public docs page (13 topics → 19 topics)
+  - New sections: ATLAS, Activity Log, Virtual Office, Settings, Help Center,
+    Onboarding — each with subtopics in sidebar navigation
+  - ATLAS: Orb visualization states (4 colors), voice+text conversation,
+    state machine flow, mock limitations noted
+  - Activity Log: Log list with filters, action detail drawer, session timeline,
+    marked as real data (not mock)
+  - Virtual Office: 3D isometric view, 5 agent status colors with visual
+    indicators, 9 rooms layout, agent inspector panel, team roster
+  - Settings: General/Members/Billing/Notifications tabs, Stripe stub noted
+  - Help Center: Alpha Playbook with 8 accordion sections, quick start guide
+  - Onboarding: 6-step wizard (welcome → company → template → integration →
+    agent → done), template system, Framer Motion transitions
+  - Added 6 new Lucide icon imports (Radio, Activity, Building2, Settings,
+    HelpCircle, Compass)
+
+FILES: 1 changed, 498 insertions(+)
+  - MODIFIED: apps/web/src/app/[locale]/(public)/docs/_lib/docs-data.tsx
+    (786 → 1284 lines)
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+
+
+================================================================================
 COMMIT #51 — Docs Sidebar + Multi-Page Layout
 ================================================================================
 DATE: 2026-02-26

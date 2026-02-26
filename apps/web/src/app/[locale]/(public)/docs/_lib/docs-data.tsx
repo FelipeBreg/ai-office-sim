@@ -13,6 +13,12 @@ import {
   CreditCard,
   Globe,
   Layers,
+  Radio,
+  Activity,
+  Building2,
+  Settings,
+  HelpCircle,
+  Compass,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -185,6 +191,65 @@ export const topics: DocTopic[] = [
     subtopics: [
       { id: 'plans', label: 'Plans' },
       { id: 'payment-methods', label: 'Payment Methods' },
+    ],
+  },
+  {
+    slug: 'atlas',
+    label: 'ATLAS',
+    icon: Radio,
+    subtopics: [
+      { id: 'atlas-orb', label: 'Orb Visualization' },
+      { id: 'atlas-conversation', label: 'Conversation' },
+      { id: 'atlas-states', label: 'States' },
+    ],
+  },
+  {
+    slug: 'activity',
+    label: 'Activity Log',
+    icon: Activity,
+    subtopics: [
+      { id: 'activity-list', label: 'Log List' },
+      { id: 'activity-detail', label: 'Action Detail' },
+      { id: 'activity-session', label: 'Session Timeline' },
+    ],
+  },
+  {
+    slug: 'office',
+    label: 'Virtual Office',
+    icon: Building2,
+    subtopics: [
+      { id: 'office-agents', label: 'Agent Avatars' },
+      { id: 'office-rooms', label: 'Rooms & Departments' },
+      { id: 'office-inspector', label: 'Agent Inspector' },
+    ],
+  },
+  {
+    slug: 'settings',
+    label: 'Settings',
+    icon: Settings,
+    subtopics: [
+      { id: 'settings-general', label: 'General' },
+      { id: 'settings-members', label: 'Members' },
+      { id: 'settings-billing', label: 'Billing' },
+      { id: 'settings-notifications', label: 'Notifications' },
+    ],
+  },
+  {
+    slug: 'help',
+    label: 'Help Center',
+    icon: HelpCircle,
+    subtopics: [
+      { id: 'help-quickstart', label: 'Quick Start' },
+      { id: 'help-playbook', label: 'Alpha Playbook' },
+    ],
+  },
+  {
+    slug: 'onboarding',
+    label: 'Onboarding',
+    icon: Compass,
+    subtopics: [
+      { id: 'onboarding-steps', label: 'Setup Steps' },
+      { id: 'onboarding-templates', label: 'Templates' },
     ],
   },
   {
@@ -729,6 +794,439 @@ export const topicContent: Record<string, React.ReactNode> = {
           'Stripe integration is in stub mode for alpha',
           'No usage-based billing yet',
           'No free trial period management',
+        ]}
+      />
+    </section>
+  ),
+
+  /* ---- ATLAS ----------------------------------------------------- */
+  atlas: (
+    <section>
+      <SectionHeading id="atlas" icon={Radio} title="ATLAS — Agent Tracking & Live Advisory System" status="partial" />
+      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
+        ATLAS is an interactive AI advisory interface that lets you query your project using voice or text.
+        It provides business intelligence insights through a conversational orb-based UI powered by Claude.
+      </p>
+
+      <h3 id="atlas-orb" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Orb Visualization
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        A canvas-based animated orb that visually represents ATLAS&apos;s current state with dynamic effects:
+      </p>
+      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+        {[
+          { state: 'Idle', color: '#00C8E0', desc: 'Cyan pulse — ready to listen' },
+          { state: 'Listening', color: '#34D399', desc: 'Green pulse — speak now' },
+          { state: 'Thinking', color: '#4493F8', desc: 'Blue pulse — analyzing context' },
+          { state: 'Speaking', color: '#FBBF24', desc: 'Amber pulse — delivering response' },
+        ].map((s) => (
+          <div key={s.state} className="flex items-center gap-3 border border-border-default bg-bg-base p-3">
+            <span
+              className="inline-block h-3 w-3 shrink-0"
+              style={{ backgroundColor: s.color, boxShadow: `0 0 8px ${s.color}` }}
+            />
+            <div>
+              <p className="text-xs font-bold text-text-primary">{s.state}</p>
+              <p className="text-[10px] text-text-muted">{s.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <FeatureList
+        items={[
+          'Pulsing orb with outer glow rings and wave distortion effects',
+          'Orbiting particles that increase with state activity (3–8 particles)',
+          'Intensity modulation responds to conversation flow in real time',
+          'Retina-ready rendering (2x canvas resolution)',
+        ]}
+      />
+
+      <h3 id="atlas-conversation" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Conversation
+      </h3>
+      <FeatureList
+        items={[
+          'Dual input: microphone button for voice or text field for typing',
+          'Transcript panel with auto-scrolling message history and timestamps',
+          'Starter suggestions: MRR status, risk assessment, weekly priorities',
+          'User and ATLAS messages visually distinct (right-aligned vs cyan-bordered)',
+          'Mute toggle, reset button, and volume controls',
+        ]}
+      />
+
+      <h3 id="atlas-states" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        State Machine
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        ATLAS cycles through four states with full UI feedback:
+      </p>
+      <FeatureList
+        items={[
+          'idle → listening (mic click or text input)',
+          'listening → thinking (processing query, ~1.5s)',
+          'thinking → speaking (delivering response, 2–4s)',
+          'speaking → idle (ready for next query)',
+        ]}
+      />
+
+      <LimitationList
+        items={[
+          'Voice recognition is UI-only — no actual speech-to-text yet',
+          'Responses are mock data with keyword matching (not live AI)',
+          'No real-time project data analysis — hardcoded demo insights',
+          'No audio playback during speaking state',
+        ]}
+      />
+    </section>
+  ),
+
+  /* ---- Activity Log ----------------------------------------------- */
+  activity: (
+    <section>
+      <SectionHeading id="activity" icon={Activity} title="Activity Log" status="done" />
+      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
+        A real-time monitoring dashboard that tracks all agent actions, API calls, LLM responses,
+        and approval requests within your project. All data is live from the database — no mocks.
+      </p>
+
+      <h3 id="activity-list" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Log List
+      </h3>
+      <FeatureList
+        items={[
+          'Paginated table (50 items per page, max 100) with relative timestamps',
+          'Filter by agent or by status (pending, completed, failed, cancelled)',
+          'Three action types tracked: Tool Call, LLM Response, Approval Request',
+          'Per-action metrics: tokens used, duration (ms), cost (USD), status',
+          'Click any row to open the detail drawer',
+        ]}
+      />
+
+      <h3 id="activity-detail" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Action Detail
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        A slide-in side panel (400px) showing full context for any action:
+      </p>
+      <FeatureList
+        items={[
+          'Agent name, session ID, action type, tool name, and status',
+          'Token count, duration, and cost breakdown',
+          'Full input and output payloads as formatted JSON',
+          'Error messages highlighted in red when present',
+          '"View Session" link to jump to the session timeline',
+        ]}
+      />
+
+      <h3 id="activity-session" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Session Timeline
+      </h3>
+      <FeatureList
+        items={[
+          'Vertical timeline showing all actions within a single agent session',
+          'Color-coded nodes: green (completed), red (failed), cyan (pending)',
+          'Collapsible payloads for LLM responses and tool call I/O',
+          'Back button to return to the main log list',
+        ]}
+      />
+
+      <LimitationList
+        items={[
+          'No real-time streaming — requires manual refresh for new logs',
+          'No aggregate analytics (success rate, avg tokens, total cost)',
+          'No CSV/JSON export',
+          'No date range picker in the UI (available via query params only)',
+        ]}
+      />
+    </section>
+  ),
+
+  /* ---- Virtual Office ---------------------------------------------- */
+  office: (
+    <section>
+      <SectionHeading id="office" icon={Building2} title="Virtual Office" status="done" />
+      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
+        A 3D isometric virtual office built with React Three Fiber where your AI agents are
+        visualized working in real time. Orthographic camera with pan, zoom, and rotate controls.
+      </p>
+
+      <h3 id="office-agents" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Agent Avatars
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Agents are rendered as capsule-shaped avatars with status-driven colors and animations:
+      </p>
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {[
+          { status: 'Idle', color: '#00FF88', desc: 'Subtle breathing bob' },
+          { status: 'Working', color: '#00C8FF', desc: 'Pulsing cyan glow' },
+          { status: 'Error', color: '#FF4444', desc: 'Fast red pulse' },
+          { status: 'Awaiting Approval', color: '#FFD700', desc: 'Steady gold glow' },
+          { status: 'Offline', color: '#666666', desc: 'Dim appearance' },
+        ].map((s) => (
+          <div key={s.status} className="flex items-center gap-3 border border-border-default bg-bg-base p-3">
+            <span
+              className="inline-block h-3 w-3 shrink-0"
+              style={{ backgroundColor: s.color, boxShadow: `0 0 6px ${s.color}` }}
+            />
+            <div>
+              <p className="text-xs font-bold text-text-primary">{s.status}</p>
+              <p className="text-[10px] text-text-muted">{s.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <FeatureList
+        items={[
+          'Floating name labels above each agent',
+          'Hover and click interactions (scale boost + glow)',
+          'Data flow particles: cyan streams from agents to server room when working',
+          'Agents assigned to desk slots by team affiliation',
+        ]}
+      />
+
+      <h3 id="office-rooms" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Rooms & Departments
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        A unified single-floor layout with 9 functional rooms:
+      </p>
+      <div className="mb-6 flex flex-wrap gap-2">
+        {[
+          'Open Workspace (6 desks)',
+          'Meeting Pod',
+          'Breakroom',
+          'Server Rack',
+          'Analysis Room (2 desks)',
+          'Data Lab (2 desks)',
+          'Marketing (3 desks)',
+          'Sales (3 desks)',
+          'Datacenter',
+        ].map((r) => (
+          <span key={r} className="border border-border-default px-2 py-1 text-xs text-text-secondary">
+            {r}
+          </span>
+        ))}
+      </div>
+      <FeatureList
+        items={[
+          'Team-to-room mapping: support/ops/finance → Open Workspace, dev → Data Lab, research → Analysis Room',
+          'Semi-transparent walls with cyan edge highlights and floating room labels',
+          'Point lights at room centers for ambient illumination',
+          'Furniture with LOD (Level of Detail) for rendering performance',
+        ]}
+      />
+
+      <h3 id="office-inspector" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Agent Inspector
+      </h3>
+      <FeatureList
+        items={[
+          'Click any agent to open a side panel (360px) with full details',
+          'Shows agent name, archetype, status, and current action',
+          'Live actions feed with tool name, input preview, and status icons',
+          'Recent activity history with success/failure indicators',
+          'Quick action buttons: Trigger, Pause, View Config',
+          'Team roster panel (280px) with status-sorted agent list and collapsed dot view',
+        ]}
+      />
+
+      <LimitationList
+        items={[
+          'Single floor only — multi-floor support deferred',
+          'Agent actions in inspector are mock data',
+          'No drag-and-drop agent repositioning',
+          'No touch-friendly controls for mobile',
+          'Desk slot wrapping: agents beyond capacity may visually overlap',
+        ]}
+      />
+    </section>
+  ),
+
+  /* ---- Settings ---------------------------------------------------- */
+  settings: (
+    <section>
+      <SectionHeading id="settings" icon={Settings} title="Settings" status="done" />
+      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
+        Project and workspace settings dashboard with five configuration tabs for admins.
+      </p>
+
+      <h3 id="settings-general" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        General
+      </h3>
+      <FeatureList
+        items={[
+          'Project name, sector selection (10 industry options), accent color picker',
+          'Language toggle (en-US / pt-BR) and timezone configuration',
+          'Danger zone: project deletion with typed confirmation',
+        ]}
+      />
+
+      <h3 id="settings-members" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Members
+      </h3>
+      <FeatureList
+        items={[
+          'Team member roster with role display (owner, admin, viewer)',
+          'Invite new members by email with role assignment',
+        ]}
+      />
+
+      <h3 id="settings-billing" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Billing
+      </h3>
+      <FeatureList
+        items={[
+          'Current plan badge with subscription status',
+          'Resource usage meters: projects, agents, and workflows vs plan limits',
+          'Plan comparison grid with monthly/annual toggle',
+          'Locale-aware pricing (USD and BRL)',
+          'Invoice history table with PDF download',
+        ]}
+      />
+
+      <h3 id="settings-notifications" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Notifications
+      </h3>
+      <FeatureList
+        items={[
+          'Toggle-based controls for 6 event types',
+          'Agent complete, agent error, approval request, workflow, team member, weekly report',
+        ]}
+      />
+
+      <LimitationList
+        items={[
+          'Stripe checkout is stubbed for alpha (requires STRIPE_SECRET_KEY)',
+          'Language switching is display-only — full locale switch not wired',
+          'Member invitation backend may be incomplete',
+        ]}
+      />
+    </section>
+  ),
+
+  /* ---- Help Center ------------------------------------------------- */
+  help: (
+    <section>
+      <SectionHeading id="help" icon={HelpCircle} title="Help Center — Alpha Playbook" status="done" />
+      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
+        A comprehensive accordion-based guide for alpha testers. Eight collapsible sections
+        with step-by-step instructions, tips, and known limitations.
+      </p>
+
+      <h3 id="help-quickstart" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Quick Start
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Five-step guide to get running:
+      </p>
+      <FeatureList
+        items={[
+          '1. Create your account and organization',
+          '2. Set up your first project',
+          '3. Connect WhatsApp (Z-API recommended)',
+          '4. Create and configure your first agent',
+          '5. Test with a real conversation',
+        ]}
+      />
+
+      <h3 id="help-playbook" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Alpha Playbook Sections
+      </h3>
+      <div className="mb-6 flex flex-wrap gap-2">
+        {[
+          'Quick Start (5 steps)',
+          'WhatsApp Integration (6 steps)',
+          'Creating Agents (4 subsections)',
+          'Approval System (3 subsections)',
+          'Monitoring (3 subsections)',
+          'Memory & Wiki (3 subsections)',
+          'Known Limitations (8 items)',
+          'Report Bugs (3 subsections)',
+        ].map((s) => (
+          <span key={s} className="border border-border-default px-2 py-1 text-xs text-text-secondary">
+            {s}
+          </span>
+        ))}
+      </div>
+      <FeatureList
+        items={[
+          'Sidebar navigation with 8 icon-labeled sections',
+          'Expand/collapse all toggle for quick browsing',
+          'Smooth scroll-to-section on nav click',
+          'Step blocks, bullet lists, and info boxes with cyan accents',
+        ]}
+      />
+
+      <LimitationList
+        items={[
+          'Content is static — not fetched from an API',
+          'No search functionality within help articles',
+          'WhatsApp screenshot placeholders not yet filled',
+        ]}
+      />
+    </section>
+  ),
+
+  /* ---- Onboarding -------------------------------------------------- */
+  onboarding: (
+    <section>
+      <SectionHeading id="onboarding" icon={Compass} title="Onboarding" status="done" />
+      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
+        A 6-step animated setup wizard for first-time users. Guides you from account creation
+        to a fully configured project with agents ready to work.
+      </p>
+
+      <h3 id="onboarding-steps" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Setup Steps
+      </h3>
+      <div className="mb-6 space-y-2">
+        {[
+          { step: '0', title: 'Welcome', desc: 'Animated typewriter intro with skip option' },
+          { step: '1', title: 'Create Company & Project', desc: 'Company name and project name inputs' },
+          { step: '2', title: 'Choose Template', desc: 'Industry template grid with agent count display' },
+          { step: '3', title: 'Set Up Integration', desc: 'WhatsApp (recommended), Email, or skip' },
+          { step: '4', title: 'Create First Agent', desc: 'Name + archetype selector (Support, Sales, Content Writer, Finance, Data Analyst)' },
+          { step: '5', title: 'Done!', desc: 'Confetti animation + "Go to Office" button' },
+        ].map((s) => (
+          <div key={s.step} className="flex gap-3 border border-border-default bg-bg-base p-3">
+            <span className="shrink-0 text-xs font-bold text-accent-cyan">{s.step}</span>
+            <div>
+              <p className="text-xs font-bold text-text-primary">{s.title}</p>
+              <p className="text-[10px] text-text-muted">{s.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <h3 id="onboarding-templates" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Templates
+      </h3>
+      <FeatureList
+        items={[
+          'Industry-specific templates with pre-configured agent sets',
+          'Locale-aware template names (en-US / pt-BR)',
+          'Template cards show agent count and description',
+          'Templates loaded from shared package (@ai-office/shared)',
+        ]}
+      />
+
+      <FeatureList
+        items={[
+          'Framer Motion slide transitions between steps',
+          'Visual progress indicator with 6 dots',
+          'Skip buttons on every step (no forced choices)',
+          'Back navigation on steps 1–5',
+          'Keyboard-friendly: Enter to submit, Shift+Enter for multiline',
+        ]}
+      />
+
+      <LimitationList
+        items={[
+          'Project/agent creation happens on navigation to /office, not during wizard steps',
+          'Templates are hardcoded — not editable by users',
+          'Email integration step has no further config UI',
         ]}
       />
     </section>
