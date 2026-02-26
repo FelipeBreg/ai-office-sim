@@ -1,3 +1,5 @@
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import {
   Bot,
@@ -31,7 +33,17 @@ const features = [
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const { userId } = await auth();
+
+  if (userId) {
+    redirect(`/${locale}/office`);
+  }
   return (
     <div className="min-h-screen bg-bg-deepest text-text-primary">
       {/* Hero */}
