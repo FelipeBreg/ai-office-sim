@@ -34,7 +34,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             let projectId: string | undefined;
             if (typeof window !== 'undefined') {
               try {
-                const raw = localStorage.getItem('project-store');
+                const raw = localStorage.getItem('ai-office-project');
                 if (raw) {
                   projectId = JSON.parse(raw)?.state?.currentProjectId;
                 }
