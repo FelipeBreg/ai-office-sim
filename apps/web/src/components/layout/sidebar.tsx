@@ -21,7 +21,6 @@ import {
 import { useUIStore } from '@/stores/ui-store';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip } from '@/components/ui/tooltip';
-import { ProjectSwitcher } from '@/components/sidebar/project-switcher';
 import type { LucideIcon } from 'lucide-react';
 
 interface NavItem {
@@ -61,9 +60,6 @@ export function Sidebar({ pendingApprovalCount = 0 }: SidebarProps) {
       className="relative flex shrink-0 flex-col border-r border-border-default bg-bg-base transition-all duration-200"
       style={{ width: collapsed ? 'var(--width-sidebar-collapsed)' : 'var(--width-sidebar-expanded)' }}
     >
-      <div className="border-b border-border-default px-1.5 py-2">
-        <ProjectSwitcher collapsed={collapsed} />
-      </div>
       <nav aria-label="Main navigation" className="flex flex-1 flex-col gap-0.5 p-1.5 pt-3">
         {navItems.map((item) => {
           const isActive =
