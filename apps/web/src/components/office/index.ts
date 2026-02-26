@@ -8,7 +8,6 @@ export type { InspectedAgent, ActionFeedItem, AgentInspectPanelProps } from './A
 export { getAgentPosition, getRoomSlots, getRoomCapacity, getRoomKeys } from './AgentPositions';
 export { useAgentStatuses } from './useAgentStatuses';
 export { FloorSystem } from './FloorSystem';
-export { FloorSelector } from './FloorSelector';
 export { FloorCameraController } from './FloorCameraController';
 export { TeamRoster } from './TeamRoster';
 export type { RosterAgent, TeamRosterProps } from './TeamRoster';
@@ -21,4 +20,4 @@ export { LODWrapper, SimpleFurniture, useLODLevel } from './LODWrapper';
 export type { LODLevel } from './LODWrapper';
 export { PerformanceMonitor, DevStats } from './PerformanceMonitor';
 export type { FloorConfig, FurniturePlacement, RoomLayout, OfficeLayout } from './layouts/types';
-export { FLOOR_CONFIGS, DEFAULT_ACTIVE_FLOOR } from './layouts/floors';
+export { FLOOR_CONFIGS } from './layouts/floors';

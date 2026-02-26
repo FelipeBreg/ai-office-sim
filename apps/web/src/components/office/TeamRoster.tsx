@@ -41,35 +41,35 @@ const STATUS_PRIORITY: Record<AgentStatus, number> = {
 
 // ── Animation variants ──────────────────────────────────────────────
 const panelVariants = {
-  hidden: { x: '-100%', opacity: 0 },
+  hidden: { x: '100%', opacity: 0 },
   visible: {
     x: 0,
     opacity: 1,
     transition: { type: 'tween' as const, duration: 0.25, ease: 'easeOut' as const },
   },
   exit: {
-    x: '-100%',
+    x: '100%',
     opacity: 0,
     transition: { type: 'tween' as const, duration: 0.2, ease: 'easeIn' as const },
   },
 };
 
 const collapsedVariants = {
-  hidden: { x: '-100%', opacity: 0 },
+  hidden: { x: '100%', opacity: 0 },
   visible: {
     x: 0,
     opacity: 1,
     transition: { type: 'tween' as const, duration: 0.2, ease: 'easeOut' as const },
   },
   exit: {
-    x: '-100%',
+    x: '100%',
     opacity: 0,
     transition: { type: 'tween' as const, duration: 0.15, ease: 'easeIn' as const },
   },
 };
 
 const rowVariants = {
-  hidden: { opacity: 0, x: -10 },
+  hidden: { opacity: 0, x: 10 },
   visible: {
     opacity: 1,
     x: 0,
@@ -95,7 +95,7 @@ function RosterToggleButton() {
   return (
     <button
       onClick={cycleMode}
-      className="pointer-events-auto absolute left-4 top-4 z-20 flex items-center justify-center px-2 py-1.5 text-[10px] uppercase tracking-widest transition-colors"
+      className="pointer-events-auto absolute right-4 top-4 z-20 flex items-center justify-center px-2 py-1.5 text-[10px] uppercase tracking-widest transition-colors"
       style={{
         background: mode === 'hidden' ? '#0A0E14' : 'rgba(10,14,20,0.95)',
         color: '#00C8E0',
@@ -301,12 +301,12 @@ export function TeamRoster({
         {mode === 'expanded' && (
           <motion.div
             key="roster-expanded"
-            className="pointer-events-auto absolute left-0 top-12 z-10 overflow-y-auto"
+            className="pointer-events-auto absolute right-0 top-12 z-10 overflow-y-auto"
             style={{
               width: 280,
               maxHeight: 'calc(100% - 64px)',
               background: 'rgba(10,14,20,0.95)',
-              borderRight: '1px solid rgba(0,200,224,0.15)',
+              borderLeft: '1px solid rgba(0,200,224,0.15)',
               fontFamily: "'IBM Plex Mono', monospace",
             }}
             variants={panelVariants}
@@ -350,7 +350,7 @@ export function TeamRoster({
         {mode === 'collapsed' && (
           <motion.div
             key="roster-collapsed"
-            className="pointer-events-auto absolute left-1 top-12 z-10 flex flex-col gap-0.5 overflow-y-auto py-1"
+            className="pointer-events-auto absolute right-1 top-12 z-10 flex flex-col gap-0.5 overflow-y-auto py-1"
             style={{
               maxHeight: 'calc(100% - 64px)',
               background: 'rgba(10,14,20,0.95)',

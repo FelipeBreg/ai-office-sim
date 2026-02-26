@@ -3114,3 +3114,64 @@ PHASE 3 STATUS: COMPLETE (7/9 done — P3-1..P3-5, P3-7, P3-9; P3-6 & P3-8 defer
 
 
 ================================================================================
+COMMIT #44 — Office Page Overhaul: Single Floor + Real Data + Panel Repositioning
+================================================================================
+DATE: 2026-02-26
+HASH: 1e34194
+PHASE: Post-Phase 3 — Polish & Deployment Prep
+
+WHAT WAS BUILT:
+  Single-Floor Unified Layout
+    - New layouts/unified.ts: all 9 rooms from 4 floors merged onto one Y=0
+      plane across 4 tiled rows:
+        Row 1 (Z=0):  Open Workspace, Meeting Pod, Breakroom, Server Rack
+        Row 2 (Z=10): Analysis Room, Data Lab
+        Row 3 (Z=18): Marketing, Sales
+        Row 4 (Z=25): Datacenter
+    - floors.ts reduced from 4 FloorConfigs to 1 unified entry
+    - OfficeFloor.tsx floor slab enlarged from 20×15 to 22×36 units
+
+  FloorSystem Simplification
+    - Removed multi-floor iteration, opacity lerping, Y-position animation,
+      material traversal, ghost/active logic (~150 lines removed)
+    - Single <group> at Y=0 with unified layout
+    - Agents now passed as props instead of hardcoded FLOOR_AGENTS
+
+  Floor Store & Camera
+    - floor-store.ts: removed activeFloor, exploded, setActiveFloor,
+      toggleExploded, setExploded; kept only camera actions
+    - FloorCameraController.tsx: removed floor-based Y computation and
+      zoom lerping; static target at [10, 0, 16] with zoom 35
+    - FloorSelector.tsx: deleted entirely (no longer needed)
+
+  Real Agent Data via tRPC
+    - OfficeCanvas.tsx: replaced ALL_MOCK_AGENTS + AGENT_ROOM_MAP +
+      useAgentStatuses mock cycling with trpc.agents.list.useQuery()
+    - Team-to-room mapping: support/operations/finance → openWorkspace,
+      sales → sales, marketing → marketing, development → dataLab,
+      research → analysisRoom
+    - Agent statuses read directly from DB (agent.status field)
+    - Slot indices computed per-room from agent order within each team
+
+  TeamRoster Panel Repositioned
+    - Moved from left side to right side (toggle button, expanded panel,
+      collapsed dots)
+    - Animation direction: slide-from-left → slide-from-right
+    - Border: borderRight → borderLeft
+
+  DataFlowLayer Update
+    - Server room target moved from [6, -3, 4] (basement) to [6, 0, 29]
+      (datacenter on unified floor)
+
+FILES: 11 changed, 352 insertions, 482 deletions
+  - NEW: layouts/unified.ts
+  - DELETED: FloorSelector.tsx
+  - MODIFIED: FloorSystem.tsx, OfficeCanvas.tsx, FloorCameraController.tsx,
+    OfficeFloor.tsx, TeamRoster.tsx, DataFlowLayer.tsx, index.ts,
+    layouts/floors.ts, floor-store.ts
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+  - next build: compiled successfully
+
+================================================================================

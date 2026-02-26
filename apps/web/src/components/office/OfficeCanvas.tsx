@@ -9,7 +9,6 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { OfficeLighting } from './OfficeLighting';
 import { FloorSystem } from './FloorSystem';
 import { FloorCameraController } from './FloorCameraController';
-import { FloorSelector } from './FloorSelector';
 import { AgentInspectPanel } from './AgentInspectPanel';
 import type { InspectedAgent } from './AgentInspectPanel';
 import { TeamRoster } from './TeamRoster';
@@ -20,41 +19,49 @@ import { PerformanceMonitor, DevStats } from './PerformanceMonitor';
 import { HeaderOverlay } from './HeaderOverlay';
 import { NavControls } from './NavControls';
 import type { AgentStatus } from './AgentAvatar';
-import { useAgentStatuses } from './useAgentStatuses';
+import type { AgentData } from './AgentLayer';
+import type { AgentStatusMap } from './AgentLayer';
+import { trpc } from '@/lib/trpc/client';
 
-// ── Extended agent data with archetype for inspection panel ──────────
-interface MockAgentExtended {
-  id: string;
-  name: string;
-  archetype: string;
-}
-
-// All known agents across all floors (for inspection panel lookup)
-const ALL_MOCK_AGENTS: MockAgentExtended[] = [
-  { id: 'agent-1', name: 'João Suporte', archetype: 'Support' },
-  { id: 'agent-2', name: 'Maria Vendas', archetype: 'Sales' },
-  { id: 'agent-3', name: 'André Análise', archetype: 'Data Analyst' },
-  { id: 'agent-4', name: 'Lúcia Redação', archetype: 'Content Writer' },
-];
-
-// ── Mock current actions per status ──────────────────────────────────
-const MOCK_CURRENT_ACTIONS: Partial<Record<AgentStatus, string>> = {
-  working: 'Processando mensagem...',
-  awaiting_approval: 'Aguardando aprovação para envio',
-  error: 'Falha na conexão com API',
+// ── Team → room mapping ──────────────────────────────────────────────
+const TEAM_ROOM_MAP: Record<string, string> = {
+  support: 'openWorkspace',
+  operations: 'openWorkspace',
+  finance: 'openWorkspace',
+  sales: 'sales',
+  marketing: 'marketing',
+  development: 'dataLab',
+  research: 'analysisRoom',
 };
 
-// ── Agent room/slot mapping for data flow visualization ──────────────
-// Mirrors FLOOR_AGENTS in FloorSystem — needed to compute world positions
-const AGENT_ROOM_MAP: Record<string, { roomKey: string; slotIndex: number }> = {
-  'agent-1': { roomKey: 'openWorkspace', slotIndex: 0 },
-  'agent-2': { roomKey: 'openWorkspace', slotIndex: 1 },
-  'agent-3': { roomKey: 'openWorkspace', slotIndex: 3 },
-  'agent-4': { roomKey: 'openWorkspace', slotIndex: 4 },
+const DEFAULT_ROOM = 'openWorkspace';
+
+// ── Archetype display names ──────────────────────────────────────────
+const ARCHETYPE_LABELS: Record<string, string> = {
+  support: 'Support',
+  sales: 'Sales',
+  marketing: 'Marketing',
+  data_analyst: 'Data Analyst',
+  content_writer: 'Content Writer',
+  developer: 'Developer',
+  project_manager: 'Project Manager',
+  hr: 'HR',
+  finance: 'Finance',
+  email_campaign_manager: 'Email Campaign',
+  research: 'Research',
+  recruiter: 'Recruiter',
+  social_media: 'Social Media',
+  mercado_livre: 'Mercado Livre',
+  inventory_monitor: 'Inventory',
+  legal_research: 'Legal Research',
+  ad_analyst: 'Ad Analyst',
+  account_manager: 'Account Manager',
+  deployment_monitor: 'Deployment',
+  custom: 'Custom',
 };
 
 // ── Stable constants for R3F props (avoid new references per render) ──
-const ORBIT_TARGET: [number, number, number] = [9.5, 0, 4];
+const ORBIT_TARGET: [number, number, number] = [10, 0, 16];
 
 // ── Post-processing (memo'd to avoid heavy re-creation) ──────────────
 const PostProcessing = memo(function PostProcessing() {
@@ -74,7 +81,8 @@ PostProcessing.displayName = 'PostProcessing';
 // ── Scene (inside r3f Canvas) ────────────────────────────────────────
 interface SceneProps {
   roomLabels: Record<string, string>;
-  agentStatuses: Map<string, AgentStatus>;
+  agentStatuses: AgentStatusMap;
+  agents: AgentData[];
   selectedAgentId: string | null;
   onSelectAgent: (agentId: string) => void;
   dataFlowAgents: DataFlowAgent[];
@@ -83,6 +91,7 @@ interface SceneProps {
 const Scene = memo(function Scene({
   roomLabels,
   agentStatuses,
+  agents,
   selectedAgentId,
   onSelectAgent,
   dataFlowAgents,
@@ -92,7 +101,7 @@ const Scene = memo(function Scene({
       <OrthographicCamera
         makeDefault
         position={[10, 10, 10]}
-        zoom={50}
+        zoom={35}
         near={0.1}
         far={200}
       />
@@ -116,6 +125,7 @@ const Scene = memo(function Scene({
       <FloorSystem
         roomLabels={roomLabels}
         agentStatuses={agentStatuses}
+        agents={agents}
         selectedAgentId={selectedAgentId}
         onSelectAgent={onSelectAgent}
       />
@@ -142,23 +152,58 @@ export function OfficeCanvas() {
   const t = useTranslations('office');
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
-  // Get live statuses for building inspected agent data
-  const agentIds = useMemo(() => ALL_MOCK_AGENTS.map((a) => a.id), []);
-  const statuses = useAgentStatuses(agentIds);
+  // Fetch real agents from DB
+  const { data: rawAgents } = trpc.agents.list.useQuery();
+
+  // Map agents to 3D scene data with team-based room assignments
+  const { agents, rosterAgents, statusMap } = useMemo(() => {
+    if (!rawAgents || rawAgents.length === 0) {
+      return {
+        agents: [] as AgentData[],
+        rosterAgents: [] as { id: string; name: string; archetype: string }[],
+        statusMap: new Map<string, AgentStatus>(),
+      };
+    }
+
+    // Count agents per room to assign slot indices
+    const roomSlotCounters: Record<string, number> = {};
+    const agentDataList: AgentData[] = [];
+    const rosterList: { id: string; name: string; archetype: string }[] = [];
+    const sMap = new Map<string, AgentStatus>();
+
+    for (const agent of rawAgents) {
+      const roomKey = (agent.team ? TEAM_ROOM_MAP[agent.team] : null) ?? DEFAULT_ROOM;
+      const slotIndex = roomSlotCounters[roomKey] ?? 0;
+      roomSlotCounters[roomKey] = slotIndex + 1;
+
+      agentDataList.push({
+        id: agent.id,
+        name: agent.name,
+        roomKey,
+        slotIndex,
+      });
+
+      rosterList.push({
+        id: agent.id,
+        name: agent.name,
+        archetype: ARCHETYPE_LABELS[agent.archetype] ?? agent.archetype,
+      });
+
+      sMap.set(agent.id, (agent.status as AgentStatus) ?? 'idle');
+    }
+
+    return { agents: agentDataList, rosterAgents: rosterList, statusMap: sMap };
+  }, [rawAgents]);
 
   const roomLabels = useMemo<Record<string, string>>(() => ({
-    // Floor 1 — Operações
     openWorkspace: t('openWorkspace'),
     meetingPod: t('meetingPod'),
     breakroom: t('breakroom'),
     serverRack: t('serverRack'),
-    // Floor 2 — Inteligência
     analysisRoom: t('analysisRoom'),
     dataLab: t('dataLab'),
-    // Floor 3 — Comunicação
     marketing: t('marketing'),
     sales: t('sales'),
-    // Basement — Servidores
     datacenter: t('datacenter'),
   }), [t]);
 
@@ -173,33 +218,36 @@ export function OfficeCanvas() {
   // Build data flow agent list (agent positions + live statuses for particle flows)
   const dataFlowAgents: DataFlowAgent[] = useMemo(
     () =>
-      ALL_MOCK_AGENTS.map((agent) => {
-        const mapping = AGENT_ROOM_MAP[agent.id];
-        return {
-          id: agent.id,
-          roomKey: mapping?.roomKey ?? 'openWorkspace',
-          slotIndex: mapping?.slotIndex ?? 0,
-          status: statuses.get(agent.id) ?? 'idle',
-        };
-      }),
-    [statuses],
+      agents.map((agent) => ({
+        id: agent.id,
+        roomKey: agent.roomKey,
+        slotIndex: agent.slotIndex,
+        status: statusMap.get(agent.id) ?? 'idle',
+      })),
+    [agents, statusMap],
   );
 
   // Build inspected agent data for the panel
   const inspectedAgent: InspectedAgent | null = useMemo(() => {
     if (!selectedAgentId) return null;
-    const agent = ALL_MOCK_AGENTS.find((a) => a.id === selectedAgentId);
-    if (!agent) return null;
+    const roster = rosterAgents.find((a) => a.id === selectedAgentId);
+    if (!roster) return null;
 
-    const status: AgentStatus = statuses.get(agent.id) ?? 'idle';
+    const status: AgentStatus = statusMap.get(roster.id) ?? 'idle';
     return {
-      id: agent.id,
-      name: agent.name,
-      archetype: agent.archetype,
+      id: roster.id,
+      name: roster.name,
+      archetype: roster.archetype,
       status,
-      currentAction: MOCK_CURRENT_ACTIONS[status],
     };
-  }, [selectedAgentId, statuses]);
+  }, [selectedAgentId, rosterAgents, statusMap]);
+
+  // Current action labels per status
+  const currentActions = useMemo<Partial<Record<AgentStatus, string>>>(() => ({
+    working: 'Processing...',
+    awaiting_approval: 'Awaiting approval',
+    error: 'Connection error',
+  }), []);
 
   return (
     <div className="relative h-full w-full" style={{ background: '#0A0E14' }}>
@@ -223,7 +271,8 @@ export function OfficeCanvas() {
         >
           <Scene
             roomLabels={roomLabels}
-            agentStatuses={statuses}
+            agentStatuses={statusMap}
+            agents={agents}
             selectedAgentId={selectedAgentId}
             onSelectAgent={handleSelectAgent}
             dataFlowAgents={dataFlowAgents}
@@ -233,11 +282,10 @@ export function OfficeCanvas() {
         {/* DOM overlays — siblings to Canvas, absolute positioned */}
         <HeaderOverlay />
         <NavControls />
-        <FloorSelector />
         <TeamRoster
-          agents={ALL_MOCK_AGENTS}
-          statuses={statuses}
-          currentActions={MOCK_CURRENT_ACTIONS}
+          agents={rosterAgents}
+          statuses={statusMap}
+          currentActions={currentActions}
           onSelectAgent={handleSelectAgent}
         />
       </Suspense>

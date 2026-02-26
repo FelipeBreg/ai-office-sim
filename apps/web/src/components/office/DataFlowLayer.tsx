@@ -5,8 +5,8 @@ import { DataFlow } from './DataFlow';
 import { getAgentPosition } from './AgentPositions';
 import type { AgentStatus } from './AgentAvatar';
 
-// ── Server room target (basement datacenter center) ──────────────────
-const SERVER_ROOM_POSITION: [number, number, number] = [6, -3, 4];
+// ── Server room target (datacenter center on unified floor) ──────────
+const SERVER_ROOM_POSITION: [number, number, number] = [6, 0, 29];
 
 // ── Types ────────────────────────────────────────────────────────────
 export interface DataFlowAgent {
