@@ -7,6 +7,27 @@
 
 
 ================================================================================
+COMMIT #50 — Landing Page
+================================================================================
+DATE: 2026-02-26
+HASH: a326044
+PHASE: Post-Phase 3 — Polish & Deployment Prep
+
+WHAT WAS BUILT:
+  - Replaced redirect-to-office with a proper public landing page at /{locale}
+  - Hero section with app name, tagline, "Get Started" and "Sign In" CTAs
+  - Feature highlights grid: AI Agents, Live Simulation, Workflows, WhatsApp
+  - Dark DOS aesthetic using existing design tokens, zero border-radius
+  - Locale-aware links via @/i18n/navigation Link component
+
+FILES: 1 changed, 104 insertions(+), 9 deletions(-)
+  - MODIFIED: apps/web/src/app/[locale]/page.tsx
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+
+
+================================================================================
 COMMIT #1 — Epic P0-1: Monorepo & Project Scaffolding
 ================================================================================
 Hash:     9f3beec55be0c08b2c4c675cfa63a34c42a30f0b
