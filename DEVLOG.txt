@@ -7,6 +7,38 @@
 
 
 ================================================================================
+COMMIT #51 — Docs Sidebar + Multi-Page Layout
+================================================================================
+DATE: 2026-02-26
+HASH: 3f51a60
+PHASE: Post-Phase 3 — Polish & Deployment Prep
+
+WHAT WAS BUILT:
+  - Redesigned docs from single 770-line page into a sidebar + multi-page layout
+  - _lib/docs-data.tsx: TOC structure (13 topics with subtopics), content map
+    (Record<slug, JSX>), shared helpers (StatusBadge, FeatureList, etc.)
+  - _components/docs-sidebar.tsx: client component with expand/collapse, active
+    topic highlighting (cyan), subtopic anchor links, mobile drawer toggle
+  - layout.tsx: persistent header + 2-column flex (sidebar + scrollable content)
+    + footer CTA and footer
+  - [topic]/page.tsx: dynamic route with generateStaticParams for all 13 topics,
+    redirects to /docs/overview if topic not found
+  - docs/page.tsx: now just redirects to /docs/overview
+  - middleware.ts: updated public routes from /docs to /docs(.*)
+
+FILES: 6 changed, 1003 insertions(+), 768 deletions(-)
+  - NEW: apps/web/src/app/[locale]/(public)/docs/_lib/docs-data.tsx
+  - NEW: apps/web/src/app/[locale]/(public)/docs/_components/docs-sidebar.tsx
+  - NEW: apps/web/src/app/[locale]/(public)/docs/layout.tsx
+  - NEW: apps/web/src/app/[locale]/(public)/docs/[topic]/page.tsx
+  - MODIFIED: apps/web/src/app/[locale]/(public)/docs/page.tsx
+  - MODIFIED: apps/web/src/middleware.ts
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+
+
+================================================================================
 COMMIT #50 — Landing Page
 ================================================================================
 DATE: 2026-02-26
