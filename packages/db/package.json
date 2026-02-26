@@ -15,22 +15,23 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/seed.ts",
+    "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "@ai-office/shared": "workspace:*",
     "drizzle-orm": "^0.38.0",
-    "postgres": "^3.4.0",
-    "@ai-office/shared": "workspace:*"
+    "postgres": "^3.4.0"
   },
   "devDependencies": {
-    "@ai-office/tsconfig": "workspace:*",
     "@ai-office/eslint-config": "workspace:*",
+    "@ai-office/tsconfig": "workspace:*",
     "@types/node": "^22.0.0",
-    "drizzle-kit": "^0.30.0",
+    "drizzle-kit": "^0.31.9",
+    "eslint": "^9.0.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0",
-    "eslint": "^9.0.0"
+    "typescript": "^5.7.0"
   }
 }
