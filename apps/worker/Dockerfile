@@ -36,6 +36,13 @@ COPY packages/tsconfig/ packages/tsconfig/
 # Build worker and its dependencies
 RUN pnpm turbo build --filter=worker...
 
+# Rewrite package exports from ./src/index.ts to ./dist/index.js for production
+RUN for pkg in shared db queue ai realtime; do \
+  sed -i 's|"./src/index.ts"|"./dist/index.js"|g' packages/$pkg/package.json; \
+  sed -i 's|"./src/schema/index.ts"|"./dist/schema/index.js"|g' packages/$pkg/package.json; \
+  sed -i 's|"./src/client.ts"|"./dist/client.js"|g' packages/$pkg/package.json; \
+  done
+
 # Prune dev dependencies after build
 RUN pnpm prune --prod
 
