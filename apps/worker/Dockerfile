@@ -66,14 +66,19 @@ COPY --from=builder /app/apps/worker/package.json ./apps/worker/package.json
 COPY --from=builder /app/apps/worker/node_modules ./apps/worker/node_modules
 COPY --from=builder /app/packages/db/dist ./packages/db/dist
 COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
+COPY --from=builder /app/packages/db/node_modules ./packages/db/node_modules
 COPY --from=builder /app/packages/queue/dist ./packages/queue/dist
 COPY --from=builder /app/packages/queue/package.json ./packages/queue/package.json
+COPY --from=builder /app/packages/queue/node_modules ./packages/queue/node_modules
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
+COPY --from=builder /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY --from=builder /app/packages/ai/dist ./packages/ai/dist
 COPY --from=builder /app/packages/ai/package.json ./packages/ai/package.json
+COPY --from=builder /app/packages/ai/node_modules ./packages/ai/node_modules
 COPY --from=builder /app/packages/realtime/dist ./packages/realtime/dist
 COPY --from=builder /app/packages/realtime/package.json ./packages/realtime/package.json
+COPY --from=builder /app/packages/realtime/node_modules ./packages/realtime/node_modules
 
 USER worker
 
