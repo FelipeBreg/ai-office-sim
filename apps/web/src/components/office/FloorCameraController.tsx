@@ -11,8 +11,8 @@ const BASE_TARGET_Y = 0;
 const BASE_TARGET_Z = 16;
 const NORMAL_ZOOM = 35;
 
-/** Default camera position offset from target */
-const DEFAULT_CAMERA_OFFSET = new THREE.Vector3(10, 10, 10);
+/** Default camera position offset from target (isometric diagonal) */
+const DEFAULT_CAMERA_OFFSET = new THREE.Vector3(15, 15, 15);
 
 /** Zoom step applied per NavControls click */
 const ZOOM_STEP = 8;

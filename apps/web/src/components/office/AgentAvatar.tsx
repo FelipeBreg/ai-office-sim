@@ -10,7 +10,7 @@ const COLOR_IDLE = new THREE.Color('#00FF88');
 const COLOR_WORKING = new THREE.Color('#00C8FF');
 const COLOR_ERROR = new THREE.Color('#FF4444');
 const COLOR_AWAITING = new THREE.Color('#FFD700');
-const COLOR_OFFLINE = new THREE.Color('#444444');
+const COLOR_OFFLINE = new THREE.Color('#666666');
 
 const LABEL_COLOR = '#00C8E0';
 
@@ -61,7 +61,7 @@ const STATUS_CONFIG: Record<AgentStatus, StatusConfig> = {
   },
   offline: {
     color: COLOR_OFFLINE,
-    baseIntensity: 0.1,
+    baseIntensity: 0.4,
     pulse: false,
     pulseSpeed: 0,
   },

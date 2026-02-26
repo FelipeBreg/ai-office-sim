@@ -100,9 +100,9 @@ const Scene = memo(function Scene({
     <>
       <OrthographicCamera
         makeDefault
-        position={[10, 10, 10]}
+        position={[25, 15, 31]}
         zoom={35}
-        near={0.1}
+        near={-200}
         far={200}
       />
 
