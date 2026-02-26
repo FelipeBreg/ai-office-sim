@@ -3406,3 +3406,26 @@ VERIFICATION:
   - tsc --noEmit: 0 errors
 
 ================================================================================
+
+================================================================================
+COMMIT #54 — Wire Agent Trigger to BullMQ Execution Queue
+================================================================================
+DATE: 2026-02-26
+HASH: bdb9feb
+PHASE: Post-Phase 3 — Agent Execution Wiring
+
+WHAT CHANGED:
+  - agents.trigger tRPC endpoint now enqueues a real BullMQ job via getAgentExecutionQueue()
+  - Generates unique sessionId per trigger, passes agentId + projectId + triggerPayload
+  - Added @ai-office/queue as dependency of @ai-office/api package
+  - Removed TODO comment — trigger is now fully wired to worker
+
+FILES: 3 changed, +23 -7
+  - MODIFIED: packages/api/src/routers/agents.ts
+  - MODIFIED: packages/api/package.json
+  - MODIFIED: pnpm-lock.yaml
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+
+================================================================================
