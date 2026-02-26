@@ -3227,4 +3227,21 @@ FILES: 3 changed, 57 insertions, 2 deletions
 VERIFICATION:
   - tsc --noEmit: 0 errors
 
+
+================================================================================
+COMMIT #47 — Remove "Coming Soon" Badges from Sidebar
+================================================================================
+DATE: 2026-02-26
+HASH: 16ee43b
+PHASE: Post-Phase 3 — Polish & Deployment Prep
+
+WHAT WAS FIXED:
+  - Removed comingSoon: true flags from 5 sidebar nav items that still had
+    "Em Breve" / "Coming Soon" badges despite features being implemented:
+    Atlas, Workflows, DevOps, Strategy, Analytics
+  - All nav items now link directly without qualifier badges
+
+FILES: 1 changed, 5 insertions, 5 deletions
+  - MODIFIED: components/layout/sidebar.tsx
+
 ================================================================================
