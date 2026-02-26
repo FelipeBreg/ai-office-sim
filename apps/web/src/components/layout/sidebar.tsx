@@ -34,15 +34,15 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/office', labelKey: 'office', icon: Building2 },
-  { href: '/atlas', labelKey: 'atlas', icon: Radio, comingSoon: true },
+  { href: '/atlas', labelKey: 'atlas', icon: Radio },
   { href: '/agents', labelKey: 'agents', icon: Users },
-  { href: '/workflows', labelKey: 'workflows', icon: GitBranch, comingSoon: true },
-  { href: '/devops', labelKey: 'devops', icon: GitMerge, comingSoon: true },
+  { href: '/workflows', labelKey: 'workflows', icon: GitBranch },
+  { href: '/devops', labelKey: 'devops', icon: GitMerge },
   { href: '/approvals', labelKey: 'approvals', icon: ShieldCheck, hasBadge: true },
-  { href: '/strategy', labelKey: 'strategy', icon: Target, comingSoon: true },
+  { href: '/strategy', labelKey: 'strategy', icon: Target },
   { href: '/memory', labelKey: 'memory', icon: Brain },
   { href: '/tools', labelKey: 'tools', icon: Wrench },
-  { href: '/analytics', labelKey: 'analytics', icon: BarChart3, comingSoon: true },
+  { href: '/analytics', labelKey: 'analytics', icon: BarChart3 },
   { href: '/settings', labelKey: 'settings', icon: Settings },
 ];
 
