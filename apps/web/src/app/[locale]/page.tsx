@@ -55,9 +55,9 @@ export default async function LandingPage({
           <a href="#" className="font-mono text-sm text-text-secondary transition-colors hover:text-text-primary">
             Home
           </a>
-          <a href="#" className="font-mono text-sm text-text-secondary transition-colors hover:text-text-primary">
+          <Link href="/docs" className="font-mono text-sm text-text-secondary transition-colors hover:text-text-primary">
             Docs
-          </a>
+          </Link>
           <a href="#" className="font-mono text-sm text-text-secondary transition-colors hover:text-text-primary">
             Pricing
           </a>
