@@ -3377,3 +3377,32 @@ FILES: 1 changed, 4 deletions
   - MODIFIED: components/layout/sidebar.tsx
 
 ================================================================================
+
+================================================================================
+COMMIT #53 — Add Missing Delete/Edit/Link Buttons Across CRUD Pages
+================================================================================
+DATE: 2026-02-26
+HASH: def9299
+PHASE: Post-Phase 3 — Polish & Deployment Prep
+
+WHAT CHANGED:
+  - Agent list: cards now wrapped in <Link> to detail page (same pattern as workflows)
+  - Agent detail: added delete button (danger variant) with inline confirm pattern
+  - Workflows list: added trash icon on cards with inline confirm, stopPropagation on Link
+  - Workflow editor: added Delete (danger) + Run/Trigger (secondary) buttons in header
+  - Strategy detail panel: added Edit button toggling userDraft textarea + status dropdown
+  - i18n: added missing keys in agentDetail, workflows, strategy namespaces (en-US + pt-BR)
+
+FILES: 7 changed, +267 -36
+  - MODIFIED: apps/web/messages/en-US.json
+  - MODIFIED: apps/web/messages/pt-BR.json
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/agents/page.tsx
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/agents/[id]/page.tsx
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/workflows/page.tsx
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/workflows/[id]/page.tsx
+  - MODIFIED: apps/web/src/components/strategy/strategy-detail.tsx
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+
+================================================================================
