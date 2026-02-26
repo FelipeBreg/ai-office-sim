@@ -294,7 +294,10 @@
     "nodes": "{count} nodes",
     "runs": "{count} runs",
     "lastRun": "Last run",
-    "never": "Never"
+    "never": "Never",
+    "creating": "CREATING WORKFLOW...",
+    "createError": "Failed to create workflow.",
+    "backToWorkflows": "Back to workflows"
   },
   "strategy": {
     "title": "Strategy Command Center",

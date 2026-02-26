@@ -294,7 +294,10 @@
     "nodes": "{count} nodos",
     "runs": "{count} execuções",
     "lastRun": "Última execução",
-    "never": "Nunca"
+    "never": "Nunca",
+    "creating": "CRIANDO WORKFLOW...",
+    "createError": "Falha ao criar workflow.",
+    "backToWorkflows": "Voltar para workflows"
   },
   "strategy": {
     "title": "Central de Estratégia",
