@@ -15,6 +15,15 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  // Skip intl middleware for API routes — they don't need locale prefixing
+  const { pathname } = req.nextUrl;
+  if (pathname.startsWith('/api/')) {
+    if (!isPublicRoute(req)) {
+      await auth.protect();
+    }
+    return;
+  }
+
   if (!isPublicRoute(req)) {
     await auth.protect();
   }
