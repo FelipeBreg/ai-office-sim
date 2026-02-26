@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Plus, Bot, AlertTriangle, Wrench } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
+import { useRouter } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -133,7 +134,7 @@ function AgentCardSkeleton() {
 /*  Empty state                                                               */
 /* -------------------------------------------------------------------------- */
 
-function EmptyState({ t }: { t: ReturnType<typeof useTranslations<'agents'>> }) {
+function EmptyState({ t, onCreateAgent }: { t: ReturnType<typeof useTranslations<'agents'>>; onCreateAgent: () => void }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4">
       <div className="flex h-14 w-14 items-center justify-center border border-border-default bg-bg-raised">
@@ -143,7 +144,7 @@ function EmptyState({ t }: { t: ReturnType<typeof useTranslations<'agents'>> }) 
         <p className="text-xs text-text-secondary">{t('noAgents')}</p>
         <p className="mt-1 text-[10px] text-text-muted">{t('noAgentsDescription')}</p>
       </div>
-      <Button size="sm">
+      <Button size="sm" onClick={onCreateAgent}>
         <Plus size={12} strokeWidth={2} className="mr-1" />
         {t('createAgent')}
       </Button>
@@ -255,7 +256,10 @@ function AgentCard({
 
 export default function AgentsPage() {
   const t = useTranslations('agents');
+  const router = useRouter();
   const { data: agents, isLoading, isError } = trpc.agents.list.useQuery();
+
+  const handleCreateAgent = () => router.push('/agents/new');
 
   return (
     <div className="flex h-full flex-col">
@@ -267,7 +271,7 @@ export default function AgentsPage() {
           </h1>
           <p className="mt-0.5 text-[10px] text-text-muted">{t('subtitle')}</p>
         </div>
-        <Button size="sm">
+        <Button size="sm" onClick={handleCreateAgent}>
           <Plus size={12} strokeWidth={2} className="mr-1" />
           {t('newAgent')}
         </Button>
@@ -288,7 +292,7 @@ export default function AgentsPage() {
         {isError && <ErrorState t={t} />}
 
         {/* Empty */}
-        {!isLoading && !isError && agents && agents.length === 0 && <EmptyState t={t} />}
+        {!isLoading && !isError && agents && agents.length === 0 && <EmptyState t={t} onCreateAgent={handleCreateAgent} />}
 
         {/* Agent grid */}
         {!isLoading && !isError && agents && agents.length > 0 && (
