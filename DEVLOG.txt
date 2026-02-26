@@ -3275,4 +3275,19 @@ FILES: 3 changed, 239 insertions, 5 deletions
 VERIFICATION:
   - tsc --noEmit: 0 errors
 
+
+================================================================================
+COMMIT #49 — Remove Project Switcher from Sidebar
+================================================================================
+DATE: 2026-02-26
+HASH: 003aee3
+PHASE: Post-Phase 3 — Polish & Deployment Prep
+
+WHAT WAS FIXED:
+  - Removed ProjectSwitcher component and its wrapping div from sidebar
+  - Removed unused import of ProjectSwitcher
+
+FILES: 1 changed, 4 deletions
+  - MODIFIED: components/layout/sidebar.tsx
+
 ================================================================================
