@@ -3174,4 +3174,57 @@ VERIFICATION:
   - tsc --noEmit: 0 errors
   - next build: compiled successfully
 
+
+================================================================================
+COMMIT #45 — Office Camera & Visibility Fixes
+================================================================================
+DATE: 2026-02-26
+HASH: e63c543
+PHASE: Post-Phase 3 — Polish & Deployment Prep
+
+WHAT WAS FIXED:
+  1. Isometric Camera Angle
+    - Camera position [10,10,10] → [25,15,31] for proper diagonal isometric view
+      instead of near-top-down
+    - FloorCameraController reset offset updated to [15,15,15] to match
+
+  2. Near-Plane Clipping
+    - OrthographicCamera near plane 0.1 → -200 to prevent objects disappearing
+      when close to the camera (orthographic cameras support negative near planes)
+
+  3. Offline Agent Visibility
+    - AgentAvatar offline baseIntensity 0.1 → 0.4 (was nearly invisible)
+    - Offline color #444444 → #666666 (brighter grey on dark background)
+
+FILES: 3 changed, 6 insertions, 6 deletions
+  - MODIFIED: OfficeCanvas.tsx, FloorCameraController.tsx, AgentAvatar.tsx
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+
+
+================================================================================
+COMMIT #46 — Fix: /workflows/new "Workflow not found"
+================================================================================
+DATE: 2026-02-26
+HASH: 85c075e
+PHASE: Post-Phase 3 — Polish & Deployment Prep
+
+WHAT WAS FIXED:
+  - Clicking "New Workflow" navigated to /workflows/new but no new/page.tsx
+    existed — Next.js caught it with [id]/page.tsx using id="new", which
+    failed UUID validation on getById and showed "Workflow not found"
+  - Created dedicated /workflows/new/page.tsx that:
+    1. Auto-creates an "Untitled Workflow" via workflows.create mutation
+    2. Redirects to /workflows/{newId} to open the editor
+    3. Shows error state with back-link if creation fails
+  - Added i18n keys: creating, createError, backToWorkflows (en-US + pt-BR)
+
+FILES: 3 changed, 57 insertions, 2 deletions
+  - NEW: apps/web/src/app/[locale]/(auth)/workflows/new/page.tsx
+  - MODIFIED: messages/en-US.json, messages/pt-BR.json
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+
 ================================================================================
