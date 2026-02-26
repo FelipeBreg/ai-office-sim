@@ -46,6 +46,24 @@ export default async function LandingPage({
   }
   return (
     <div className="min-h-screen bg-bg-deepest text-text-primary">
+      {/* Navbar */}
+      <nav className="flex items-center justify-between border-b border-border-default px-6 py-4">
+        <span className="font-mono text-sm font-bold text-accent-cyan">
+          AI Office Sim
+        </span>
+        <div className="flex items-center gap-6">
+          <a href="#" className="font-mono text-sm text-text-secondary transition-colors hover:text-text-primary">
+            Home
+          </a>
+          <a href="#" className="font-mono text-sm text-text-secondary transition-colors hover:text-text-primary">
+            Docs
+          </a>
+          <a href="#" className="font-mono text-sm text-text-secondary transition-colors hover:text-text-primary">
+            Pricing
+          </a>
+        </div>
+      </nav>
+
       {/* Hero */}
       <div className="flex min-h-[80vh] flex-col items-center justify-center px-6 text-center">
         <div className="mb-6 flex items-center gap-3 text-accent-cyan">
@@ -111,6 +129,7 @@ export default async function LandingPage({
       {/* Footer */}
       <div className="border-t border-border-subtle px-6 py-8 text-center text-xs text-text-muted">
         AI Office Sim — alpha build
+        <div className="mt-2 text-text-disabled">Powered by Axis Brasil</div>
       </div>
     </div>
   );
