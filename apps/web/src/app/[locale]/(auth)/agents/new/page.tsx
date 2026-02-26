@@ -1021,8 +1021,10 @@ export default function AgentWizardPage() {
   const goBack = useCallback(() => {
     if (step > 0) {
       setStep((s) => s - 1);
+    } else {
+      router.push('/agents');
     }
-  }, [step]);
+  }, [step, router]);
 
   const isLastStep = step === STEPS.length - 1;
 
@@ -1140,7 +1142,6 @@ export default function AgentWizardPage() {
           variant="secondary"
           size="md"
           onClick={goBack}
-          disabled={step === 0}
         >
           <ArrowLeft size={12} strokeWidth={1.5} className="mr-1" />
           {t('back')}
