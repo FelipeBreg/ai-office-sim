@@ -3244,4 +3244,35 @@ WHAT WAS FIXED:
 FILES: 1 changed, 5 insertions, 5 deletions
   - MODIFIED: components/layout/sidebar.tsx
 
+
+================================================================================
+COMMIT #48 — Tools Catalog Page
+================================================================================
+DATE: 2026-02-26
+HASH: f944d3a
+PHASE: Post-Phase 3 — Polish & Deployment Prep
+
+WHAT WAS BUILT:
+  - Replaced stub tools page (just showed "Ferramentas" centered) with full
+    tool catalog displaying all 22 agent tools across 8 categories:
+      Built-in (3): get_current_time, search_company_memory, log_message
+      WhatsApp (2): send/read messages
+      Email (2): send/read emails
+      Web Search (1): search_web (Serper API)
+      CRM (5): contacts + deals (RD Station)
+      Google Sheets (3): read/write/append
+      Finance (2): Pix monitoring, NFe status
+      DevOps (3): deploy requests, PR reviews, human tasks
+  - Each tool card shows: name, description, approval badge (if required),
+    OAuth2 connection status (connected/not connected for Google/RD Station)
+  - Fetches real credential status via trpc.toolCredentials.list
+  - Added toolsPage i18n namespace (en-US + pt-BR)
+
+FILES: 3 changed, 239 insertions, 5 deletions
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/tools/page.tsx,
+    messages/en-US.json, messages/pt-BR.json
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+
 ================================================================================
