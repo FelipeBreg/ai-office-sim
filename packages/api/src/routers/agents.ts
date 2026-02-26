@@ -1,7 +1,9 @@
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 import { createTRPCRouter, projectProcedure, adminProcedure, enforceResourceLimit } from '../trpc.js';
 import { db, agents, eq, and, desc } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
+import { getAgentExecutionQueue } from '@ai-office/queue';
 
 export const agentsRouter = createTRPCRouter({
   list: projectProcedure.query(async ({ ctx }) => {
@@ -153,7 +155,17 @@ export const agentsRouter = createTRPCRouter({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Agent is inactive' });
       }
 
-      // TODO: Enqueue agent-execution job via BullMQ
-      return { triggered: true, agentId: agent.id };
+      const sessionId = randomUUID();
+      await getAgentExecutionQueue().add(
+        `agent-${agent.id}-${sessionId}`,
+        {
+          agentId: agent.id,
+          projectId: ctx.project!.id,
+          sessionId,
+          ...(input.payload ? { triggerPayload: input.payload as Record<string, unknown> } : {}),
+        },
+      );
+
+      return { triggered: true, agentId: agent.id, sessionId };
     }),
 });
