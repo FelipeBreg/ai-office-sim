@@ -2,9 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Building2, Users, CreditCard, Bell, Puzzle, Cpu, Trash2, Plus, Send, Check, ExternalLink, Download, FileText } from 'lucide-react';
+import {
+  Building2, Users, CreditCard, Bell, Key, Cpu, PanelLeft, Trash2, Plus, Send, Check,
+  ExternalLink, Download, FileText, Radio, ShieldCheck, Target, BarChart3, BookOpen,
+  GitBranch, Wrench, GitMerge, DollarSign, Settings as SettingsIcon,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
-import { WhatsAppPanel } from './_components/whatsapp-panel';
+import { useRouter } from '@/i18n/navigation';
 import { trpc } from '@/lib/trpc/client';
 import { useActiveProject, useActiveOrg, useProjectStore } from '@/stores/project-store';
 import { Button } from '@/components/ui/button';
@@ -32,7 +37,8 @@ const tabs = [
   { id: 'members', labelKey: 'members', icon: Users },
   { id: 'billing', labelKey: 'billing', icon: CreditCard },
   { id: 'notifications', labelKey: 'notifications', icon: Bell },
-  { id: 'integrations', labelKey: 'integrations', icon: Puzzle },
+  { id: 'navigation', labelKey: 'navigation', icon: PanelLeft },
+  { id: 'apikeys', labelKey: 'apiKeys', icon: Key },
   { id: 'models', labelKey: 'models', icon: Cpu },
 ] as const;
 
@@ -442,6 +448,24 @@ function BillingTab() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Current Balance */}
+      <div className="border border-border-default p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
+              {t('currentBalance')}
+            </span>
+            <div className="mt-1 text-sm font-bold text-text-primary">$0.00</div>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => window.alert(t('addCreditsComingSoon'))}
+          >
+            {t('addCredits')}
+          </Button>
+        </div>
+      </div>
+
       {/* Current plan + subscription status */}
       <div className="border border-border-default p-4">
         <div className="flex items-center justify-between">
@@ -732,19 +756,281 @@ function NotificationsTab() {
 }
 
 // ===========================================================================
+// Tab: Navigation
+// ===========================================================================
+
+interface NavItemConfig {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  pinned?: boolean;
+}
+
+interface NavGroupConfig {
+  key: string;
+  label: string;
+  items: NavItemConfig[];
+}
+
+const SETTINGS_NAV_GROUPS: NavGroupConfig[] = [
+  {
+    key: 'pinned',
+    label: 'Pinned',
+    items: [
+      { href: '/atlas', label: 'Atlas', icon: Radio, pinned: true },
+      { href: '/settings', label: 'Settings', icon: SettingsIcon, pinned: true },
+    ],
+  },
+  {
+    key: 'monitoring',
+    label: 'Monitoring',
+    items: [
+      { href: '/office', label: 'Office', icon: Building2 },
+      { href: '/approvals', label: 'Approvals', icon: ShieldCheck },
+      { href: '/strategy', label: 'Strategy', icon: Target },
+      { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+      { href: '/memory', label: 'Memory', icon: BookOpen },
+    ],
+  },
+  {
+    key: 'aiCapabilities',
+    label: 'AI Capabilities',
+    items: [
+      { href: '/agents', label: 'Agents', icon: Users },
+      { href: '/workflows', label: 'Workflows', icon: GitBranch },
+      { href: '/tools', label: 'Tools', icon: Wrench },
+    ],
+  },
+  {
+    key: 'sectors',
+    label: 'Sectors',
+    items: [
+      { href: '/devops', label: 'DevOps', icon: GitMerge },
+      { href: '/finance', label: 'Finance', icon: DollarSign },
+    ],
+  },
+];
+
+function NavigationTab() {
+  const t = useTranslations('settings');
+  const tNav = useTranslations('nav');
+
+  const [hiddenItems, setHiddenItems] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return JSON.parse(localStorage.getItem('ai-office-hidden-nav-items') || '[]');
+      } catch { return []; }
+    }
+    return [];
+  });
+
+  const toggleItem = useCallback((href: string) => {
+    setHiddenItems((prev) => {
+      const next = prev.includes(href)
+        ? prev.filter((h) => h !== href)
+        : [...prev, href];
+      localStorage.setItem('ai-office-hidden-nav-items', JSON.stringify(next));
+      // Dispatch storage event so sidebar picks it up in the same tab
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'ai-office-hidden-nav-items',
+        newValue: JSON.stringify(next),
+      }));
+      return next;
+    });
+  }, []);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="mb-3 text-[9px] text-text-muted">{t('navigationDesc')}</p>
+      {SETTINGS_NAV_GROUPS.map((group) => (
+        <div key={group.key} className="mb-3">
+          <div className="mb-1 text-[8px] uppercase tracking-[0.15em] text-text-muted">
+            {group.label}
+          </div>
+          {group.items.map((item) => {
+            const Icon = item.icon;
+            const isVisible = !hiddenItems.includes(item.href);
+            const isPinned = !!item.pinned;
+
+            return (
+              <div
+                key={item.href}
+                className="flex items-center justify-between border-b border-border-default px-1 py-3 last:border-b-0"
+              >
+                <div className="flex items-center gap-2">
+                  <Icon size={13} strokeWidth={1.5} className="text-text-muted" />
+                  <span className="text-[11px] font-medium text-text-primary">{item.label}</span>
+                  {isPinned && (
+                    <span className="text-[8px] text-text-muted">({t('alwaysVisible')})</span>
+                  )}
+                </div>
+                {isPinned ? (
+                  <div className="h-5 w-9 shrink-0 bg-accent-cyan opacity-50 cursor-not-allowed relative">
+                    <span className="absolute top-0.5 left-0.5 h-4 w-4 bg-bg-deepest translate-x-4" />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isVisible}
+                    onClick={() => toggleItem(item.href)}
+                    className={`relative h-5 w-9 shrink-0 transition-colors ${
+                      isVisible ? 'bg-accent-cyan' : 'bg-bg-overlay'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-4 w-4 bg-bg-deepest transition-transform ${
+                        isVisible ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ===========================================================================
+// Tab: API Keys
+// ===========================================================================
+function ApiKeysTab() {
+  const t = useTranslations('settings');
+  const router = useRouter();
+  const { data: credentials } = trpc.toolCredentials.list.useQuery();
+  const connectionQuery = trpc.whatsapp.getConnection.useQuery();
+  const disconnectMutation = trpc.toolCredentials.disconnect.useMutation({
+    onSuccess: () => {
+      // Invalidate will be handled by trpc's built-in cache
+    },
+  });
+  const utils = trpc.useUtils();
+
+  const handleDisconnect = useCallback((toolType: string) => {
+    if (!window.confirm(t('disconnectConfirm'))) return;
+    disconnectMutation.mutate(
+      { toolType: toolType as any },
+      { onSuccess: () => utils.toolCredentials.list.invalidate() },
+    );
+  }, [disconnectMutation, utils, t]);
+
+  // Group credentials by service
+  const googleCreds = credentials?.filter((c) => c.toolType.startsWith('google_')) ?? [];
+  const rdCreds = credentials?.filter((c) => c.toolType.startsWith('rdstation_')) ?? [];
+  const connection = connectionQuery.data;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-[9px] text-text-muted">{t('apiKeysDesc')}</p>
+
+      {/* WhatsApp */}
+      <div className="border border-border-default p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-medium text-text-primary">WhatsApp</span>
+            {connection?.status === 'connected' ? (
+              <Badge variant="success">{connection.phoneNumber || t('whatsapp.connected')}</Badge>
+            ) : (
+              <Badge variant="default">{t('whatsapp.disconnected')}</Badge>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push('/tools')}
+            className="text-[9px] text-accent-cyan hover:underline"
+          >
+            {t('configureInTools')}
+          </button>
+        </div>
+        {connection?.provider && (
+          <div className="mt-1 text-[9px] text-text-muted">
+            Provider: {connection.provider}
+          </div>
+        )}
+      </div>
+
+      {/* Google (Gmail + Sheets) */}
+      <div className="border border-border-default p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-medium text-text-primary">Google</span>
+            {googleCreds.length > 0 ? (
+              <Badge variant="success">{googleCreds.length} connected</Badge>
+            ) : (
+              <Badge variant="default">Not Connected</Badge>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push('/tools')}
+            className="text-[9px] text-accent-cyan hover:underline"
+          >
+            {t('configureInTools')}
+          </button>
+        </div>
+        {googleCreds.map((cred) => (
+          <div key={cred.id} className="mt-2 flex items-center justify-between border-t border-border-default pt-2">
+            <span className="text-[9px] text-text-muted">{cred.toolType.replace('google_', '')}</span>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => handleDisconnect(cred.toolType)}
+              disabled={disconnectMutation.isPending}
+            >
+              {t('whatsapp.disconnect')}
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      {/* RD Station */}
+      <div className="border border-border-default p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-medium text-text-primary">RD Station</span>
+            {rdCreds.length > 0 ? (
+              <Badge variant="success">{rdCreds.length} connected</Badge>
+            ) : (
+              <Badge variant="default">Not Connected</Badge>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push('/tools')}
+            className="text-[9px] text-accent-cyan hover:underline"
+          >
+            {t('configureInTools')}
+          </button>
+        </div>
+        {rdCreds.map((cred) => (
+          <div key={cred.id} className="mt-2 flex items-center justify-between border-t border-border-default pt-2">
+            <span className="text-[9px] text-text-muted">{cred.toolType.replace('rdstation_', '')}</span>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => handleDisconnect(cred.toolType)}
+              disabled={disconnectMutation.isPending}
+            >
+              {t('whatsapp.disconnect')}
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ===========================================================================
 // Tab: Models
 // ===========================================================================
 
-const MODEL_OPTIONS = [
-  { id: 'claude-sonnet-4-6', labelKey: 'modelSonnet' },
-  { id: 'claude-haiku-4-5-20251001', labelKey: 'modelHaiku' },
-  { id: 'claude-opus-4-6', labelKey: 'modelOpus' },
-] as const;
-
-const MODEL_PRICING_TABLE = [
-  { model: 'Claude Sonnet 4.6', id: 'claude-sonnet-4-6', input: 3.0, output: 15.0 },
-  { model: 'Claude Haiku 4.5', id: 'claude-haiku-4-5-20251001', input: 0.8, output: 4.0 },
-  { model: 'Claude Opus 4.6', id: 'claude-opus-4-6', input: 15.0, output: 75.0 },
+const MODEL_CATALOG = [
+  { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6', input: 3.0, output: 15.0 },
+  { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', input: 0.8, output: 4.0 },
+  { id: 'claude-opus-4-6', label: 'Claude Opus 4.6', input: 15.0, output: 75.0 },
 ] as const;
 
 function ModelsTab() {
@@ -770,72 +1056,48 @@ function ModelsTab() {
   }, []);
 
   const handleBudgetChange = useCallback((value: string) => {
-    // Only allow numbers and decimals
     const clean = value.replace(/[^\d.]/g, '');
     setBudget(clean);
     localStorage.setItem('ai-office-monthly-budget', clean);
   }, []);
 
+  const selectedEntry = MODEL_CATALOG.find((m) => m.id === selectedModel) ?? MODEL_CATALOG[0]!;
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Default Model Selector */}
+      {/* Default Model — 3-column row */}
       <div>
         <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
           {t('defaultModel')}
         </label>
         <p className="mb-2 text-[9px] text-text-muted">{t('defaultModelDesc')}</p>
-        <div className="flex flex-col gap-1.5">
-          {MODEL_OPTIONS.map((opt) => (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => handleModelChange(opt.id)}
-              className={`flex items-center gap-2 border px-3 py-2 text-left text-[10px] transition-colors ${
-                selectedModel === opt.id
-                  ? 'border-accent-cyan bg-accent-cyan/5 text-accent-cyan'
-                  : 'border-border-default text-text-secondary hover:border-border-hover'
-              }`}
-            >
-              <div
-                className={`h-2 w-2 shrink-0 ${
-                  selectedModel === opt.id ? 'bg-accent-cyan' : 'bg-bg-overlay'
-                }`}
-              />
-              <span className="font-medium">{t(opt.labelKey)}</span>
-              <code className="ml-auto text-[8px] text-text-muted">{opt.id}</code>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Token Pricing Table */}
-      <div>
-        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
-          {t('pricingTable')}
-        </label>
-        <div className="flex flex-col">
-          {/* Header */}
-          <div className="flex items-center border border-border-default bg-bg-overlay px-3 py-1.5">
-            <span className="flex-1 text-[8px] uppercase tracking-[0.1em] text-text-muted">{t('pricingModel')}</span>
-            <span className="w-28 text-right text-[8px] uppercase tracking-[0.1em] text-text-muted">{t('pricingInput')}</span>
-            <span className="w-28 text-right text-[8px] uppercase tracking-[0.1em] text-text-muted">{t('pricingOutput')}</span>
+        <div className="flex items-center border border-border-default">
+          {/* Column 1: Label */}
+          <div className="shrink-0 border-r border-border-default bg-bg-overlay px-3 py-2">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
+              {t('llmModel')}
+            </span>
           </div>
-          {MODEL_PRICING_TABLE.map((row) => (
-            <div
-              key={row.id}
-              className={`flex items-center border border-t-0 border-border-default px-3 py-2 ${
-                selectedModel === row.id ? 'bg-accent-cyan/5' : ''
-              }`}
+          {/* Column 2: Dropdown */}
+          <div className="flex-1 border-r border-border-default px-3 py-1">
+            <select
+              value={selectedModel}
+              onChange={(e) => handleModelChange(e.target.value)}
+              className="w-full border-0 bg-transparent text-[10px] text-text-primary focus:outline-none [&>option]:bg-bg-base [&>option]:text-text-primary"
             >
-              <span className="flex-1 text-[10px] text-text-primary">{row.model}</span>
-              <span className="w-28 text-right text-[10px] text-text-secondary">
-                ${row.input.toFixed(2)}
-              </span>
-              <span className="w-28 text-right text-[10px] text-text-secondary">
-                ${row.output.toFixed(2)}
-              </span>
-            </div>
-          ))}
+              {MODEL_CATALOG.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {/* Column 3: Cost */}
+          <div className="shrink-0 px-3 py-2">
+            <span className="text-[9px] text-text-secondary">
+              ${selectedEntry.input.toFixed(2)} input, ${selectedEntry.output.toFixed(2)} output per 1M tokens
+            </span>
+          </div>
         </div>
         <p className="mt-1 text-[8px] text-text-muted">{t('pricingNote')}</p>
       </div>
@@ -915,7 +1177,8 @@ export default function SettingsPage() {
             {activeTab === 'members' && <MembersTab />}
             {activeTab === 'billing' && <BillingTab />}
             {activeTab === 'notifications' && <NotificationsTab />}
-            {activeTab === 'integrations' && <WhatsAppPanel />}
+            {activeTab === 'navigation' && <NavigationTab />}
+            {activeTab === 'apikeys' && <ApiKeysTab />}
             {activeTab === 'models' && <ModelsTab />}
           </div>
         </div>

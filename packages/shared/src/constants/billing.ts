@@ -31,12 +31,14 @@ export const PLAN_PRICING: Record<PlanTier, PlanPricing> = {
 /** Map plan tier to feature highlights (for pricing page/upgrade modal) */
 export const PLAN_FEATURES: Record<PlanTier, string[]> = {
   starter: [
+    '100K tokens/month',
     '1 project',
     '3 agents',
     '5 workflows',
     'Community support',
   ],
   growth: [
+    '1M tokens/month',
     '5 projects',
     '10 agents',
     '25 workflows',
@@ -44,6 +46,7 @@ export const PLAN_FEATURES: Record<PlanTier, string[]> = {
     'WhatsApp integration',
   ],
   pro: [
+    '5M tokens/month',
     '20 projects',
     '50 agents',
     '100 workflows',
@@ -52,6 +55,7 @@ export const PLAN_FEATURES: Record<PlanTier, string[]> = {
     'Advanced analytics',
   ],
   enterprise: [
+    'Unlimited tokens',
     'Unlimited projects',
     'Unlimited agents',
     'Unlimited workflows',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   MessageSquare,
@@ -22,6 +22,7 @@ import type { LucideIcon } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CredentialModal } from '@/components/tools/CredentialModal';
 
 // ── Tool catalog ─────────────────────────────────────────────────────
 interface ToolDef {
@@ -123,6 +124,7 @@ const TOOL_CATALOG: ToolCategory[] = [
 export default function ToolsPage() {
   const t = useTranslations('toolsPage');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [configCategory, setConfigCategory] = useState<ToolCategory | null>(null);
 
   // Fetch OAuth2 credentials to show connection status
   const { data: credentials } = trpc.toolCredentials.list.useQuery();
@@ -224,6 +226,7 @@ export default function ToolsPage() {
             category={selected}
             connectedTypes={connectedTypes}
             onClose={() => setSelectedKey(null)}
+            onConfigure={setConfigCategory}
             t={t}
           />
         ) : (
@@ -232,6 +235,14 @@ export default function ToolsPage() {
           </div>
         )}
       </div>
+
+      {/* Credential configuration modal */}
+      {configCategory && (
+        <CredentialModal
+          category={configCategory}
+          onClose={() => setConfigCategory(null)}
+        />
+      )}
     </div>
   );
 }
@@ -241,11 +252,13 @@ function DetailPanel({
   category,
   connectedTypes,
   onClose,
+  onConfigure,
   t,
 }: {
   category: ToolCategory;
   connectedTypes: Set<string>;
   onClose: () => void;
+  onConfigure: (cat: ToolCategory) => void;
   t: ReturnType<typeof useTranslations<'toolsPage'>>;
 }) {
   const Icon = category.icon;
@@ -263,14 +276,25 @@ function DetailPanel({
             {t(`categories.${category.key}`)}
           </h2>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex h-5 w-5 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
-          aria-label={t('close' as any)}
-        >
-          <X size={12} strokeWidth={1.5} />
-        </button>
+        <div className="flex items-center gap-2">
+          {category.key !== 'builtin' && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => onConfigure(category)}
+            >
+              {t('configure')}
+            </Button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-5 w-5 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
+            aria-label={t('close' as any)}
+          >
+            <X size={12} strokeWidth={1.5} />
+          </button>
+        </div>
       </div>
 
       {/* Built-in badge or connection status + tutorial */}

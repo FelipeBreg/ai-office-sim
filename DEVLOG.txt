@@ -7,6 +7,86 @@
 
 
 ================================================================================
+COMMIT #63 — Settings Overhaul: Models, Billing, Nav Config, API Keys + Tools
+================================================================================
+DATE: 2026-02-27
+HASH: (pending)
+PHASE: Post-Phase 3 — Settings Polish
+
+WHAT CHANGED:
+  MODELS TAB:
+  - Replaced radio-button selector + separate pricing table with single 3-column
+    row: LLM Model label | dropdown selector | dynamic cost display
+  - Merged MODEL_OPTIONS + MODEL_PRICING_TABLE into unified MODEL_CATALOG
+  - Selection persists to localStorage, cost updates dynamically
+
+  BILLING TAB:
+  - Added "Current Balance: $0.00" card at top with "Add Credits" placeholder button
+  - Added token allocations as first feature in each plan tier:
+    Starter 100K, Growth 1M, Pro 5M, Enterprise Unlimited
+
+  NAVIGATION TAB (NEW):
+  - New settings tab with toggle switches for all sidebar nav items
+  - Atlas + Settings marked "Always visible" (not toggleable)
+  - Persists hidden items to localStorage('ai-office-hidden-nav-items')
+  - Sidebar reads hidden items on mount + listens for storage events
+  - Groups with 0 visible items are automatically hidden
+
+  API KEYS TAB (replaces Integrations):
+  - Replaced integrations tab with API Keys tab showing grouped credentials
+  - WhatsApp, Google, RD Station cards with status badges
+  - "Configure in Tools" links + disconnect buttons for OAuth services
+  - Removed WhatsAppPanel from settings page
+
+  TOOLS PAGE — CONFIGURE BUTTON + CREDENTIAL MODAL:
+  - Added "Configure" button in DetailPanel header for non-builtin categories
+  - New CredentialModal.tsx with per-category credential forms:
+    WhatsApp: provider dropdown + credential fields + phone + handler agent
+    Email/Sheets: Google OAuth connect/disconnect
+    CRM: RD Station OAuth connect/disconnect
+    Web Search/Finance/DevOps: env var configuration note
+
+  I18N:
+  - Added ~18 new keys to en-US.json and pt-BR.json (settings + toolsPage)
+
+FILES: 7 modified, 1 new
+  - MODIFIED: DEVLOG.txt
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/settings/page.tsx
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/tools/page.tsx
+  - MODIFIED: apps/web/src/components/layout/sidebar.tsx
+  - MODIFIED: packages/shared/src/constants/billing.ts
+  - MODIFIED: apps/web/messages/en-US.json
+  - MODIFIED: apps/web/messages/pt-BR.json
+  - NEW:      apps/web/src/components/tools/CredentialModal.tsx
+
+VERIFICATION:
+  - pnpm --filter web exec tsc --noEmit: 0 errors
+  - JSON locale files validated
+
+================================================================================
+
+================================================================================
+COMMIT #62 — Atlas Error Handling Fix
+================================================================================
+DATE: 2026-02-27
+HASH: e0407b3
+PHASE: Post-Phase 3 — Bug Fix
+
+WHAT CHANGED:
+  - Fixed Atlas agent error handling: uncaught exceptions during agentic loop
+    no longer leave conversations in a broken state
+  - Added proper try/catch around tool execution and LLM calls
+  - Atlas now returns graceful error messages to the frontend instead of crashing
+
+FILES: Modified
+  - MODIFIED: packages/api/src/routers/atlas.ts
+
+VERIFICATION:
+  - pnpm --filter @ai-office/api exec tsc --noEmit: 0 errors
+
+================================================================================
+
+================================================================================
 COMMIT #61 — Atlas: Real LLM Agent with Anthropic Tool Use
 ================================================================================
 DATE: 2026-02-27

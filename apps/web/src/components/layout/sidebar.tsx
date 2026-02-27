@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from '@/i18n/navigation';
 import { Link } from '@/i18n/navigation';
@@ -81,6 +82,24 @@ export function Sidebar({ pendingApprovalCount = 0 }: SidebarProps) {
   const collapsedGroups = useUIStore((s) => s.collapsedGroups);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const toggleGroup = useUIStore((s) => s.toggleGroup);
+
+  // Read hidden nav items from localStorage
+  const [hiddenItems, setHiddenItems] = useState<string[]>([]);
+
+  useEffect(() => {
+    const load = () => {
+      try {
+        const raw = localStorage.getItem('ai-office-hidden-nav-items');
+        setHiddenItems(raw ? JSON.parse(raw) : []);
+      } catch { setHiddenItems([]); }
+    };
+    load();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'ai-office-hidden-nav-items') load();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   function renderNavItem(item: NavItem) {
     const isActive =
@@ -185,6 +204,8 @@ export function Sidebar({ pendingApprovalCount = 0 }: SidebarProps) {
 
         {/* Grouped navigation */}
         {NAV_GROUPS.map((group) => {
+          const visibleItems = group.items.filter((item) => !hiddenItems.includes(item.href));
+          if (visibleItems.length === 0) return null;
           const isGroupCollapsed = collapsedGroups[group.key] ?? false;
 
           return (
@@ -208,7 +229,7 @@ export function Sidebar({ pendingApprovalCount = 0 }: SidebarProps) {
               {/* Group items */}
               {(!isGroupCollapsed || collapsed) && (
                 <div className="flex flex-col gap-0.5">
-                  {group.items.map((item) => renderNavItem(item))}
+                  {visibleItems.map((item) => renderNavItem(item))}
                 </div>
               )}
             </div>

@@ -374,6 +374,12 @@
     "close": "Close",
     "builtIn": "BUILT-IN",
     "builtInDesc": "These tools are always available and require no configuration.",
+    "configure": "Configure",
+    "connectWith": "Connect with {service}",
+    "disconnect": "Disconnect",
+    "saveCredentials": "Save Credentials",
+    "credentialsSaved": "Credentials saved.",
+    "envVarNote": "This integration is configured via environment variables on the server.",
     "categories": {
       "builtin": "Built-in",
       "whatsapp": "WhatsApp",
@@ -744,7 +750,18 @@
     "pricingOutput": "Output ($/1M)",
     "pricingNote": "Prices per 1 million tokens (as of Feb 2026).",
     "monthlyBudget": "Monthly Budget Cap",
-    "monthlyBudgetDesc": "Set an optional spending limit for AI usage per month."
+    "monthlyBudgetDesc": "Set an optional spending limit for AI usage per month.",
+    "llmModel": "LLM Model",
+    "currentBalance": "Current Balance",
+    "addCredits": "Add Credits",
+    "addCreditsComingSoon": "Credit top-ups are coming soon!",
+    "navigation": "Navigation",
+    "navigationDesc": "Toggle sidebar navigation items on or off. Pinned items are always visible.",
+    "alwaysVisible": "Always visible",
+    "apiKeys": "API Keys",
+    "apiKeysDesc": "View and manage all connected service credentials.",
+    "configureInTools": "Configure in Tools",
+    "disconnectConfirm": "Are you sure you want to disconnect this service?"
   },
   "agentWizard": {
     "title": "Create New Agent",

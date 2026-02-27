@@ -374,6 +374,12 @@
     "close": "Fechar",
     "builtIn": "INTEGRADA",
     "builtInDesc": "Essas ferramentas estão sempre disponíveis e não necessitam configuração.",
+    "configure": "Configurar",
+    "connectWith": "Conectar com {service}",
+    "disconnect": "Desconectar",
+    "saveCredentials": "Salvar Credenciais",
+    "credentialsSaved": "Credenciais salvas.",
+    "envVarNote": "Esta integração é configurada via variáveis de ambiente no servidor.",
     "categories": {
       "builtin": "Integradas",
       "whatsapp": "WhatsApp",
@@ -744,7 +750,18 @@
     "pricingOutput": "Saída ($/1M)",
     "pricingNote": "Preços por 1 milhão de tokens (fev 2026).",
     "monthlyBudget": "Limite Mensal",
-    "monthlyBudgetDesc": "Defina um limite opcional de gastos com IA por mês."
+    "monthlyBudgetDesc": "Defina um limite opcional de gastos com IA por mês.",
+    "llmModel": "Modelo LLM",
+    "currentBalance": "Saldo Atual",
+    "addCredits": "Adicionar Créditos",
+    "addCreditsComingSoon": "Recarga de créditos em breve!",
+    "navigation": "Navegação",
+    "navigationDesc": "Ative ou desative itens de navegação da barra lateral. Itens fixos são sempre visíveis.",
+    "alwaysVisible": "Sempre visível",
+    "apiKeys": "Chaves de API",
+    "apiKeysDesc": "Visualize e gerencie todas as credenciais de serviços conectados.",
+    "configureInTools": "Configurar em Ferramentas",
+    "disconnectConfirm": "Tem certeza que deseja desconectar este serviço?"
   },
   "agentWizard": {
     "title": "Criar Novo Agente",
