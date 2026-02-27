@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, AlertTriangle } from 'lucide-react';
+import { Plus, AlertTriangle, BookOpen, Sparkles } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -61,10 +62,22 @@ export default function StrategyPage() {
           </h1>
           <p className="mt-0.5 text-[10px] text-text-muted">{t('subtitle')}</p>
         </div>
-        <Button size="sm" onClick={() => setWizardOpen(true)}>
-          <Plus size={12} strokeWidth={2} className="mr-1" />
-          {t('createStrategy')}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link href="/docs">
+            <Button size="sm" variant="secondary">
+              <BookOpen size={12} strokeWidth={1.5} className="mr-1" />
+              {t('businessPlaybook')}
+            </Button>
+          </Link>
+          <Button size="sm" variant="secondary" disabled>
+            <Sparkles size={12} strokeWidth={1.5} className="mr-1" />
+            {t('generateInsights')}
+          </Button>
+          <Button size="sm" onClick={() => setWizardOpen(true)}>
+            <Plus size={12} strokeWidth={2} className="mr-1" />
+            {t('createStrategy')}
+          </Button>
+        </div>
       </div>
 
       {/* Content */}

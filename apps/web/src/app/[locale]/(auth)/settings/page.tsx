@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Building2, Users, CreditCard, Bell, Puzzle, Trash2, Plus, Send, Check, ExternalLink, Download, FileText } from 'lucide-react';
+import { Building2, Users, CreditCard, Bell, Puzzle, Cpu, Trash2, Plus, Send, Check, ExternalLink, Download, FileText } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { WhatsAppPanel } from './_components/whatsapp-panel';
 import { trpc } from '@/lib/trpc/client';
@@ -33,6 +33,7 @@ const tabs = [
   { id: 'billing', labelKey: 'billing', icon: CreditCard },
   { id: 'notifications', labelKey: 'notifications', icon: Bell },
   { id: 'integrations', labelKey: 'integrations', icon: Puzzle },
+  { id: 'models', labelKey: 'models', icon: Cpu },
 ] as const;
 
 type Tab = (typeof tabs)[number]['id'];
@@ -731,6 +732,136 @@ function NotificationsTab() {
 }
 
 // ===========================================================================
+// Tab: Models
+// ===========================================================================
+
+const MODEL_OPTIONS = [
+  { id: 'claude-sonnet-4-6', labelKey: 'modelSonnet' },
+  { id: 'claude-haiku-4-5-20251001', labelKey: 'modelHaiku' },
+  { id: 'claude-opus-4-6', labelKey: 'modelOpus' },
+] as const;
+
+const MODEL_PRICING_TABLE = [
+  { model: 'Claude Sonnet 4.6', id: 'claude-sonnet-4-6', input: 3.0, output: 15.0 },
+  { model: 'Claude Haiku 4.5', id: 'claude-haiku-4-5-20251001', input: 0.8, output: 4.0 },
+  { model: 'Claude Opus 4.6', id: 'claude-opus-4-6', input: 15.0, output: 75.0 },
+] as const;
+
+function ModelsTab() {
+  const t = useTranslations('settings');
+
+  const [selectedModel, setSelectedModel] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('ai-office-default-model') ?? 'claude-sonnet-4-6';
+    }
+    return 'claude-sonnet-4-6';
+  });
+
+  const [budget, setBudget] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('ai-office-monthly-budget') ?? '';
+    }
+    return '';
+  });
+
+  const handleModelChange = useCallback((modelId: string) => {
+    setSelectedModel(modelId);
+    localStorage.setItem('ai-office-default-model', modelId);
+  }, []);
+
+  const handleBudgetChange = useCallback((value: string) => {
+    // Only allow numbers and decimals
+    const clean = value.replace(/[^\d.]/g, '');
+    setBudget(clean);
+    localStorage.setItem('ai-office-monthly-budget', clean);
+  }, []);
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Default Model Selector */}
+      <div>
+        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+          {t('defaultModel')}
+        </label>
+        <p className="mb-2 text-[9px] text-text-muted">{t('defaultModelDesc')}</p>
+        <div className="flex flex-col gap-1.5">
+          {MODEL_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => handleModelChange(opt.id)}
+              className={`flex items-center gap-2 border px-3 py-2 text-left text-[10px] transition-colors ${
+                selectedModel === opt.id
+                  ? 'border-accent-cyan bg-accent-cyan/5 text-accent-cyan'
+                  : 'border-border-default text-text-secondary hover:border-border-hover'
+              }`}
+            >
+              <div
+                className={`h-2 w-2 shrink-0 ${
+                  selectedModel === opt.id ? 'bg-accent-cyan' : 'bg-bg-overlay'
+                }`}
+              />
+              <span className="font-medium">{t(opt.labelKey)}</span>
+              <code className="ml-auto text-[8px] text-text-muted">{opt.id}</code>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Token Pricing Table */}
+      <div>
+        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+          {t('pricingTable')}
+        </label>
+        <div className="flex flex-col">
+          {/* Header */}
+          <div className="flex items-center border border-border-default bg-bg-overlay px-3 py-1.5">
+            <span className="flex-1 text-[8px] uppercase tracking-[0.1em] text-text-muted">{t('pricingModel')}</span>
+            <span className="w-28 text-right text-[8px] uppercase tracking-[0.1em] text-text-muted">{t('pricingInput')}</span>
+            <span className="w-28 text-right text-[8px] uppercase tracking-[0.1em] text-text-muted">{t('pricingOutput')}</span>
+          </div>
+          {MODEL_PRICING_TABLE.map((row) => (
+            <div
+              key={row.id}
+              className={`flex items-center border border-t-0 border-border-default px-3 py-2 ${
+                selectedModel === row.id ? 'bg-accent-cyan/5' : ''
+              }`}
+            >
+              <span className="flex-1 text-[10px] text-text-primary">{row.model}</span>
+              <span className="w-28 text-right text-[10px] text-text-secondary">
+                ${row.input.toFixed(2)}
+              </span>
+              <span className="w-28 text-right text-[10px] text-text-secondary">
+                ${row.output.toFixed(2)}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-1 text-[8px] text-text-muted">{t('pricingNote')}</p>
+      </div>
+
+      {/* Monthly Budget Cap */}
+      <div>
+        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+          {t('monthlyBudget')}
+        </label>
+        <p className="mb-2 text-[9px] text-text-muted">{t('monthlyBudgetDesc')}</p>
+        <div className="flex items-center gap-1">
+          <span className="text-[11px] text-text-muted">$</span>
+          <Input
+            value={budget}
+            onChange={(e) => handleBudgetChange(e.target.value)}
+            placeholder="0.00"
+            className="w-32"
+          />
+          <span className="text-[9px] text-text-muted">USD / {t('perMonth')}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===========================================================================
 // Main Page
 // ===========================================================================
 export default function SettingsPage() {
@@ -785,6 +916,7 @@ export default function SettingsPage() {
             {activeTab === 'billing' && <BillingTab />}
             {activeTab === 'notifications' && <NotificationsTab />}
             {activeTab === 'integrations' && <WhatsAppPanel />}
+            {activeTab === 'models' && <ModelsTab />}
           </div>
         </div>
       </div>

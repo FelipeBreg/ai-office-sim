@@ -8,12 +8,40 @@ interface OrbVisualizationProps {
   intensity: number;
 }
 
-const COLOR_MAP: Record<AtlasState, [number, number, number]> = {
+/** Fallback RGB colors per state (dark-theme defaults). */
+const FALLBACK_COLORS: Record<AtlasState, [number, number, number]> = {
   idle: [0, 200, 224],
   listening: [52, 211, 153],
   thinking: [68, 147, 248],
   speaking: [251, 191, 36],
 };
+
+/** Parse a CSS color value (hex or rgb()) into an [r, g, b] tuple. */
+function parseCSSColor(raw: string): [number, number, number] | null {
+  const trimmed = raw.trim();
+
+  // hex
+  const hexMatch = trimmed.match(/^#([0-9a-f]{6})$/i);
+  if (hexMatch) {
+    const hex = hexMatch[1]!;
+    return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
+  }
+
+  // rgb(r, g, b) or rgba(r, g, b, a)
+  const rgbMatch = trimmed.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (rgbMatch) {
+    return [Number(rgbMatch[1]), Number(rgbMatch[2]), Number(rgbMatch[3])];
+  }
+
+  return null;
+}
+
+/** Read the current --color-accent-cyan from the document root. */
+function getAccentColor(): [number, number, number] {
+  if (typeof document === 'undefined') return FALLBACK_COLORS.idle;
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--color-accent-cyan');
+  return parseCSSColor(raw) ?? FALLBACK_COLORS.idle;
+}
 
 function OrbVisualizationBase({ state, intensity }: OrbVisualizationProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -26,6 +54,9 @@ function OrbVisualizationBase({ state, intensity }: OrbVisualizationProps) {
   const intensityRef = useRef(intensity);
   stateRef.current = state;
   intensityRef.current = intensity;
+
+  // Track current accent color — updated when theme changes
+  const accentRef = useRef<[number, number, number]>(FALLBACK_COLORS.idle);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -41,6 +72,18 @@ function OrbVisualizationBase({ state, intensity }: OrbVisualizationProps) {
     const center = size / 2;
     const baseRadius = 90;
 
+    // Read accent color on mount
+    accentRef.current = getAccentColor();
+
+    // Watch for data-theme changes to update accent color
+    const observer = new MutationObserver(() => {
+      // Small delay to allow CSS variables to settle
+      requestAnimationFrame(() => {
+        accentRef.current = getAccentColor();
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
     let lastTimestamp = 0;
 
     function draw(timestamp: number) {
@@ -52,7 +95,10 @@ function OrbVisualizationBase({ state, intensity }: OrbVisualizationProps) {
 
       const currentState = stateRef.current;
       const currentIntensity = intensityRef.current;
-      const [r, g, b] = COLOR_MAP[currentState];
+
+      // idle state uses the theme accent; other states keep their semantic colors
+      const [r, g, b] =
+        currentState === 'idle' ? accentRef.current : FALLBACK_COLORS[currentState];
 
       // Pulse config per state
       let pulseSpeed = 1;
@@ -171,7 +217,10 @@ function OrbVisualizationBase({ state, intensity }: OrbVisualizationProps) {
     }
 
     animFrame.current = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(animFrame.current);
+    return () => {
+      cancelAnimationFrame(animFrame.current);
+      observer.disconnect();
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

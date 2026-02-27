@@ -73,7 +73,7 @@ const TOOL_CATALOG: ToolCategory[] = [
     icon: Search,
     tutorialUrl: 'https://serper.dev/dashboard',
     tools: [
-      { name: 'search_web', description: 'Google search via Serper API (cached 1h)', requiresApproval: false },
+      { name: 'search_web', description: 'AI-powered web search with intelligent result extraction via Serper API (requires API key)', requiresApproval: false },
     ],
   },
   {
@@ -190,11 +190,17 @@ export default function ToolsPage() {
                       </span>
                     </div>
                     <div className="mt-0.5 flex items-center gap-1.5">
-                      {isConnected === true && (
-                        <Badge variant="success">{t('connected')}</Badge>
-                      )}
-                      {isConnected === false && (
-                        <Badge variant="default">{t('notConnected')}</Badge>
+                      {category.key === 'builtin' ? (
+                        <Badge variant="default">{t('builtIn')}</Badge>
+                      ) : (
+                        <>
+                          {isConnected === true && (
+                            <Badge variant="success">{t('connected')}</Badge>
+                          )}
+                          {isConnected === false && (
+                            <Badge variant="default">{t('notConnected')}</Badge>
+                          )}
+                        </>
                       )}
                       {category.tools.some((tool) => tool.requiresApproval) && (
                         <Badge variant="warning">{t('approval')}</Badge>
@@ -267,8 +273,14 @@ function DetailPanel({
         </button>
       </div>
 
-      {/* Connection status + tutorial */}
-      {(category.credentialType || category.tutorialUrl) && (
+      {/* Built-in badge or connection status + tutorial */}
+      {category.key === 'builtin' ? (
+        <div className="border-b border-border-default px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-text-muted">{t('builtInDesc')}</span>
+          </div>
+        </div>
+      ) : (category.credentialType || category.tutorialUrl) ? (
         <div className="border-b border-border-default px-4 py-3">
           {/* Connection badge */}
           {isConnected === true && (
@@ -297,7 +309,7 @@ function DetailPanel({
             </a>
           )}
         </div>
-      )}
+      ) : null}
 
       {/* Tools list */}
       <div className="flex-1 px-4 py-3">

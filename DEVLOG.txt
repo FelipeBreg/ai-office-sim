@@ -7,6 +7,91 @@
 
 
 ================================================================================
+COMMIT #59 — 10-Feature Post-Phase 3 Enhancement Pack
+================================================================================
+DATE: 2026-02-27
+HASH: (pending)
+PHASE: Post-Phase 3 — Feature
+
+WHAT CHANGED:
+  SIDEBAR REORGANIZATION:
+  - Replaced flat navItems array with 3 collapsible groups:
+    Operations (Dashboard, Agents, Workflows, Analytics),
+    Business (Strategy, Finance, Memory),
+    Configuration (Tools)
+  - Atlas pinned at top with visual separator
+  - Settings pinned at bottom above collapse toggle
+  - Group collapse state persisted in Zustand (ui-store collapsedGroups)
+
+  FINANCE PAGE (NEW):
+  - Full finance dashboard pulling real data from trpc.actionLogs.stats
+  - Revenue Overview: 3 summary cards (total spend, tokens, actions)
+  - Expense Tracking: cost-by-model table from action_logs
+  - Daily Breakdown: day-by-day cost/token/action table
+  - Period selector (7/30/90 days)
+  - Placeholder Tax Obligations + Reports sections with Coming Soon badges
+
+  ATLAS LIGHT MODE FIX:
+  - atlas/page.tsx: all hardcoded hex colors → Tailwind CSS variable classes
+  - OrbVisualization.tsx: reads --color-accent-cyan via getComputedStyle
+    at runtime for canvas; MutationObserver on data-theme for live updates
+  - TranscriptPanel.tsx: all rgba() inline styles → Tailwind opacity classes
+
+  SETTINGS MODELS TAB:
+  - 6th tab "Models" with Cpu icon
+  - Default model selector (Sonnet 4.6 / Haiku 4.5 / Opus 4.6)
+  - Token pricing table (input/output $/1M sourced from llm.ts constants)
+  - Monthly budget cap input (stored in localStorage as interim)
+
+  TOOLS UI UPDATES:
+  - Built-in tools show "BUILT-IN" badge, no connect button
+  - External tools show connection status + tutorial links
+  - search_web description updated: "AI-powered web search with intelligent
+    result extraction via Serper API (requires API key)"
+
+  STRATEGY ENHANCEMENTS:
+  - Insight strip renamed from "AI Insights" to "ATLAS Insights"
+  - Added "Implement" button → navigates to /atlas?insight={learningId}
+  - Added "Business Playbook" button → links to /docs
+  - Added "Generate Insights" button (disabled, BullMQ cron TODO)
+
+  ATLAS SUPER-INTELLIGENCE:
+  - New tRPC router: atlas.chat mutation with real Anthropic LLM call
+  - JARVIS-like system prompt with full company context awareness
+    (agents, workflows, strategies injected into prompt)
+  - Replaced mock simulateResponse() with live tRPC mutation
+  - Conversation history (last 20 messages) sent for context
+  - Action detection: parses [ACTION: type] patterns from LLM responses
+  - Approval popups: inline cards in transcript with Approve/Reject buttons
+  - Strategy integration: reads ?insight= query param, auto-sends to Atlas
+  - atlas-store enhanced: pendingActions[], context, addAction/approve/reject
+
+FILES CHANGED (16):
+  Modified:
+  - apps/web/src/components/layout/sidebar.tsx
+  - apps/web/src/stores/ui-store.ts
+  - apps/web/src/stores/atlas-store.ts
+  - apps/web/src/app/[locale]/(auth)/atlas/page.tsx
+  - apps/web/src/components/atlas/OrbVisualization.tsx
+  - apps/web/src/components/atlas/TranscriptPanel.tsx
+  - apps/web/src/app/[locale]/(auth)/settings/page.tsx
+  - apps/web/src/app/[locale]/(auth)/tools/page.tsx
+  - apps/web/src/app/[locale]/(auth)/strategy/page.tsx
+  - apps/web/src/components/strategy/insight-strip.tsx
+  - packages/api/src/root.ts
+  - apps/web/messages/en-US.json
+  - apps/web/messages/pt-BR.json
+
+  New:
+  - apps/web/src/app/[locale]/(auth)/finance/page.tsx
+  - apps/web/src/components/atlas/ApprovalPopup.tsx
+  - packages/api/src/routers/atlas.ts
+
+TYPECHECK: 0 errors (web + api)
+--------------------------------------------------------------------------------
+
+
+================================================================================
 COMMIT #58 — Tools Detail Panel + Analytics Dashboard + Workflow Card Improvements
 ================================================================================
 DATE: 2026-02-27

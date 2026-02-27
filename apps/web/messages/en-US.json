@@ -50,7 +50,11 @@
     "switchProject": "Switch Project",
     "currentProject": "Current Project",
     "lightMode": "Switch to light mode",
-    "darkMode": "Switch to dark mode"
+    "darkMode": "Switch to dark mode",
+    "groupOperations": "Operations",
+    "groupBusiness": "Business",
+    "groupConfiguration": "Configuration",
+    "finance": "Finance"
   },
   "agents": {
     "title": "Agents",
@@ -368,6 +372,8 @@
     "availableTools": "Available tools",
     "toolCount": "{count} tools",
     "close": "Close",
+    "builtIn": "BUILT-IN",
+    "builtInDesc": "These tools are always available and require no configuration.",
     "categories": {
       "builtin": "Built-in",
       "whatsapp": "WhatsApp",
@@ -378,6 +384,29 @@
       "finance": "Finance",
       "devops": "DevOps"
     }
+  },
+  "finance": {
+    "title": "Finance & Tax",
+    "subtitle": "revenue · expenses · tax obligations",
+    "revenueOverview": "Revenue Overview",
+    "expenses": "Expenses",
+    "taxObligations": "Tax Obligations",
+    "reports": "Reports",
+    "comingSoon": "Coming Soon",
+    "totalSpend": "Total Spend",
+    "totalTokens": "Total Tokens",
+    "totalActions": "Total Actions",
+    "model": "Model",
+    "calls": "Calls",
+    "tokens": "Tokens",
+    "cost": "Cost",
+    "noExpenses": "No cost data recorded yet.",
+    "dailyBreakdown": "Daily Breakdown",
+    "date": "Date",
+    "actions": "Actions",
+    "taxPlaceholder": "NFe and tax integrations will appear here when configured.",
+    "exportCSV": "Export CSV",
+    "exportPDF": "Export PDF"
   },
   "strategy": {
     "title": "Strategy Command Center",
@@ -412,10 +441,13 @@
     "kpiStrategies": "Strategies",
     "today": "TODAY",
     "progress": "{value}%",
-    "insightsTitle": "AI Insights",
+    "insightsTitle": "ATLAS Insights",
     "insightsEmpty": "No pending insights.",
     "apply": "Apply",
+    "implement": "Implement",
     "dismiss": "Dismiss",
+    "businessPlaybook": "Business Playbook",
+    "generateInsights": "Generate Insights",
     "insightOf": "{current} of {total}",
     "confidence": "Confidence: {value}%",
     "detailDraft": "Draft",
@@ -699,7 +731,20 @@
     "notifReportDesc": "Receive a weekly summary of agent activities",
     "inviteEmail": "Email address",
     "inviteRole": "Role",
-    "sendInvite": "Send Invite"
+    "sendInvite": "Send Invite",
+    "models": "Models",
+    "defaultModel": "Default Model",
+    "defaultModelDesc": "Select the default AI model for agent operations.",
+    "modelSonnet": "Claude Sonnet 4.6",
+    "modelHaiku": "Claude Haiku 4.5",
+    "modelOpus": "Claude Opus 4.6",
+    "pricingTable": "Token Pricing",
+    "pricingModel": "Model",
+    "pricingInput": "Input ($/1M)",
+    "pricingOutput": "Output ($/1M)",
+    "pricingNote": "Prices per 1 million tokens (as of Feb 2026).",
+    "monthlyBudget": "Monthly Budget Cap",
+    "monthlyBudgetDesc": "Set an optional spending limit for AI usage per month."
   },
   "agentWizard": {
     "title": "Create New Agent",
@@ -1125,7 +1170,14 @@
     "activeAgents": "{count} active agents",
     "mute": "Mute",
     "unmute": "Unmute",
-    "reset": "Reset"
+    "reset": "Reset",
+    "chatError": "Failed to reach ATLAS. Please try again.",
+    "insightPrompt": "I'd like to implement insight {id}. What steps do you recommend?",
+    "actionSuggestion": "Suggested Action",
+    "approve": "Approve",
+    "reject": "Reject",
+    "actionApproved": "Approved",
+    "actionRejected": "Rejected"
   },
   "projectWizard": {
     "title": "New Project",

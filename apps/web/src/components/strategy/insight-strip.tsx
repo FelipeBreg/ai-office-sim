@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 
 export function InsightStrip() {
   const t = useTranslations('strategy');
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const { data: learnings } = trpc.strategies.listPendingLearnings.useQuery(undefined, {
@@ -118,6 +120,13 @@ export function InsightStrip() {
           disabled={applyMutation.isPending}
         >
           {t('apply')}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => router.push(`/atlas?insight=${learning.id}`)}
+        >
+          {t('implement')}
         </Button>
         <Button
           size="sm"

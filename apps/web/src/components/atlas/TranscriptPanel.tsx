@@ -3,34 +3,41 @@
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Send } from 'lucide-react';
-import type { AtlasMessage } from '@/stores/atlas-store';
+import { ApprovalPopup } from '@/components/atlas/ApprovalPopup';
+import type { AtlasMessage, AtlasAction } from '@/stores/atlas-store';
 
 interface TranscriptPanelProps {
   messages: AtlasMessage[];
+  pendingActions: AtlasAction[];
   input: string;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onSuggestionClick: (text: string) => void;
+  onApproveAction: (id: string) => void;
+  onRejectAction: (id: string) => void;
   disabled: boolean;
 }
 
 export function TranscriptPanel({
   messages,
+  pendingActions,
   input,
   onInputChange,
   onSend,
   onSuggestionClick,
+  onApproveAction,
+  onRejectAction,
   disabled,
 }: TranscriptPanelProps) {
   const t = useTranslations('atlas');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages or actions
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, pendingActions]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && !e.shiftKey && input.trim()) {
@@ -48,38 +55,41 @@ export function TranscriptPanel({
 
   const suggestions = [t('suggestion1'), t('suggestion2'), t('suggestion3')];
 
+  // Build an interleaved timeline of messages and actions
+  type TimelineItem =
+    | { kind: 'message'; data: AtlasMessage }
+    | { kind: 'action'; data: AtlasAction };
+
+  const timeline: TimelineItem[] = [];
+  for (const msg of messages) {
+    timeline.push({ kind: 'message', data: msg });
+  }
+  for (const action of pendingActions) {
+    timeline.push({ kind: 'action', data: action });
+  }
+  timeline.sort((a, b) => {
+    const aTime = a.data.timestamp;
+    const bTime = b.data.timestamp;
+    return aTime - bTime;
+  });
+
   return (
     <div
-      className="flex h-full flex-col border-l"
-      style={{
-        borderColor: 'rgba(0, 200, 224, 0.1)',
-        backgroundColor: '#0A0E14',
-        width: 340,
-        minWidth: 340,
-      }}
+      className="flex h-full w-[340px] min-w-[340px] flex-col border-l border-accent-cyan/10 bg-bg-deepest"
     >
       {/* Header */}
-      <div
-        className="flex shrink-0 items-center border-b px-3 py-2"
-        style={{ borderColor: 'rgba(0, 200, 224, 0.1)' }}
-      >
-        <span
-          className="font-mono text-[10px] font-medium uppercase tracking-wider"
-          style={{ color: '#00C8E0' }}
-        >
+      <div className="flex shrink-0 items-center border-b border-accent-cyan/10 px-3 py-2">
+        <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-accent-cyan">
           {t('transcript')}
         </span>
       </div>
 
       {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-2" style={{ scrollbarWidth: 'thin' }}>
-        {messages.length === 0 ? (
+        {timeline.length === 0 ? (
           /* Empty state */
           <div className="flex h-full flex-col items-center justify-center gap-3">
-            <p
-              className="font-mono text-[9px]"
-              style={{ color: 'rgba(255, 255, 255, 0.35)' }}
-            >
+            <p className="font-mono text-[9px] text-text-disabled">
               {t('emptyState')}
             </p>
             <div className="flex flex-col gap-1.5">
@@ -88,20 +98,7 @@ export function TranscriptPanel({
                   key={i}
                   onClick={() => onSuggestionClick(text)}
                   disabled={disabled}
-                  className="border px-2 py-1 text-left font-mono text-[9px] transition-colors"
-                  style={{
-                    borderColor: 'rgba(0, 200, 224, 0.15)',
-                    color: 'rgba(0, 200, 224, 0.6)',
-                    borderRadius: 0,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(0, 200, 224, 0.4)';
-                    e.currentTarget.style.color = '#00C8E0';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(0, 200, 224, 0.15)';
-                    e.currentTarget.style.color = 'rgba(0, 200, 224, 0.6)';
-                  }}
+                  className="border border-accent-cyan/15 px-2 py-1 text-left font-mono text-[9px] text-accent-cyan/60 transition-colors hover:border-accent-cyan/40 hover:text-accent-cyan"
                 >
                   {text}
                 </button>
@@ -109,52 +106,56 @@ export function TranscriptPanel({
             </div>
           </div>
         ) : (
-          /* Message list */
+          /* Timeline */
           <div className="flex flex-col gap-2">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex flex-col gap-0.5 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
-              >
-                <span
-                  className="font-mono text-[8px] uppercase tracking-wider"
-                  style={{ color: 'rgba(255, 255, 255, 0.3)' }}
-                >
-                  {msg.role === 'user' ? t('you') : t('atlasLabel')} &middot;{' '}
-                  {formatTime(msg.timestamp)}
-                </span>
+            {timeline.map((item) => {
+              if (item.kind === 'action') {
+                return (
+                  <ApprovalPopup
+                    key={item.data.id}
+                    action={item.data}
+                    onApprove={onApproveAction}
+                    onReject={onRejectAction}
+                  />
+                );
+              }
+
+              const msg = item.data;
+              return (
                 <div
-                  className="max-w-[280px] px-2 py-1.5"
-                  style={{
-                    borderRadius: 0,
-                    backgroundColor:
-                      msg.role === 'user' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 200, 224, 0.04)',
-                    borderLeft: msg.role === 'atlas' ? '2px solid #00C8E0' : 'none',
-                  }}
+                  key={msg.id}
+                  className={`flex flex-col gap-0.5 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
                 >
-                  <p
-                    className="font-mono text-[10px] leading-relaxed"
-                    style={{
-                      color:
-                        msg.role === 'user'
-                          ? 'rgba(255, 255, 255, 0.7)'
-                          : 'rgba(0, 200, 224, 0.85)',
-                    }}
+                  <span className="font-mono text-[8px] uppercase tracking-wider text-text-disabled">
+                    {msg.role === 'user' ? t('you') : t('atlasLabel')} &middot;{' '}
+                    {formatTime(msg.timestamp)}
+                  </span>
+                  <div
+                    className={`max-w-[280px] px-2 py-1.5 ${
+                      msg.role === 'user'
+                        ? 'bg-text-primary/4'
+                        : 'border-l-2 border-accent-cyan bg-accent-cyan/4'
+                    }`}
                   >
-                    {msg.text}
-                  </p>
+                    <p
+                      className={`font-mono text-[10px] leading-relaxed ${
+                        msg.role === 'user'
+                          ? 'text-text-secondary'
+                          : 'text-accent-cyan/85'
+                      }`}
+                    >
+                      {msg.text}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* Input area */}
-      <div
-        className="flex shrink-0 items-center gap-2 border-t px-3 py-2"
-        style={{ borderColor: 'rgba(0, 200, 224, 0.1)' }}
-      >
+      <div className="flex shrink-0 items-center gap-2 border-t border-accent-cyan/10 px-3 py-2">
         <input
           type="text"
           value={input}
@@ -162,28 +163,16 @@ export function TranscriptPanel({
           onKeyDown={handleKeyDown}
           placeholder={t('inputPlaceholder')}
           disabled={disabled}
-          className="flex-1 border bg-transparent px-2 py-1 font-mono text-[10px] outline-none transition-colors"
-          style={{
-            borderColor: 'rgba(0, 200, 224, 0.15)',
-            color: 'rgba(255, 255, 255, 0.8)',
-            borderRadius: 0,
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(0, 200, 224, 0.4)';
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(0, 200, 224, 0.15)';
-          }}
+          className="flex-1 border border-accent-cyan/15 bg-transparent px-2 py-1 font-mono text-[10px] text-text-secondary outline-none transition-colors focus:border-accent-cyan/40"
         />
         <button
           onClick={onSend}
           disabled={disabled || !input.trim()}
-          className="flex h-6 w-6 shrink-0 items-center justify-center border transition-colors"
-          style={{
-            borderColor: input.trim() && !disabled ? '#00C8E0' : 'rgba(0, 200, 224, 0.15)',
-            color: input.trim() && !disabled ? '#00C8E0' : 'rgba(0, 200, 224, 0.3)',
-            borderRadius: 0,
-          }}
+          className={`flex h-6 w-6 shrink-0 items-center justify-center border transition-colors ${
+            input.trim() && !disabled
+              ? 'border-accent-cyan text-accent-cyan'
+              : 'border-accent-cyan/15 text-accent-cyan/30'
+          }`}
         >
           <Send size={10} strokeWidth={1.5} />
         </button>

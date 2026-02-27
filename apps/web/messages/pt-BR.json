@@ -50,7 +50,11 @@
     "switchProject": "Trocar Projeto",
     "currentProject": "Projeto Atual",
     "lightMode": "Mudar para modo claro",
-    "darkMode": "Mudar para modo escuro"
+    "darkMode": "Mudar para modo escuro",
+    "groupOperations": "Operações",
+    "groupBusiness": "Negócios",
+    "groupConfiguration": "Configuração",
+    "finance": "Finanças"
   },
   "agents": {
     "title": "Agentes",
@@ -368,6 +372,8 @@
     "availableTools": "Ferramentas disponíveis",
     "toolCount": "{count} ferramentas",
     "close": "Fechar",
+    "builtIn": "INTEGRADA",
+    "builtInDesc": "Essas ferramentas estão sempre disponíveis e não necessitam configuração.",
     "categories": {
       "builtin": "Integradas",
       "whatsapp": "WhatsApp",
@@ -378,6 +384,29 @@
       "finance": "Financeiro",
       "devops": "DevOps"
     }
+  },
+  "finance": {
+    "title": "Finanças & Impostos",
+    "subtitle": "receita · despesas · obrigações fiscais",
+    "revenueOverview": "Visão de Receita",
+    "expenses": "Despesas",
+    "taxObligations": "Obrigações Fiscais",
+    "reports": "Relatórios",
+    "comingSoon": "Em Breve",
+    "totalSpend": "Gasto Total",
+    "totalTokens": "Tokens Totais",
+    "totalActions": "Total de Ações",
+    "model": "Modelo",
+    "calls": "Chamadas",
+    "tokens": "Tokens",
+    "cost": "Custo",
+    "noExpenses": "Nenhum dado de custo registrado ainda.",
+    "dailyBreakdown": "Detalhamento Diário",
+    "date": "Data",
+    "actions": "Ações",
+    "taxPlaceholder": "Integrações de NFe e impostos aparecerão aqui quando configuradas.",
+    "exportCSV": "Exportar CSV",
+    "exportPDF": "Exportar PDF"
   },
   "strategy": {
     "title": "Central de Estratégia",
@@ -412,10 +441,13 @@
     "kpiStrategies": "Estratégias",
     "today": "HOJE",
     "progress": "{value}%",
-    "insightsTitle": "Insights da IA",
+    "insightsTitle": "Insights do ATLAS",
     "insightsEmpty": "Nenhum insight pendente.",
     "apply": "Aplicar",
+    "implement": "Implementar",
     "dismiss": "Dispensar",
+    "businessPlaybook": "Playbook de Negócios",
+    "generateInsights": "Gerar Insights",
     "insightOf": "{current} de {total}",
     "confidence": "Confiança: {value}%",
     "detailDraft": "Rascunho",
@@ -699,7 +731,20 @@
     "notifReportDesc": "Receba um resumo semanal das atividades dos agentes",
     "inviteEmail": "Endereço de email",
     "inviteRole": "Papel",
-    "sendInvite": "Enviar Convite"
+    "sendInvite": "Enviar Convite",
+    "models": "Modelos",
+    "defaultModel": "Modelo Padrão",
+    "defaultModelDesc": "Selecione o modelo de IA padrão para operações dos agentes.",
+    "modelSonnet": "Claude Sonnet 4.6",
+    "modelHaiku": "Claude Haiku 4.5",
+    "modelOpus": "Claude Opus 4.6",
+    "pricingTable": "Preços de Tokens",
+    "pricingModel": "Modelo",
+    "pricingInput": "Entrada ($/1M)",
+    "pricingOutput": "Saída ($/1M)",
+    "pricingNote": "Preços por 1 milhão de tokens (fev 2026).",
+    "monthlyBudget": "Limite Mensal",
+    "monthlyBudgetDesc": "Defina um limite opcional de gastos com IA por mês."
   },
   "agentWizard": {
     "title": "Criar Novo Agente",
@@ -1125,7 +1170,14 @@
     "activeAgents": "{count} agentes ativos",
     "mute": "Silenciar",
     "unmute": "Ativar som",
-    "reset": "Resetar"
+    "reset": "Resetar",
+    "chatError": "Falha ao conectar com ATLAS. Tente novamente.",
+    "insightPrompt": "Gostaria de implementar o insight {id}. Quais passos você recomenda?",
+    "actionSuggestion": "Ação Sugerida",
+    "approve": "Aprovar",
+    "reject": "Rejeitar",
+    "actionApproved": "Aprovada",
+    "actionRejected": "Rejeitada"
   },
   "projectWizard": {
     "title": "Novo Projeto",
