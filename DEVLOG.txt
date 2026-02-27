@@ -7,6 +7,43 @@
 
 
 ================================================================================
+COMMIT #57 — Light/Dark Mode Switcher
+================================================================================
+DATE: 2026-02-27
+HASH: a3563b0
+PHASE: Post-Phase 3 — Feature
+
+WHAT CHANGED:
+  - Light mode CSS variable overrides in globals.css: cream backgrounds (#FAF6F1),
+    orange accent (#E07800), dark text (#1A1A1A) — status colors unchanged
+  - Zustand UI store: added theme state ('dark'|'light'), toggleTheme(), setTheme()
+    persisted to localStorage alongside sidebarCollapsed
+  - ThemeProvider component: syncs data-theme attribute on <html> from store
+  - Header: Sun/Moon toggle button (lucide-react) before locale switcher
+  - Blocking <script> in layout.tsx prevents FOUC by reading localStorage before paint
+  - not-found.tsx: replaced hardcoded hex colors with CSS variable references
+  - i18n: lightMode/darkMode keys added for en-US and pt-BR
+
+FILES CHANGED (9):
+  apps/web/src/app/globals.css              — light mode CSS overrides
+  apps/web/src/stores/ui-store.ts           — theme state + actions
+  apps/web/src/components/layout/theme-provider.tsx — NEW, data-theme sync
+  apps/web/src/components/layout/app-shell.tsx      — mount ThemeProvider
+  apps/web/src/components/layout/header.tsx          — toggle button
+  apps/web/src/app/[locale]/layout.tsx               — FOUC-prevention script
+  apps/web/src/app/not-found.tsx                     — use CSS variables
+  apps/web/messages/en-US.json              — +2 i18n keys
+  apps/web/messages/pt-BR.json              — +2 i18n keys
+
+KNOWN LIMITATIONS:
+  - Many components still use hardcoded hex colors (TeamRoster, AgentInspectPanel,
+    WorkflowEditor, etc.) — these won't respond to theme switch yet
+  - 3D office scene (THREE.js) is inherently dark-themed, unaffected by toggle
+  - Clerk UserButton not yet theme-aware
+  - No 'system' preference option (manual toggle only)
+
+
+================================================================================
 COMMIT #56 — Workflow Template Gallery (12 Pre-built Templates)
 ================================================================================
 DATE: 2026-02-27
