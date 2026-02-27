@@ -100,8 +100,9 @@ export default function AtlasPage() {
   // tRPC chat mutation
   const chatMutation = trpc.atlas.chat.useMutation({
     onSuccess: handleLoopResult,
-    onError: () => {
-      addMessage('atlas', t('chatError'));
+    onError: (err) => {
+      const detail = err?.message || '';
+      addMessage('atlas', detail ? `${t('chatError')}\n\n${detail}` : t('chatError'));
       setAtlasState('idle');
       stopIntensitySimulation();
     },
@@ -110,8 +111,9 @@ export default function AtlasPage() {
   // tRPC resolve mutation
   const resolveMutation = trpc.atlas.resolveToolCalls.useMutation({
     onSuccess: handleLoopResult,
-    onError: () => {
-      addMessage('atlas', t('chatError'));
+    onError: (err) => {
+      const detail = err?.message || '';
+      addMessage('atlas', detail ? `${t('chatError')}\n\n${detail}` : t('chatError'));
       setAtlasState('idle');
       stopIntensitySimulation();
       clearToolState();

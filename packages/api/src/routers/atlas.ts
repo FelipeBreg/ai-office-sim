@@ -347,7 +347,15 @@ export const atlasRouter = createTRPCRouter({
         { role: 'user', content: input.message },
       ];
 
-      return runAtlasLoop(messages, projectId, userId);
+      try {
+        return await runAtlasLoop(messages, projectId, userId);
+      } catch (err) {
+        console.error('[atlas.chat] Error:', err);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: err instanceof Error ? err.message : 'Atlas encountered an error',
+        });
+      }
     }),
 
   resolveToolCalls: projectProcedure
@@ -424,6 +432,14 @@ export const atlasRouter = createTRPCRouter({
         { role: 'user', content: toolResults },
       ];
 
-      return runAtlasLoop(messages, projectId, userId);
+      try {
+        return await runAtlasLoop(messages, projectId, userId);
+      } catch (err) {
+        console.error('[atlas.resolveToolCalls] Error:', err);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: err instanceof Error ? err.message : 'Atlas encountered an error',
+        });
+      }
     }),
 });
