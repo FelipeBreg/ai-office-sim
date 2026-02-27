@@ -7,6 +7,48 @@
 
 
 ================================================================================
+COMMIT #58 — Tools Detail Panel + Analytics Dashboard + Workflow Card Improvements
+================================================================================
+DATE: 2026-02-27
+HASH: ef31ac3
+PHASE: Post-Phase 3 — Feature
+
+WHAT CHANGED:
+  TOOLS PAGE:
+  - Refactored from flat grid → master/detail layout
+  - Left: clickable category list with connection badges
+  - Right: detail panel showing individual tools, approval flags, and
+    tutorial links (WhatsApp, Email, Serper, RD Station, Google Sheets)
+  - i18n: toolCount, selectApp, setupGuide, availableTools, close keys
+
+  ANALYTICS PAGE:
+  - New tRPC endpoint: actionLogs.stats (aggregated metrics over N days)
+    → total actions, total tokens, total cost
+    → daily breakdown (day, actions, tokens, cost)
+    → cost by model (extracted from input->>'model' in llm_response logs)
+  - Dashboard section at top of page: 3 stat cards + 2 charts
+    → bar chart: daily action count (7 days, hover tooltips)
+    → table: cost per model (Haiku/Sonnet/Opus) with tokens + USD
+  - i18n: 7 new stats keys in en-US and pt-BR
+
+  WORKFLOWS:
+  - Workflow cards now show node-type indicator dots (colored 1.5px squares)
+    using same NODE_TYPE_COLORS map as template cards
+  - Agent count badge (Bot icon + "N agents") on both workflow and template cards
+  - Shared extractNodeInfo() helper to parse definition JSON
+  - i18n: agentCount key in both workflows and workflowTemplates namespaces
+
+FILES CHANGED (7):
+  apps/web/src/app/[locale]/(auth)/tools/page.tsx    — master/detail layout
+  apps/web/src/app/[locale]/(auth)/analytics/page.tsx — metrics dashboard
+  packages/api/src/routers/action-logs.ts            — stats endpoint
+  apps/web/src/app/[locale]/(auth)/workflows/page.tsx — node dots + agent count
+  apps/web/src/app/[locale]/(auth)/workflows/templates/page.tsx — agent count
+  apps/web/messages/en-US.json                       — +12 i18n keys
+  apps/web/messages/pt-BR.json                       — +12 i18n keys
+
+
+================================================================================
 COMMIT #57 — Light/Dark Mode Switcher
 ================================================================================
 DATE: 2026-02-27
