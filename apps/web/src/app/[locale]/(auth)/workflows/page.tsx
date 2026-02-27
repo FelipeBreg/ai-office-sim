@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, GitBranch, AlertTriangle, Trash2 } from 'lucide-react';
+import { Plus, GitBranch, AlertTriangle, Trash2, LayoutGrid } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -71,12 +71,20 @@ function EmptyState({ t }: { t: ReturnType<typeof useTranslations<'workflows'>> 
         <p className="text-xs text-text-secondary">{t('noWorkflows')}</p>
         <p className="mt-1 text-[10px] text-text-muted">{t('noWorkflowsDescription')}</p>
       </div>
-      <Link href="/workflows/new">
-        <Button size="sm">
-          <Plus size={12} strokeWidth={2} className="mr-1" />
-          {t('createWorkflow')}
-        </Button>
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link href="/workflows/new">
+          <Button size="sm">
+            <Plus size={12} strokeWidth={2} className="mr-1" />
+            {t('createWorkflow')}
+          </Button>
+        </Link>
+        <Link href="/workflows/templates">
+          <Button size="sm" variant="secondary">
+            <LayoutGrid size={12} strokeWidth={2} className="mr-1" />
+            {t('browseTemplates')}
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }
@@ -225,12 +233,20 @@ export default function WorkflowsPage() {
           </h1>
           <p className="mt-0.5 text-[10px] text-text-muted">{t('subtitle')}</p>
         </div>
-        <Link href="/workflows/new">
-          <Button size="sm">
-            <Plus size={12} strokeWidth={2} className="mr-1" />
-            {t('newWorkflow')}
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/workflows/templates">
+            <Button size="sm" variant="secondary">
+              <LayoutGrid size={12} strokeWidth={2} className="mr-1" />
+              {t('browseTemplates')}
+            </Button>
+          </Link>
+          <Link href="/workflows/new">
+            <Button size="sm">
+              <Plus size={12} strokeWidth={2} className="mr-1" />
+              {t('newWorkflow')}
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Content */}

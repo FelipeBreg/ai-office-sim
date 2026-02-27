@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq, and } from 'drizzle-orm';
 import postgres from 'postgres';
 import * as schema from './schema/index.js';
+import { seedWorkflowTemplates } from './seed/workflow-templates.js';
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -206,6 +207,9 @@ async function seed() {
   } else {
     console.log(`  Action logs: already seeded, skipping`);
   }
+
+  // 6. Seed global workflow templates
+  await seedWorkflowTemplates();
 
   console.log('\nSeed complete!');
   await client.end();
