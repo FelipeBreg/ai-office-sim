@@ -7,6 +7,48 @@
 
 
 ================================================================================
+COMMIT #56 — Workflow Template Gallery (12 Pre-built Templates)
+================================================================================
+DATE: 2026-02-27
+HASH: 288e9a9
+PHASE: Post-Phase 3 — Feature
+
+WHAT CHANGED:
+  - New DB schema: workflow_templates table (global, no projectId) with slug,
+    bilingual name/description, category, icon, nodeCount, definition (jsonb)
+  - Seeded 12 workflow templates across 5 categories:
+      Universal (5): Customer Inquiry, Lead Qualification, Daily Summary,
+        Content Review, Task Escalation
+      Marketing (2): Campaign Launch, Social Media Monitor
+      E-commerce (2): Order Follow-up, Inventory Alert
+      SaaS (2): User Onboarding Drip, Churn Prevention
+      Finance (1): Invoice Processing
+  - Each template has full React Flow node/edge definitions with positioned
+    nodes (trigger, agent, condition, approval, output, delay types)
+  - New tRPC router: workflowTemplates.list (with category filter),
+    workflowTemplates.getById, workflowTemplates.use (copies to project)
+  - New gallery page at /workflows/templates with DOS-style category filter
+    tabs, responsive card grid, node-type color dots, Use Template button
+  - Added "Browse Templates" button to workflows page header + empty state
+  - Full i18n: 40+ keys in both en-US and pt-BR
+
+FILES: 10 changed (4 new), +829 -15
+  - NEW: packages/db/src/schema/workflow-templates.ts
+  - NEW: packages/db/src/seed/workflow-templates.ts
+  - NEW: packages/api/src/routers/workflow-templates.ts
+  - NEW: apps/web/src/app/[locale]/(auth)/workflows/templates/page.tsx
+  - MODIFIED: packages/db/src/schema/index.ts
+  - MODIFIED: packages/db/src/seed.ts
+  - MODIFIED: packages/api/src/root.ts
+  - MODIFIED: apps/web/messages/en-US.json
+  - MODIFIED: apps/web/messages/pt-BR.json
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/workflows/page.tsx
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+
+
+================================================================================
 COMMIT #55 — Remove Project Rail (Duplicate of Header Selector)
 ================================================================================
 DATE: 2026-02-27
