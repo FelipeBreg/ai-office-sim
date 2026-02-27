@@ -2,42 +2,58 @@
 
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { Send } from 'lucide-react';
+import { Send, CheckCircle, XCircle } from 'lucide-react';
 import { ApprovalPopup } from '@/components/atlas/ApprovalPopup';
-import type { AtlasMessage, AtlasAction } from '@/stores/atlas-store';
+import { Button } from '@/components/ui/button';
+import type { AtlasMessage, PendingToolCall, ToolCallResult } from '@/stores/atlas-store';
 
 interface TranscriptPanelProps {
   messages: AtlasMessage[];
-  pendingActions: AtlasAction[];
+  pendingToolCalls: PendingToolCall[];
+  toolCallResults: ToolCallResult[];
   input: string;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onSuggestionClick: (text: string) => void;
-  onApproveAction: (id: string) => void;
-  onRejectAction: (id: string) => void;
+  onApproveToolCall: (id: string) => void;
+  onRejectToolCall: (id: string) => void;
+  onApproveAll: () => void;
+  onRejectAll: () => void;
   disabled: boolean;
+  isAwaitingApproval: boolean;
+}
+
+function formatToolName(name: string): string {
+  return name
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }
 
 export function TranscriptPanel({
   messages,
-  pendingActions,
+  pendingToolCalls,
+  toolCallResults,
   input,
   onInputChange,
   onSend,
   onSuggestionClick,
-  onApproveAction,
-  onRejectAction,
+  onApproveToolCall,
+  onRejectToolCall,
+  onApproveAll,
+  onRejectAll,
   disabled,
+  isAwaitingApproval,
 }: TranscriptPanelProps) {
   const t = useTranslations('atlas');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages or actions
+  // Auto-scroll to bottom on new messages, tool calls, or results
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, pendingActions]);
+  }, [messages, pendingToolCalls, toolCallResults]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && !e.shiftKey && input.trim()) {
@@ -55,28 +71,30 @@ export function TranscriptPanel({
 
   const suggestions = [t('suggestion1'), t('suggestion2'), t('suggestion3')];
 
-  // Build an interleaved timeline of messages and actions
+  // Build timeline
   type TimelineItem =
     | { kind: 'message'; data: AtlasMessage }
-    | { kind: 'action'; data: AtlasAction };
+    | { kind: 'tool_call'; data: PendingToolCall }
+    | { kind: 'tool_result'; data: ToolCallResult };
 
   const timeline: TimelineItem[] = [];
   for (const msg of messages) {
     timeline.push({ kind: 'message', data: msg });
   }
-  for (const action of pendingActions) {
-    timeline.push({ kind: 'action', data: action });
+  for (const result of toolCallResults) {
+    timeline.push({ kind: 'tool_result', data: result });
   }
+  // Sort by timestamp
   timeline.sort((a, b) => {
-    const aTime = a.data.timestamp;
-    const bTime = b.data.timestamp;
+    const aTime = 'timestamp' in a.data ? a.data.timestamp : 0;
+    const bTime = 'timestamp' in b.data ? b.data.timestamp : 0;
     return aTime - bTime;
   });
 
+  const hasPendingApprovals = pendingToolCalls.some((tc) => tc.status === 'pending');
+
   return (
-    <div
-      className="flex h-full w-[340px] min-w-[340px] flex-col border-l border-accent-cyan/10 bg-bg-deepest"
-    >
+    <div className="flex h-full w-[340px] min-w-[340px] flex-col border-l border-accent-cyan/10 bg-bg-deepest">
       {/* Header */}
       <div className="flex shrink-0 items-center border-b border-accent-cyan/10 px-3 py-2">
         <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-accent-cyan">
@@ -85,13 +103,15 @@ export function TranscriptPanel({
       </div>
 
       {/* Messages area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-2" style={{ scrollbarWidth: 'thin' }}>
-        {timeline.length === 0 ? (
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-3 py-2"
+        style={{ scrollbarWidth: 'thin' }}
+      >
+        {timeline.length === 0 && pendingToolCalls.length === 0 ? (
           /* Empty state */
           <div className="flex h-full flex-col items-center justify-center gap-3">
-            <p className="font-mono text-[9px] text-text-disabled">
-              {t('emptyState')}
-            </p>
+            <p className="font-mono text-[9px] text-text-disabled">{t('emptyState')}</p>
             <div className="flex flex-col gap-1.5">
               {suggestions.map((text, i) => (
                 <button
@@ -106,21 +126,45 @@ export function TranscriptPanel({
             </div>
           </div>
         ) : (
-          /* Timeline */
           <div className="flex flex-col gap-2">
+            {/* Timeline items */}
             {timeline.map((item) => {
-              if (item.kind === 'action') {
+              if (item.kind === 'tool_result') {
+                const result = item.data;
                 return (
-                  <ApprovalPopup
-                    key={item.data.id}
-                    action={item.data}
-                    onApprove={onApproveAction}
-                    onReject={onRejectAction}
-                  />
+                  <div
+                    key={result.id}
+                    className={`my-0.5 border-l-2 p-2 ${
+                      result.isError
+                        ? 'border-status-error/50 bg-status-error/5'
+                        : 'border-accent-cyan/30 bg-accent-cyan/3'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[8px] uppercase tracking-wider text-text-disabled">
+                        {formatToolName(result.toolName)}
+                      </span>
+                      {result.autoExecuted && (
+                        <span className="rounded-sm bg-accent-cyan/10 px-1 py-px text-[7px] uppercase tracking-wider text-accent-cyan/60">
+                          {t('toolExecuted')}
+                        </span>
+                      )}
+                      {result.isError && (
+                        <span className="rounded-sm bg-status-error/10 px-1 py-px text-[7px] uppercase tracking-wider text-status-error/60">
+                          {t('toolFailed')}
+                        </span>
+                      )}
+                    </div>
+                    <pre className="mt-1 max-h-[100px] overflow-auto font-mono text-[8px] leading-relaxed text-text-muted">
+                      {result.output.length > 200
+                        ? result.output.slice(0, 200) + '...'
+                        : result.output}
+                    </pre>
+                  </div>
                 );
               }
 
-              const msg = item.data;
+              const msg = item.data as AtlasMessage;
               return (
                 <div
                   key={msg.id}
@@ -139,9 +183,7 @@ export function TranscriptPanel({
                   >
                     <p
                       className={`font-mono text-[10px] leading-relaxed ${
-                        msg.role === 'user'
-                          ? 'text-text-secondary'
-                          : 'text-accent-cyan/85'
+                        msg.role === 'user' ? 'text-text-secondary' : 'text-accent-cyan/85'
                       }`}
                     >
                       {msg.text}
@@ -150,6 +192,34 @@ export function TranscriptPanel({
                 </div>
               );
             })}
+
+            {/* Pending tool call approvals */}
+            {pendingToolCalls.length > 0 && (
+              <>
+                {pendingToolCalls.map((tc) => (
+                  <ApprovalPopup
+                    key={tc.id}
+                    toolCall={tc}
+                    onApprove={onApproveToolCall}
+                    onReject={onRejectToolCall}
+                  />
+                ))}
+
+                {/* Approve All / Reject All buttons */}
+                {hasPendingApprovals && (
+                  <div className="flex items-center gap-1.5 border-t border-accent-cyan/10 pt-2">
+                    <Button size="sm" variant="primary" onClick={onApproveAll}>
+                      <CheckCircle size={10} strokeWidth={2} className="mr-0.5" />
+                      {t('approveAll')}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={onRejectAll}>
+                      <XCircle size={10} strokeWidth={2} className="mr-0.5" />
+                      {t('rejectAll')}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>

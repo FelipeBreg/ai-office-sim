@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type AtlasState = 'idle' | 'listening' | 'thinking' | 'speaking';
+export type AtlasState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'awaiting_approval';
 
 export interface AtlasMessage {
   id: string;
@@ -9,12 +9,19 @@ export interface AtlasMessage {
   timestamp: number;
 }
 
-export interface AtlasAction {
+export interface PendingToolCall {
   id: string;
-  type: string;
-  title: string;
-  description: string;
+  name: string;
+  input: Record<string, unknown>;
   status: 'pending' | 'approved' | 'rejected';
+}
+
+export interface ToolCallResult {
+  id: string;
+  toolName: string;
+  output: string;
+  isError: boolean;
+  autoExecuted: boolean;
   timestamp: number;
 }
 
@@ -24,23 +31,36 @@ interface AtlasStore {
   intensity: number;
   muted: boolean;
   context: string;
-  pendingActions: AtlasAction[];
 
+  // Tool-use state
+  conversationHistory: any[];
+  pendingToolCalls: PendingToolCall[];
+  partialHistory: any[];
+  toolCallResults: ToolCallResult[];
+
+  // Actions
   setState: (state: AtlasState) => void;
   setIntensity: (intensity: number) => void;
   toggleMuted: () => void;
   addMessage: (role: 'user' | 'atlas', text: string) => void;
   clearMessages: () => void;
   setContext: (context: string) => void;
-  addAction: (action: Omit<AtlasAction, 'id' | 'status' | 'timestamp'>) => void;
-  approveAction: (id: string) => void;
-  rejectAction: (id: string) => void;
+
+  // Tool-use actions
+  setConversationHistory: (history: any[]) => void;
+  setPendingToolCalls: (calls: PendingToolCall[]) => void;
+  setPartialHistory: (history: any[]) => void;
+  approveToolCall: (id: string) => void;
+  rejectToolCall: (id: string) => void;
+  addToolCallResult: (result: Omit<ToolCallResult, 'id' | 'timestamp'>) => void;
+  clearToolState: () => void;
+
   reset: () => void;
 }
 
 const MAX_MESSAGES = 200;
 let msgCounter = 0;
-let actionCounter = 0;
+let toolResultCounter = 0;
 
 export const useAtlasStore = create<AtlasStore>()((set) => ({
   state: 'idle',
@@ -48,7 +68,10 @@ export const useAtlasStore = create<AtlasStore>()((set) => ({
   intensity: 0,
   muted: false,
   context: '',
-  pendingActions: [],
+  conversationHistory: [],
+  pendingToolCalls: [],
+  partialHistory: [],
+  toolCallResults: [],
 
   setState: (state) => set({ state }),
   setIntensity: (intensity) => set({ intensity }),
@@ -67,30 +90,39 @@ export const useAtlasStore = create<AtlasStore>()((set) => ({
     })),
   clearMessages: () => set({ messages: [] }),
   setContext: (context) => set({ context }),
-  addAction: (action) =>
+
+  setConversationHistory: (history) => set({ conversationHistory: history }),
+  setPendingToolCalls: (calls) => set({ pendingToolCalls: calls }),
+  setPartialHistory: (history) => set({ partialHistory: history }),
+  approveToolCall: (id) =>
     set((s) => ({
-      pendingActions: [
-        ...s.pendingActions,
+      pendingToolCalls: s.pendingToolCalls.map((tc) =>
+        tc.id === id ? { ...tc, status: 'approved' as const } : tc,
+      ),
+    })),
+  rejectToolCall: (id) =>
+    set((s) => ({
+      pendingToolCalls: s.pendingToolCalls.map((tc) =>
+        tc.id === id ? { ...tc, status: 'rejected' as const } : tc,
+      ),
+    })),
+  addToolCallResult: (result) =>
+    set((s) => ({
+      toolCallResults: [
+        ...s.toolCallResults,
         {
-          ...action,
-          id: `action-${Date.now()}-${actionCounter++}`,
-          status: 'pending' as const,
+          ...result,
+          id: `tr-${Date.now()}-${toolResultCounter++}`,
           timestamp: Date.now(),
         },
       ],
     })),
-  approveAction: (id) =>
-    set((s) => ({
-      pendingActions: s.pendingActions.map((a) =>
-        a.id === id ? { ...a, status: 'approved' as const } : a,
-      ),
-    })),
-  rejectAction: (id) =>
-    set((s) => ({
-      pendingActions: s.pendingActions.map((a) =>
-        a.id === id ? { ...a, status: 'rejected' as const } : a,
-      ),
-    })),
+  clearToolState: () =>
+    set({
+      pendingToolCalls: [],
+      partialHistory: [],
+    }),
+
   reset: () =>
     set({
       state: 'idle',
@@ -98,6 +130,9 @@ export const useAtlasStore = create<AtlasStore>()((set) => ({
       intensity: 0,
       muted: false,
       context: '',
-      pendingActions: [],
+      conversationHistory: [],
+      pendingToolCalls: [],
+      partialHistory: [],
+      toolCallResults: [],
     }),
 }));

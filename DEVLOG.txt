@@ -7,6 +7,50 @@
 
 
 ================================================================================
+COMMIT #61 — Atlas: Real LLM Agent with Anthropic Tool Use
+================================================================================
+DATE: 2026-02-27
+HASH: (pending)
+PHASE: Post-Phase 3 — Atlas Agent Upgrade
+
+WHAT CHANGED:
+  - Replaced Atlas regex-based [ACTION: type] system with Anthropic native tool_use
+  - Created 16 Atlas tools (10 read-only auto-execute, 6 mutation requiring approval)
+    Read-only: list_agents, get_agent, list_workflows, get_workflow, list_strategies,
+      get_strategy, get_analytics, list_pending_approvals, list_human_tasks, search_memory
+    Mutations: create_agent, update_agent, trigger_agent, create_workflow,
+      update_strategy, create_human_task
+  - Rewrote atlas.ts router with agentic loop (max 8 iterations, 50k token budget)
+    Read-only tools auto-execute and feed results back to Claude in a loop
+    Mutation tools pause the loop and return pendingToolCalls to frontend
+  - Added atlas.resolveToolCalls tRPC mutation for approval resumption flow
+  - Updated atlas-store.ts: new PendingToolCall/ToolCallResult types, conversationHistory,
+    partialHistory, toolCallResults state; removed old AtlasAction/pendingActions
+  - Added 'awaiting_approval' to AtlasState (store, page, orb, state maps)
+  - Rewrote ApprovalPopup to show tool name, input params as key-value pairs
+  - Updated TranscriptPanel with tool_result timeline items, auto-executed badges,
+    approve all / reject all buttons
+  - Added 10 i18n keys to en-US.json and pt-BR.json (atlas namespace)
+
+FILES: 10 changed, 1 new
+  - NEW:      packages/api/src/lib/atlas-tools.ts
+  - MODIFIED: packages/api/src/routers/atlas.ts
+  - MODIFIED: packages/api/src/index.ts
+  - MODIFIED: apps/web/src/stores/atlas-store.ts
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/atlas/page.tsx
+  - MODIFIED: apps/web/src/components/atlas/ApprovalPopup.tsx
+  - MODIFIED: apps/web/src/components/atlas/TranscriptPanel.tsx
+  - MODIFIED: apps/web/src/components/atlas/OrbVisualization.tsx
+  - MODIFIED: apps/web/messages/en-US.json
+  - MODIFIED: apps/web/messages/pt-BR.json
+
+VERIFICATION:
+  - pnpm --filter @ai-office/api exec tsc --noEmit: 0 errors
+  - pnpm --filter web exec tsc --noEmit: 0 errors
+
+================================================================================
+
+================================================================================
 COMMIT #60 — Reorganize Sidebar Nav Groups
 ================================================================================
 DATE: 2026-02-27

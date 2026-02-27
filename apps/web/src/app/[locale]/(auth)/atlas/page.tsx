@@ -16,14 +16,15 @@ const STATE_LABEL_MAP: Record<AtlasState, { label: string; sub: string }> = {
   listening: { label: 'stateListening', sub: 'stateListeningSub' },
   thinking: { label: 'stateThinking', sub: 'stateThinkingSub' },
   speaking: { label: 'stateSpeaking', sub: 'stateSpeakingSub' },
+  awaiting_approval: { label: 'stateAwaitingApproval', sub: 'stateAwaitingApprovalSub' },
 };
 
-/** Color classes per state — uses Tailwind tokens so theme changes apply */
 const STATE_COLOR_CLASS: Record<AtlasState, string> = {
   idle: 'text-accent-cyan',
   listening: 'text-[#34D399]',
   thinking: 'text-[#4493F8]',
   speaking: 'text-[#FBBF24]',
+  awaiting_approval: 'text-status-warning',
 };
 
 export default function AtlasPage() {
@@ -35,44 +36,85 @@ export default function AtlasPage() {
   const messages = useAtlasStore((s) => s.messages);
   const intensity = useAtlasStore((s) => s.intensity);
   const muted = useAtlasStore((s) => s.muted);
-  const pendingActions = useAtlasStore((s) => s.pendingActions);
+  const pendingToolCalls = useAtlasStore((s) => s.pendingToolCalls);
+  const toolCallResults = useAtlasStore((s) => s.toolCallResults);
+  const conversationHistory = useAtlasStore((s) => s.conversationHistory);
   const setAtlasState = useAtlasStore((s) => s.setState);
   const setIntensity = useAtlasStore((s) => s.setIntensity);
   const toggleMuted = useAtlasStore((s) => s.toggleMuted);
   const addMessage = useAtlasStore((s) => s.addMessage);
-  const addAction = useAtlasStore((s) => s.addAction);
-  const approveAction = useAtlasStore((s) => s.approveAction);
-  const rejectAction = useAtlasStore((s) => s.rejectAction);
+  const setConversationHistory = useAtlasStore((s) => s.setConversationHistory);
+  const setPendingToolCalls = useAtlasStore((s) => s.setPendingToolCalls);
+  const setPartialHistory = useAtlasStore((s) => s.setPartialHistory);
+  const approveToolCall = useAtlasStore((s) => s.approveToolCall);
+  const rejectToolCall = useAtlasStore((s) => s.rejectToolCall);
+  const addToolCallResult = useAtlasStore((s) => s.addToolCallResult);
+  const clearToolState = useAtlasStore((s) => s.clearToolState);
   const reset = useAtlasStore((s) => s.reset);
 
   const [input, setInput] = useState('');
   const intensityTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const insightHandled = useRef(false);
 
+  // Handle loop result (shared by chat + resolve)
+  const handleLoopResult = useCallback(
+    (data: any) => {
+      // Update conversation history
+      setConversationHistory(data.history);
+
+      if (data.status === 'complete') {
+        addMessage('atlas', data.text);
+        clearToolState();
+        setAtlasState('speaking');
+        startIntensitySimulation();
+
+        const speakDuration = 1500 + Math.random() * 1500;
+        setTimeout(() => {
+          setAtlasState('idle');
+          stopIntensitySimulation();
+        }, speakDuration);
+      } else if (data.status === 'awaiting_approval') {
+        // Show partial text if any
+        if (data.text) {
+          addMessage('atlas', data.text);
+        }
+
+        // Store pending tool calls + partial history for resumption
+        setPendingToolCalls(
+          data.pendingToolCalls.map((tc: any) => ({
+            id: tc.id,
+            name: tc.name,
+            input: tc.input,
+            status: 'pending' as const,
+          })),
+        );
+        setPartialHistory(data.history);
+        setAtlasState('awaiting_approval');
+        stopIntensitySimulation();
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
   // tRPC chat mutation
   const chatMutation = trpc.atlas.chat.useMutation({
-    onSuccess: (data) => {
-      addMessage('atlas', data.text);
-
-      // Create approval popups for any suggested actions
-      for (const action of data.actions) {
-        addAction(action);
-      }
-
-      setAtlasState('speaking');
-      startIntensitySimulation();
-
-      // After speaking animation, back to idle
-      const speakDuration = 1500 + Math.random() * 1500;
-      setTimeout(() => {
-        setAtlasState('idle');
-        stopIntensitySimulation();
-      }, speakDuration);
-    },
+    onSuccess: handleLoopResult,
     onError: () => {
       addMessage('atlas', t('chatError'));
       setAtlasState('idle');
       stopIntensitySimulation();
+    },
+  });
+
+  // tRPC resolve mutation
+  const resolveMutation = trpc.atlas.resolveToolCalls.useMutation({
+    onSuccess: handleLoopResult,
+    onError: () => {
+      addMessage('atlas', t('chatError'));
+      setAtlasState('idle');
+      stopIntensitySimulation();
+      clearToolState();
     },
   });
 
@@ -90,14 +132,12 @@ export default function AtlasPage() {
     if (insightId) {
       insightHandled.current = true;
       const insightText = t('insightPrompt', { id: insightId });
-      // Auto-send the insight as the first message
       setTimeout(() => {
         sendMessage(insightText);
       }, 500);
-      // Clear the query param from URL without navigation
       window.history.replaceState({}, '', window.location.pathname);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // Intensity simulation during listening/speaking
@@ -116,7 +156,7 @@ export default function AtlasPage() {
     setIntensity(0);
   }, [setIntensity]);
 
-  // Send a message to Atlas (real LLM or mock fallback)
+  // Send a message to Atlas
   const sendMessage = useCallback(
     (text: string) => {
       if (!text.trim()) return;
@@ -125,23 +165,82 @@ export default function AtlasPage() {
       setAtlasState('thinking');
       stopIntensitySimulation();
 
-      // Build conversation history from existing messages
-      const history = messages.map((m) => ({
-        role: m.role === 'user' ? ('user' as const) : ('assistant' as const),
-        content: m.text,
-      }));
-
       chatMutation.mutate({
         message: text,
-        history: history.slice(-20), // Last 20 messages for context
+        history: conversationHistory.slice(-40),
       });
     },
-    [messages, addMessage, setAtlasState, stopIntensitySimulation, chatMutation],
+    [conversationHistory, addMessage, setAtlasState, stopIntensitySimulation, chatMutation],
+  );
+
+  // Handle approve/reject all pending tool calls
+  const handleResolveAll = useCallback(
+    (approved: boolean) => {
+      // Mark all as approved or rejected in the store
+      for (const tc of pendingToolCalls) {
+        if (approved) approveToolCall(tc.id);
+        else rejectToolCall(tc.id);
+      }
+
+      setAtlasState('thinking');
+      startIntensitySimulation();
+
+      const partialHistory = useAtlasStore.getState().partialHistory;
+
+      resolveMutation.mutate({
+        decisions: pendingToolCalls.map((tc) => ({
+          toolCallId: tc.id,
+          toolName: tc.name,
+          toolInput: tc.input,
+          approved,
+        })),
+        partialHistory,
+      });
+    },
+    [
+      pendingToolCalls,
+      approveToolCall,
+      rejectToolCall,
+      setAtlasState,
+      startIntensitySimulation,
+      resolveMutation,
+    ],
+  );
+
+  // Handle single tool call approve/reject
+  const handleToolCallDecision = useCallback(
+    (id: string, approved: boolean) => {
+      if (approved) approveToolCall(id);
+      else rejectToolCall(id);
+
+      // Check if all have been decided
+      const updated = useAtlasStore.getState().pendingToolCalls;
+      const allDecided = updated.every((tc) => tc.status !== 'pending');
+
+      if (allDecided) {
+        setAtlasState('thinking');
+        startIntensitySimulation();
+
+        const partialHistory = useAtlasStore.getState().partialHistory;
+
+        resolveMutation.mutate({
+          decisions: updated.map((tc) => ({
+            toolCallId: tc.id,
+            toolName: tc.name,
+            toolInput: tc.input,
+            approved: tc.status === 'approved',
+          })),
+          partialHistory,
+        });
+      }
+    },
+    [approveToolCall, rejectToolCall, setAtlasState, startIntensitySimulation, resolveMutation],
   );
 
   // Handle mic toggle
   const handleMicToggle = useCallback(() => {
-    if (atlasState === 'thinking' || atlasState === 'speaking') return;
+    if (atlasState === 'thinking' || atlasState === 'speaking' || atlasState === 'awaiting_approval')
+      return;
 
     if (atlasState === 'listening') {
       setAtlasState('idle');
@@ -155,7 +254,8 @@ export default function AtlasPage() {
   // Handle text send
   const handleSend = useCallback(() => {
     const text = input.trim();
-    if (!text || atlasState === 'thinking' || atlasState === 'speaking') return;
+    if (!text || atlasState === 'thinking' || atlasState === 'speaking' || atlasState === 'awaiting_approval')
+      return;
 
     if (atlasState === 'listening') {
       stopIntensitySimulation();
@@ -168,7 +268,8 @@ export default function AtlasPage() {
   // Handle suggestion click
   const handleSuggestionClick = useCallback(
     (text: string) => {
-      if (atlasState === 'thinking' || atlasState === 'speaking') return;
+      if (atlasState === 'thinking' || atlasState === 'speaking' || atlasState === 'awaiting_approval')
+        return;
       sendMessage(text);
     },
     [atlasState, sendMessage],
@@ -183,8 +284,10 @@ export default function AtlasPage() {
 
   const stateLabels = STATE_LABEL_MAP[atlasState];
   const stateColorClass = STATE_COLOR_CLASS[atlasState];
-  const micDisabled = atlasState === 'thinking' || atlasState === 'speaking';
-  const inputDisabled = atlasState === 'thinking' || atlasState === 'speaking';
+  const micDisabled =
+    atlasState === 'thinking' || atlasState === 'speaking' || atlasState === 'awaiting_approval';
+  const inputDisabled =
+    atlasState === 'thinking' || atlasState === 'speaking' || atlasState === 'awaiting_approval';
 
   return (
     <div className="flex h-full flex-col bg-bg-deepest">
@@ -235,7 +338,9 @@ export default function AtlasPage() {
 
           {/* State label */}
           <div className="flex flex-col items-center gap-0.5">
-            <span className={`font-mono text-[11px] font-bold uppercase tracking-widest ${stateColorClass}`}>
+            <span
+              className={`font-mono text-[11px] font-bold uppercase tracking-widest ${stateColorClass}`}
+            >
               {t(stateLabels.label)}
             </span>
             <span className="font-mono text-[8px] uppercase tracking-wider text-text-disabled">
@@ -271,14 +376,18 @@ export default function AtlasPage() {
         {/* Right: Transcript panel */}
         <TranscriptPanel
           messages={messages}
-          pendingActions={pendingActions}
+          pendingToolCalls={pendingToolCalls}
+          toolCallResults={toolCallResults}
           input={input}
           onInputChange={setInput}
           onSend={handleSend}
           onSuggestionClick={handleSuggestionClick}
-          onApproveAction={approveAction}
-          onRejectAction={rejectAction}
+          onApproveToolCall={(id) => handleToolCallDecision(id, true)}
+          onRejectToolCall={(id) => handleToolCallDecision(id, false)}
+          onApproveAll={() => handleResolveAll(true)}
+          onRejectAll={() => handleResolveAll(false)}
           disabled={inputDisabled}
+          isAwaitingApproval={atlasState === 'awaiting_approval'}
         />
       </div>
     </div>

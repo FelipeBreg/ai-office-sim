@@ -1177,7 +1177,17 @@
     "approve": "Aprovar",
     "reject": "Rejeitar",
     "actionApproved": "Aprovada",
-    "actionRejected": "Rejeitada"
+    "actionRejected": "Rejeitada",
+    "stateAwaitingApproval": "AGUARDANDO APROVAÇÃO",
+    "stateAwaitingApprovalSub": "revise ações pendentes",
+    "toolCallApproval": "Aprovação de Ferramenta",
+    "approveAll": "Aprovar Tudo",
+    "rejectAll": "Rejeitar Tudo",
+    "toolExecuted": "auto-executado",
+    "toolFailed": "falhou",
+    "toolRejected": "rejeitado",
+    "toolParams": "Parâmetros",
+    "toolResult": "Resultado"
   },
   "projectWizard": {
     "title": "Novo Projeto",

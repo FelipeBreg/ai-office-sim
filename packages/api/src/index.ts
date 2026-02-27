@@ -11,3 +11,4 @@ export {
   requireRole,
 } from './trpc.js';
 export type { TRPCContext } from './trpc.js';
+export type { LoopResult } from './routers/atlas.js';

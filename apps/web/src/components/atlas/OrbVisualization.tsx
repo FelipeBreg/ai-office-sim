@@ -14,6 +14,7 @@ const FALLBACK_COLORS: Record<AtlasState, [number, number, number]> = {
   listening: [52, 211, 153],
   thinking: [68, 147, 248],
   speaking: [251, 191, 36],
+  awaiting_approval: [251, 191, 36],
 };
 
 /** Parse a CSS color value (hex or rgb()) into an [r, g, b] tuple. */
@@ -120,6 +121,10 @@ function OrbVisualizationBase({ state, intensity }: OrbVisualizationProps) {
         pulseSpeed = 1.2;
         pulseAmplitude = 0.05 + currentIntensity * 0.15;
         waveCount = 4;
+      } else if (currentState === 'awaiting_approval') {
+        pulseSpeed = 0.6;
+        pulseAmplitude = 0.05;
+        waveCount = 2;
       }
 
       const pulse = 1 + Math.sin(t * pulseSpeed * Math.PI) * pulseAmplitude;
