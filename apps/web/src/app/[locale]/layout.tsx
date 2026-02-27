@@ -40,7 +40,14 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={ibmPlexMono.variable}>
+    <html lang={locale} className={ibmPlexMono.variable} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=JSON.parse(localStorage.getItem('ai-office-ui')||'{}');if(t.state&&t.state.theme==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="font-mono antialiased">
         <ClerkProvider
           signInUrl={`/${locale}/sign-in`}

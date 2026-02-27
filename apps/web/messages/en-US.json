@@ -48,7 +48,9 @@
     "searchPlaceholder": "search...",
     "notifications": "Notifications",
     "switchProject": "Switch Project",
-    "currentProject": "Current Project"
+    "currentProject": "Current Project",
+    "lightMode": "Switch to light mode",
+    "darkMode": "Switch to dark mode"
   },
   "agents": {
     "title": "Agents",

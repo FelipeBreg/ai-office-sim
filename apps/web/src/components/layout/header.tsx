@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from '@/i18n/navigation';
-import { Search, Bell, ChevronDown } from 'lucide-react';
+import { Search, Bell, ChevronDown, Sun, Moon } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 import { useProjectStore, useActiveProject, useProjects } from '@/stores/project-store';
+import { useUIStore } from '@/stores/ui-store';
 import { LocaleSwitcher } from '@/components/locale-switcher/locale-switcher';
 import { safeColor } from '@/lib/safe-color';
 
@@ -36,6 +37,8 @@ export function Header({ pendingApprovalCount = 0 }: HeaderProps) {
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isMac, setIsMac] = useState(false);
+  const theme = useUIStore((s) => s.theme);
+  const toggleTheme = useUIStore((s) => s.toggleTheme);
 
   // Detect platform for keyboard shortcut display
   useEffect(() => {
@@ -119,6 +122,19 @@ export function Header({ pendingApprovalCount = 0 }: HeaderProps) {
           <Bell size={14} strokeWidth={1.5} />
           {pendingApprovalCount > 0 && (
             <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 animate-pulse bg-accent-cyan" />
+          )}
+        </button>
+
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          className="text-text-muted transition-colors hover:text-text-primary"
+          aria-label={theme === 'dark' ? t('lightMode') : t('darkMode')}
+        >
+          {theme === 'dark' ? (
+            <Sun size={14} strokeWidth={1.5} />
+          ) : (
+            <Moon size={14} strokeWidth={1.5} />
           )}
         </button>
 

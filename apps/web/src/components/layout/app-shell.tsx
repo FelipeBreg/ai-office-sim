@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
+import { ThemeProvider } from './theme-provider';
 import { useProjectStore } from '@/stores/project-store';
 import { useUIStore } from '@/stores/ui-store';
 import { trpc } from '@/lib/trpc/client';
@@ -48,6 +49,7 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg-deepest">
+      <ThemeProvider />
       {/* Left: sidebar navigation */}
       <Sidebar />
 
