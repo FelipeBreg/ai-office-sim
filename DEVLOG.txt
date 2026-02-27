@@ -7,6 +7,31 @@
 
 
 ================================================================================
+COMMIT #55 — Remove Project Rail (Duplicate of Header Selector)
+================================================================================
+DATE: 2026-02-27
+HASH: fa70193
+PHASE: Post-Phase 3 — Polish
+
+WHAT CHANGED:
+  - Removed ProjectRail and RailExpandButton components from AppShell
+  - Deleted project-rail.tsx (90 lines) — the far-left vertical project
+    switcher was redundant since the header already has a project selector
+  - Cleaned up ui-store.ts: removed railCollapsed, toggleRail, setRailCollapsed
+    state (no longer needed)
+
+FILES: 3 changed (1 deleted), 102 deletions
+  - DELETED: apps/web/src/components/layout/project-rail.tsx
+  - MODIFIED: apps/web/src/components/layout/app-shell.tsx
+  - MODIFIED: apps/web/src/stores/ui-store.ts
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+
+================================================================================
+
+
+================================================================================
 COMMIT #52 — Docs: Add 6 Undocumented Feature Sections
 ================================================================================
 DATE: 2026-02-26
