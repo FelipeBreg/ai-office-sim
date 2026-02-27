@@ -7,6 +7,35 @@
 
 
 ================================================================================
+COMMIT #60 — Reorganize Sidebar Nav Groups
+================================================================================
+DATE: 2026-02-27
+HASH: (pending)
+PHASE: Post-Phase 3 — Polish
+
+WHAT CHANGED:
+  - Reorganized sidebar navigation into 3 new groups (replacing Operations/
+    Business/Configuration):
+      1. Monitoring: Office, Approvals, Strategy, Analytics, Memory
+      2. AI Capabilities: Agents, Workflows, Tools
+      3. Sectors: DevOps, Finance
+  - Atlas remains pinned at top with separator
+  - Settings (config icon) remains pinned at bottom
+  - Updated i18n group labels in en-US and pt-BR:
+      en: "Monitoring", "AI Capabilities", "Sectors"
+      pt: "Monitoramento", "IA & Capacidades", "Setores"
+
+FILES: 3 changed
+  - MODIFIED: apps/web/src/components/layout/sidebar.tsx
+  - MODIFIED: apps/web/messages/en-US.json
+  - MODIFIED: apps/web/messages/pt-BR.json
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+
+================================================================================
+
+================================================================================
 COMMIT #59 — 10-Feature Post-Phase 3 Enhancement Pack
 ================================================================================
 DATE: 2026-02-27

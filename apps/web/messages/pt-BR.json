@@ -51,9 +51,9 @@
     "currentProject": "Projeto Atual",
     "lightMode": "Mudar para modo claro",
     "darkMode": "Mudar para modo escuro",
-    "groupOperations": "Operações",
-    "groupBusiness": "Negócios",
-    "groupConfiguration": "Configuração",
+    "groupAiCapabilities": "IA & Capacidades",
+    "groupSectors": "Setores",
+    "groupMonitoring": "Monitoramento",
     "finance": "Finanças"
   },
   "agents": {

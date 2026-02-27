@@ -51,9 +51,9 @@
     "currentProject": "Current Project",
     "lightMode": "Switch to light mode",
     "darkMode": "Switch to dark mode",
-    "groupOperations": "Operations",
-    "groupBusiness": "Business",
-    "groupConfiguration": "Configuration",
+    "groupAiCapabilities": "AI Capabilities",
+    "groupSectors": "Sectors",
+    "groupMonitoring": "Monitoring",
     "finance": "Finance"
   },
   "agents": {

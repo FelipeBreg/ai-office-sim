@@ -41,31 +41,31 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    key: 'operations',
-    labelKey: 'groupOperations',
+    key: 'monitoring',
+    labelKey: 'groupMonitoring',
     items: [
       { href: '/office', labelKey: 'office', icon: Building2 },
-      { href: '/agents', labelKey: 'agents', icon: Users },
-      { href: '/workflows', labelKey: 'workflows', icon: GitBranch },
-      { href: '/devops', labelKey: 'devops', icon: GitMerge },
       { href: '/approvals', labelKey: 'approvals', icon: ShieldCheck, hasBadge: true },
-      { href: '/analytics', labelKey: 'analytics', icon: BarChart3 },
-    ],
-  },
-  {
-    key: 'business',
-    labelKey: 'groupBusiness',
-    items: [
       { href: '/strategy', labelKey: 'strategy', icon: Target },
-      { href: '/finance', labelKey: 'finance', icon: DollarSign },
+      { href: '/analytics', labelKey: 'analytics', icon: BarChart3 },
       { href: '/memory', labelKey: 'memory', icon: BookOpen },
     ],
   },
   {
-    key: 'configuration',
-    labelKey: 'groupConfiguration',
+    key: 'aiCapabilities',
+    labelKey: 'groupAiCapabilities',
     items: [
+      { href: '/agents', labelKey: 'agents', icon: Users },
+      { href: '/workflows', labelKey: 'workflows', icon: GitBranch },
       { href: '/tools', labelKey: 'tools', icon: Wrench },
+    ],
+  },
+  {
+    key: 'sectors',
+    labelKey: 'groupSectors',
+    items: [
+      { href: '/devops', labelKey: 'devops', icon: GitMerge },
+      { href: '/finance', labelKey: 'finance', icon: DollarSign },
     ],
   },
 ];
