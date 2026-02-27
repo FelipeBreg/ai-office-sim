@@ -10,7 +10,7 @@
 COMMIT #60 — Reorganize Sidebar Nav Groups
 ================================================================================
 DATE: 2026-02-27
-HASH: (pending)
+HASH: 880589d
 PHASE: Post-Phase 3 — Polish
 
 WHAT CHANGED:
