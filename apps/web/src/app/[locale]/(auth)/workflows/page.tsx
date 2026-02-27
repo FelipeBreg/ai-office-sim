@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, GitBranch, AlertTriangle, Trash2, LayoutGrid } from 'lucide-react';
+import { Plus, GitBranch, AlertTriangle, Trash2, LayoutGrid, Bot } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from '@/i18n/navigation';
 
 /* -------------------------------------------------------------------------- */
-/*  Relative time helper                                                      */
+/*  Node-type colors (same as templates)                                      */
+/* -------------------------------------------------------------------------- */
+
+const NODE_TYPE_COLORS: Record<string, string> = {
+  trigger: 'bg-emerald-500',
+  agent: 'bg-cyan-400',
+  condition: 'bg-amber-400',
+  approval: 'bg-violet-400',
+  output: 'bg-rose-400',
+  delay: 'bg-blue-400',
+};
+
+/* -------------------------------------------------------------------------- */
+/*  Helpers                                                                   */
 /* -------------------------------------------------------------------------- */
 
 function timeAgo(date: Date | string): string {
@@ -25,6 +38,27 @@ function timeAgo(date: Date | string): string {
   if (hours < 24) return `${hours}h`;
   const days = Math.floor(hours / 24);
   return `${days}d`;
+}
+
+interface DefinitionData {
+  nodes?: Array<{ type?: string; data?: { nodeType?: string } }>;
+  edges?: unknown[];
+}
+
+function extractNodeInfo(definition: unknown): { nodeTypes: Set<string>; agentCount: number; nodeCount: number } {
+  const def = definition as DefinitionData | null;
+  const nodeTypes = new Set<string>();
+  let agentCount = 0;
+
+  if (def?.nodes) {
+    for (const n of def.nodes) {
+      const nt = n.data?.nodeType ?? n.type;
+      if (nt) nodeTypes.add(nt);
+      if (nt === 'agent') agentCount++;
+    }
+  }
+
+  return { nodeTypes, agentCount, nodeCount: def?.nodes?.length ?? 0 };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -127,7 +161,7 @@ function WorkflowCard({
   t: ReturnType<typeof useTranslations<'workflows'>>;
   onDelete: (id: string) => void;
 }) {
-  const nodeCount = (workflow.definition as any)?.nodes?.length ?? 0;
+  const { nodeTypes, agentCount, nodeCount } = extractNodeInfo(workflow.definition);
   const runCount = 0; // TODO: wire up when run history is available
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -160,14 +194,32 @@ function WorkflowCard({
           </Badge>
         </div>
 
-        {/* Stats badges */}
+        {/* Stats badges + node dots */}
         <div className="flex flex-wrap items-center gap-1.5 px-4">
           <Badge variant="default">
             {t('nodes', { count: nodeCount })}
           </Badge>
+          {agentCount > 0 && (
+            <Badge variant="default">
+              <Bot size={8} strokeWidth={1.5} className="mr-0.5" />
+              {t('agentCount', { count: agentCount })}
+            </Badge>
+          )}
           <Badge variant="default">
             {t('runs', { count: runCount })}
           </Badge>
+          {/* Node type dots */}
+          {nodeTypes.size > 0 && (
+            <div className="ml-1 flex items-center gap-1">
+              {Array.from(nodeTypes).map((nt) => (
+                <span
+                  key={nt}
+                  className={`inline-block h-1.5 w-1.5 ${NODE_TYPE_COLORS[nt] ?? 'bg-text-muted'}`}
+                  title={nt}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Description preview */}

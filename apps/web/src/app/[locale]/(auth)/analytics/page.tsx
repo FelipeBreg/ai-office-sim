@@ -19,6 +19,9 @@ import {
   CheckCircle2,
   XCircle,
   MinusCircle,
+  Coins,
+  Zap,
+  BarChart3,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button, Badge, Skeleton, Separator } from '@/components/ui';
@@ -109,6 +112,150 @@ function formatTokens(tokens: number | null): string {
   if (tokens == null) return '—';
   if (tokens >= 1000) return `${(tokens / 1000).toFixed(1)}k`;
   return String(tokens);
+}
+
+function formatCost(cost: string | number): string {
+  const n = typeof cost === 'string' ? parseFloat(cost) : cost;
+  if (n === 0) return '$0.00';
+  if (n < 0.01) return `$${n.toFixed(4)}`;
+  return `$${n.toFixed(2)}`;
+}
+
+function shortModelName(model: string): string {
+  if (model.includes('haiku')) return 'Haiku';
+  if (model.includes('sonnet')) return 'Sonnet';
+  if (model.includes('opus')) return 'Opus';
+  return model.split('/').pop()?.split('-').slice(0, 2).join('-') ?? model;
+}
+
+// ── Metrics Dashboard ─────────────────────────────────────────────────────
+
+function MetricsDashboard({ t }: { t: (key: string) => string }) {
+  const { data: stats, isLoading, isError } = trpc.actionLogs.stats.useQuery({ days: 7 });
+
+  if (isError) return null;
+  if (isLoading) {
+    return (
+      <div className="border-b border-border-default p-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="border border-border-default bg-bg-raised p-3">
+              <Skeleton className="mb-2 h-2.5 w-20" />
+              <Skeleton className="h-5 w-28" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) return null;
+
+  const dailyMax = Math.max(...(stats.daily.map((d) => d.actions) || [1]), 1);
+
+  return (
+    <div className="border-b border-border-default p-4">
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {/* Total actions */}
+        <div className="border border-border-default bg-bg-raised p-3">
+          <div className="flex items-center gap-1.5">
+            <Zap size={10} strokeWidth={1.5} className="text-accent-cyan" />
+            <span className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
+              {t('statsActions')}
+            </span>
+          </div>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-text-primary">
+            {stats.totals.totalActions.toLocaleString()}
+          </p>
+          <span className="text-[8px] text-text-muted">{t('statsLast7d')}</span>
+        </div>
+
+        {/* Total tokens */}
+        <div className="border border-border-default bg-bg-raised p-3">
+          <div className="flex items-center gap-1.5">
+            <BarChart3 size={10} strokeWidth={1.5} className="text-accent-cyan" />
+            <span className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
+              {t('statsTokens')}
+            </span>
+          </div>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-text-primary">
+            {formatTokens(stats.totals.totalTokens)}
+          </p>
+          <span className="text-[8px] text-text-muted">{t('statsLast7d')}</span>
+        </div>
+
+        {/* Total cost */}
+        <div className="border border-border-default bg-bg-raised p-3">
+          <div className="flex items-center gap-1.5">
+            <Coins size={10} strokeWidth={1.5} className="text-accent-cyan" />
+            <span className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
+              {t('statsCost')}
+            </span>
+          </div>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-text-primary">
+            {formatCost(stats.totals.totalCost)}
+          </p>
+          <span className="text-[8px] text-text-muted">{t('statsLast7d')}</span>
+        </div>
+      </div>
+
+      {/* Charts row */}
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* Daily activity bar chart */}
+        <div className="border border-border-default bg-bg-raised p-3">
+          <span className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
+            {t('statsDailyActions')}
+          </span>
+          <div className="mt-2 flex items-end gap-1" style={{ height: 48 }}>
+            {stats.daily.length === 0 ? (
+              <span className="text-[9px] text-text-muted">{t('statsNoData')}</span>
+            ) : (
+              stats.daily.map((d) => (
+                <div key={d.day} className="group relative flex-1">
+                  <div
+                    className="w-full bg-accent-cyan/60 transition-colors group-hover:bg-accent-cyan"
+                    style={{ height: `${Math.max((d.actions / dailyMax) * 48, 2)}px` }}
+                  />
+                  <div className="pointer-events-none absolute bottom-full left-1/2 mb-1 hidden -translate-x-1/2 whitespace-nowrap border border-border-default bg-bg-overlay px-1.5 py-0.5 text-[8px] text-text-primary group-hover:block">
+                    {d.day.slice(5)}: {d.actions}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Cost by model */}
+        <div className="border border-border-default bg-bg-raised p-3">
+          <span className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
+            {t('statsByModel')}
+          </span>
+          <div className="mt-2 flex flex-col gap-1.5">
+            {stats.byModel.length === 0 ? (
+              <span className="text-[9px] text-text-muted">{t('statsNoData')}</span>
+            ) : (
+              stats.byModel.map((m) => (
+                <div key={m.model} className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-text-secondary">
+                    {shortModelName(m.model)}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[9px] tabular-nums text-text-muted">
+                      {formatTokens(m.tokens)} tok
+                    </span>
+                    <span className="text-[9px] tabular-nums text-text-primary">
+                      {formatCost(m.cost)}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────
@@ -771,6 +918,9 @@ export default function ActivityLogPage() {
           />
         </div>
       </div>
+
+      {/* Metrics dashboard */}
+      <MetricsDashboard t={t} />
 
       {/* Error state */}
       {logsQuery.isError && (

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure } from '../trpc.js';
-import { db, actionLogs, eq, and, desc, count, gte, lte } from '@ai-office/db';
+import { db, actionLogs, eq, and, desc, count, gte, lte, sql } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 
 export const actionLogsRouter = createTRPCRouter({
@@ -55,5 +55,64 @@ export const actionLogsRouter = createTRPCRouter({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Action log not found' });
       }
       return log;
+    }),
+
+  stats: projectProcedure
+    .input(
+      z.object({
+        days: z.number().min(1).max(90).default(7),
+      }).default({}),
+    )
+    .query(async ({ ctx, input }) => {
+      const projectId = ctx.project!.id;
+      const since = new Date(Date.now() - input.days * 24 * 60 * 60 * 1000);
+
+      // Run all aggregate queries in parallel
+      const [totals, daily, byModel] = await Promise.all([
+        // Totals
+        db
+          .select({
+            totalActions: count(),
+            totalTokens: sql<number>`COALESCE(SUM(${actionLogs.tokensUsed}), 0)::int`,
+            totalCost: sql<string>`COALESCE(SUM(${actionLogs.costUsd}), 0)::text`,
+          })
+          .from(actionLogs)
+          .where(and(eq(actionLogs.projectId, projectId), gte(actionLogs.createdAt, since)))
+          .then((rows) => rows[0]!),
+
+        // Daily breakdown
+        db
+          .select({
+            day: sql<string>`DATE(${actionLogs.createdAt})::text`,
+            actions: count(),
+            tokens: sql<number>`COALESCE(SUM(${actionLogs.tokensUsed}), 0)::int`,
+            cost: sql<string>`COALESCE(SUM(${actionLogs.costUsd}), 0)::text`,
+          })
+          .from(actionLogs)
+          .where(and(eq(actionLogs.projectId, projectId), gte(actionLogs.createdAt, since)))
+          .groupBy(sql`DATE(${actionLogs.createdAt})`)
+          .orderBy(sql`DATE(${actionLogs.createdAt})`),
+
+        // Cost by model (extracted from llm_response input JSON)
+        db
+          .select({
+            model: sql<string>`${actionLogs.input}->>'model'`,
+            tokens: sql<number>`COALESCE(SUM(${actionLogs.tokensUsed}), 0)::int`,
+            cost: sql<string>`COALESCE(SUM(${actionLogs.costUsd}), 0)::text`,
+            count: count(),
+          })
+          .from(actionLogs)
+          .where(
+            and(
+              eq(actionLogs.projectId, projectId),
+              gte(actionLogs.createdAt, since),
+              eq(actionLogs.actionType, 'llm_response'),
+              sql`${actionLogs.input}->>'model' IS NOT NULL`,
+            ),
+          )
+          .groupBy(sql`${actionLogs.input}->>'model'`),
+      ]);
+
+      return { totals, daily, byModel };
     }),
 });

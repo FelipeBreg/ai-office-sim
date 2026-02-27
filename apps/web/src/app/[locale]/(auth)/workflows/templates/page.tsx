@@ -18,6 +18,7 @@ import {
   Receipt,
   LayoutGrid,
   Loader2,
+  Bot,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
@@ -122,12 +123,14 @@ interface TemplateCardProps {
 function TemplateCard({ template, onUse, isUsing, t }: TemplateCardProps) {
   const Icon: LucideIcon = ICON_MAP[template.icon] ?? LayoutGrid;
 
-  // Collect unique node types for dot indicators
+  // Collect unique node types for dot indicators + agent count
   const nodeTypes = new Set<string>();
+  let agentCount = 0;
   if (template.definition?.nodes) {
     for (const n of template.definition.nodes) {
       const nt = (n as { data?: { nodeType?: string } }).data?.nodeType;
       if (nt) nodeTypes.add(nt);
+      if (nt === 'agent') agentCount++;
     }
   }
 
@@ -159,6 +162,12 @@ function TemplateCard({ template, onUse, isUsing, t }: TemplateCardProps) {
           <span className="text-[10px] text-text-muted">
             {t('nodeCount', { count: template.nodeCount })}
           </span>
+          {agentCount > 0 && (
+            <span className="flex items-center gap-0.5 text-[10px] text-text-muted">
+              <Bot size={9} strokeWidth={1.5} />
+              {t('agentCount', { count: agentCount })}
+            </span>
+          )}
           <div className="flex items-center gap-1">
             {Array.from(nodeTypes).map((nt) => (
               <span

@@ -310,7 +310,8 @@
     "triggerWorkflow": "Run",
     "triggerSuccess": "Workflow triggered",
     "triggerFailed": "Trigger failed",
-    "browseTemplates": "Browse Templates"
+    "browseTemplates": "Browse Templates",
+    "agentCount": "{count} agents"
   },
   "workflowTemplates": {
     "title": "Workflow Templates",
@@ -352,7 +353,8 @@
     "tplChurnPrevention": "Churn Prevention",
     "tplChurnPreventionDesc": "Analyze usage data weekly and proactively engage at-risk customers.",
     "tplInvoiceProcessing": "Invoice Processing",
-    "tplInvoiceProcessingDesc": "Extract invoice data, validate with AI, and route for financial approval."
+    "tplInvoiceProcessingDesc": "Extract invoice data, validate with AI, and route for financial approval.",
+    "agentCount": "{count} agents"
   },
   "toolsPage": {
     "title": "Tools",
@@ -361,6 +363,11 @@
     "approval": "Approval",
     "connected": "Connected",
     "notConnected": "Not Connected",
+    "selectApp": "Select an application to view its tools",
+    "setupGuide": "How to get your API keys",
+    "availableTools": "Available tools",
+    "toolCount": "{count} tools",
+    "close": "Close",
     "categories": {
       "builtin": "Built-in",
       "whatsapp": "WhatsApp",
@@ -565,7 +572,14 @@
     "unknownAgent": "Unknown Agent",
     "input": "Input",
     "output": "Output",
-    "outputSnippet": "Response"
+    "outputSnippet": "Response",
+    "statsActions": "Agent Actions",
+    "statsTokens": "Tokens Used",
+    "statsCost": "Total Cost",
+    "statsLast7d": "Last 7 days",
+    "statsDailyActions": "Daily Actions",
+    "statsByModel": "Cost by Model",
+    "statsNoData": "No data yet"
   },
   "settings": {
     "title": "Settings",
