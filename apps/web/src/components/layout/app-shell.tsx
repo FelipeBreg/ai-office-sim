@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
-import { ProjectRail, RailExpandButton } from './project-rail';
 import { useProjectStore } from '@/stores/project-store';
 import { useUIStore } from '@/stores/ui-store';
 import { trpc } from '@/lib/trpc/client';
@@ -49,10 +48,6 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg-deepest">
-      {/* Far-left: project rail (collapsed by default) */}
-      <ProjectRail />
-      <RailExpandButton />
-
       {/* Left: sidebar navigation */}
       <Sidebar />
 
