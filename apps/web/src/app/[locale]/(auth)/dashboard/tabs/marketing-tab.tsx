@@ -328,7 +328,7 @@ function MiniStat({ label, value }: { label: string; value: number | string }) {
 
 function FunnelBar({ label, value, width, color }: { label: string; value: number; width: string; color: string }) {
   return (
-    <div className="flex w-full flex-col items-center" style={{ width }}>
+    <div className="flex flex-col items-center" style={{ width }}>
       <div className={`flex w-full items-center justify-between ${color} px-3 py-2`}>
         <span className="text-[10px] font-medium text-bg-base">{label}</span>
         <span className="text-[10px] font-semibold tabular-nums text-bg-base">{value.toLocaleString()}</span>

@@ -176,7 +176,7 @@ export function BrandingTab() {
                 <div key={tp.id} className="group flex items-center justify-between px-4 py-2.5">
                   <div className="flex flex-col gap-0.5">
                     <span className="text-[11px] font-medium text-text-primary">{tp.label}</span>
-                    {tp.url && (
+                    {tp.url && /^https?:\/\//i.test(tp.url) && (
                       <a
                         href={tp.url}
                         target="_blank"
