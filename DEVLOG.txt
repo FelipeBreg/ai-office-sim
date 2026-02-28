@@ -7,6 +7,59 @@
 
 
 ================================================================================
+COMMIT #64 — Docs Restructure: Uniform Pattern + Atlas & Settings Content Update
+================================================================================
+DATE: 2026-02-28
+HASH: f6b8c20
+PHASE: Post-Phase 3 — Documentation Polish
+
+WHAT CHANGED:
+  NEW COMPONENT:
+  - Added QuickStart numbered-step component matching DOS aesthetic
+  - Cyan accent, bordered container, auto-numbered steps
+
+  SIDEBAR (topics array):
+  - Added 'quickstart' as first subtopic for all 17 content pages
+  - Expanded subtopics for agents (7), workflows (4), whatsapp (5), email (5),
+    documents (5), wiki (4), approvals (4), strategies (5), atlas (6), settings (8)
+  - Settings now includes: Models, API Keys, Tool Credentials subtopics
+
+  CONTENT RESTRUCTURE (all 17 pages):
+  - Applied uniform pattern: Title → Overview → QuickStart → Features → Limitations
+  - Each feature section now has: h3 anchor + 1-line description + FeatureList details
+  - Agents: split flat "Capabilities" into LLM Config, Tool Assignment, Triggers, Teams
+  - Workflows: split flat FeatureList into Visual Editor, Node Types, Execution
+  - WhatsApp: expanded into Messaging, Webhooks, Templates sections
+  - Email: expanded into Sending, Templates, Inbox Reading sections
+  - Documents: broken into Sources, Chunking, Search, Agent Access
+  - Wiki: broken into Categories, Articles, Documents
+  - Approvals: broken into Rules, Risk Levels, Review Flow
+  - Strategies: broken into Types, KPIs, Learnings, Recommendations
+
+  ATLAS (MAJOR UPDATE):
+  - Removed outdated "responses are mock data with keyword matching" claims
+  - Removed "no real-time project data analysis — hardcoded demo insights"
+  - Documented real Claude Sonnet 4.6 agentic loop with 22 tools
+  - Added Agentic Loop section: 8-iteration cap, streaming, tool transparency
+  - Added Tool Categories section: 6 domains with all 22 tool names
+  - Added Approval Popup section: mutation approval flow
+  - Updated limitations to current state (voice not wired, no persistent memory)
+
+  SETTINGS (NEW SECTIONS):
+  - Models tab: 3-column layout, model selection per use case
+  - API Keys tab: Anthropic/OpenAI key management, encrypted storage
+  - Tool Credentials: OAuth2 modal, provider credentials, connection status
+
+FILE STATS:
+  - docs-data.tsx: 1284 → 2007 lines (+802 insertions, -79 deletions)
+
+VERIFIED:
+  - TypeScript compilation passes (tsc --noEmit)
+  - All 17 subtopic anchor IDs match between sidebar and content JSX
+  - QuickStart component has id="quickstart" for sidebar scroll targeting
+
+
+================================================================================
 COMMIT #63 — Settings Overhaul: Models, Billing, Nav Config, API Keys + Tools
 ================================================================================
 DATE: 2026-02-27
