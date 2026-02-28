@@ -7,6 +7,87 @@
 
 
 ================================================================================
+COMMIT #66 — Dashboard Overhaul + Wiki Blueprints
+================================================================================
+DATE: 2026-02-28
+HASH: 88756a6
+PHASE: Post-Phase 3 — Dashboard V2
+
+WHAT CHANGED:
+  BUG FIX:
+  - CRM create button: added onError callback with inline error display,
+    isPending loading state ("Creating..."), strips non-numeric chars from value
+
+  NEW DATABASE (4 tables + 2 ALTER):
+  - `pipeline_stages` — custom kanban columns (name, slug, color, sortOrder,
+    isWon, isLost) per project. Unique index on (projectId, slug)
+  - `marketing_campaigns` — platform enum (meta_ads/youtube_ads/email/etc),
+    status, spend, impressions, clicks, conversions, revenue, funnelStage
+  - `brand_touchpoints` — type enum (linkedin/instagram/domain/etc), label,
+    url, description, status (active/inactive/planned)
+  - `financial_records` — type (revenue/expense/tax/investment), category
+    (mrr/arr/cogs/salary/etc), amount, currency, period dates
+  - ALTER deals: added stage_id UUID FK → pipeline_stages
+  - ALTER wiki_categories: added is_blueprint BOOLEAN
+  - ALTER wiki_articles: added template_key TEXT
+  - Migration SQL: packages/db/src/migrations/dashboard-overhaul.sql
+
+  NEW ROUTERS (4):
+  - `pipelineStages`: list, create, update, delete, reorder, seedDefaults (7 stages)
+  - `marketingCampaigns`: list, create, update, delete, funnelMetrics
+  - `brandTouchpoints`: list (grouped by type), create, update, delete
+  - `financialRecords`: list, create, update, delete, summary (with growth indicators)
+
+  MODIFIED ROUTERS (4):
+  - `deals`: stageId FK throughout, list joins pipelineStages, new kpis() query
+  - `dashboard`: new general() top KPIs, extended operations (agentActivity/actionDaily),
+    extended marketing (funnel metrics from campaigns)
+  - `agents`: new listByTeam(team) query
+  - `wiki`: new seedBlueprints (10 templates), new aiEnhance (Anthropic API)
+
+  NEW SHARED COMPONENTS:
+  - PeriodSelector — extracted 7D/30D/90D pattern
+  - AgentDrawer — slide-out panel showing agents filtered by team
+
+  NEW TABS:
+  - General — 3x3 KPI grid (Revenue, Profit, AI Cost, Pipeline Value, Deals Won,
+    Conversion Rate, Active Agents, Task Completion, Campaign ROI) with growth arrows
+  - Branding — touchpoints CRUD grouped by platform type with icons
+
+  REBUILT TABS:
+  - Commercial: custom pipeline stages (auto-seeded), KPI bar (pipeline/won/lost/
+    conversion/avg deal), stage manager (add/rename/recolor/delete), stageId DnD
+  - Finance: 6 KPI cards with growth, financial records CRUD table, existing charts kept
+  - Operations: compressed to 4-col row, new agent activity AreaChart (hourly),
+    stacked actions BarChart (daily by status)
+  - Marketing: funnel viz (ToFu/MoFu/BoFu with conversion %), campaign cards with
+    ROI/impressions/clicks/spend, existing WhatsApp/Email sections moved to bottom
+
+  WIKI CHANGES:
+  - Blueprint banner: "Create Blueprints" button seeds 10 template articles
+  - Templates: Brand Guidelines, Tone of Voice, Product Catalog, Target Personas,
+    Content Calendar, Sales Playbook, Customer FAQ, Compliance/Legal, Onboarding, SOPs
+  - AI Enhance button on template articles → calls Anthropic to enrich content
+
+  DASHBOARD PAGE:
+  - Tab order: General, Commercial, Finance, Operations, Marketing, Branding
+  - Default tab changed from Commercial → General
+
+  I18N:
+  - Added ~75 new keys per locale (en-US, pt-BR) in dashboard + wiki namespaces
+
+FILES: 29 changed (+2725 -333 lines)
+
+TECH NOTES:
+  - Auto-seed useEffect guarded with useRef to prevent double-fire
+  - Funnel metrics: ToFu impressions → MoFu clicks → BoFu conversions
+  - Financial summary uses period comparison (current vs previous N days) for growth %
+  - Wiki aiEnhance uses createDirectClient() from @ai-office/ai (not direct SDK import)
+  - Dashboard general query runs 9 parallel DB queries for top KPIs
+  - Migration SQL uses DO $$ BEGIN/EXCEPTION blocks for idempotent enum creation
+
+
+================================================================================
 COMMIT #65 — Dashboard Page: Commercial, Finance, Operations & Marketing Tabs
 ================================================================================
 DATE: 2026-02-28
