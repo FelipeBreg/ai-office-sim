@@ -10,6 +10,7 @@ import {
 import { dealStageEnum } from './enums.js';
 import { projects } from './projects.js';
 import { agents } from './agents.js';
+import { pipelineStages } from './pipeline-stages.js';
 
 export const deals = pgTable(
   'deals',
@@ -24,6 +25,9 @@ export const deals = pgTable(
     contactEmail: text('contact_email'),
     value: numeric('value', { precision: 12, scale: 2 }),
     stage: dealStageEnum('stage').notNull().default('prospect'),
+    stageId: uuid('stage_id').references(() => pipelineStages.id, {
+      onDelete: 'set null',
+    }),
     sortOrder: integer('sort_order').notNull().default(0),
     notes: text('notes'),
     crmProvider: text('crm_provider'),
@@ -41,6 +45,7 @@ export const deals = pgTable(
   (table) => [
     index('deal_project_id_idx').on(table.projectId),
     index('deal_stage_idx').on(table.stage),
+    index('deal_stage_id_idx').on(table.stageId),
     index('deal_crm_external_idx').on(table.projectId, table.crmExternalId),
   ],
 );

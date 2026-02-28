@@ -2,24 +2,28 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Briefcase, DollarSign, Activity, MessageSquare } from 'lucide-react';
+import { LayoutGrid, Briefcase, DollarSign, Activity, MessageSquare, Palette } from 'lucide-react';
+import { GeneralTab } from './tabs/general-tab';
 import { CommercialTab } from './tabs/commercial-tab';
 import { FinanceTab } from './tabs/finance-tab';
 import { OperationsTab } from './tabs/operations-tab';
 import { MarketingTab } from './tabs/marketing-tab';
+import { BrandingTab } from './tabs/branding-tab';
 
 const tabs = [
+  { id: 'general', labelKey: 'tabGeneral', icon: LayoutGrid },
   { id: 'commercial', labelKey: 'tabCommercial', icon: Briefcase },
   { id: 'finance', labelKey: 'tabFinance', icon: DollarSign },
   { id: 'operations', labelKey: 'tabOperations', icon: Activity },
   { id: 'marketing', labelKey: 'tabMarketing', icon: MessageSquare },
+  { id: 'branding', labelKey: 'tabBranding', icon: Palette },
 ] as const;
 
 type Tab = (typeof tabs)[number]['id'];
 
 export default function DashboardPage() {
   const t = useTranslations('dashboard');
-  const [activeTab, setActiveTab] = useState<Tab>('commercial');
+  const [activeTab, setActiveTab] = useState<Tab>('general');
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
@@ -56,10 +60,12 @@ export default function DashboardPage() {
 
       {/* Tab content */}
       <div className="flex-1">
+        {activeTab === 'general' && <GeneralTab />}
         {activeTab === 'commercial' && <CommercialTab />}
         {activeTab === 'finance' && <FinanceTab />}
         {activeTab === 'operations' && <OperationsTab />}
         {activeTab === 'marketing' && <MarketingTab />}
+        {activeTab === 'branding' && <BrandingTab />}
       </div>
     </div>
   );

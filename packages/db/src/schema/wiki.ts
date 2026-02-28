@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   integer,
+  boolean,
   timestamp,
   index,
   uniqueIndex,
@@ -29,6 +30,7 @@ export const wikiCategories = pgTable(
     description: text('description'),
     icon: text('icon'),
     sortOrder: integer('sort_order').notNull().default(0),
+    isBlueprint: boolean('is_blueprint').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
@@ -57,6 +59,7 @@ export const wikiArticles = pgTable(
     summary: text('summary'),
     content: text('content').notNull(),
     tags: text('tags').array().notNull().default([]),
+    templateKey: text('template_key'),
     authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
     attachedDocumentIds: uuid('attached_document_ids').array().notNull().default([]),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

@@ -21,3 +21,7 @@ export * from './billing.js';
 export * from './devops.js';
 export * from './workflow-templates.js';
 export * from './deals.js';
+export * from './pipeline-stages.js';
+export * from './marketing-campaigns.js';
+export * from './brand-touchpoints.js';
+export * from './financial-records.js';

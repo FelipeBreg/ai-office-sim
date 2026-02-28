@@ -20,6 +20,10 @@ import { workflowTemplatesRouter } from './routers/workflow-templates.js';
 import { atlasRouter } from './routers/atlas.js';
 import { dealsRouter } from './routers/deals.js';
 import { dashboardRouter } from './routers/dashboard.js';
+import { pipelineStagesRouter } from './routers/pipeline-stages.js';
+import { marketingCampaignsRouter } from './routers/marketing-campaigns.js';
+import { brandTouchpointsRouter } from './routers/brand-touchpoints.js';
+import { financialRecordsRouter } from './routers/financial-records.js';
 
 export const appRouter = createTRPCRouter({
   agents: agentsRouter,
@@ -43,6 +47,10 @@ export const appRouter = createTRPCRouter({
   atlas: atlasRouter,
   deals: dealsRouter,
   dashboard: dashboardRouter,
+  pipelineStages: pipelineStagesRouter,
+  marketingCampaigns: marketingCampaignsRouter,
+  brandTouchpoints: brandTouchpointsRouter,
+  financialRecords: financialRecordsRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -14,6 +14,16 @@ export const agentsRouter = createTRPCRouter({
       .orderBy(desc(agents.createdAt));
   }),
 
+  listByTeam: projectProcedure
+    .input(z.object({ team: z.enum(['development', 'research', 'marketing', 'sales', 'support', 'finance', 'operations']) }))
+    .query(async ({ ctx, input }) => {
+      return db
+        .select()
+        .from(agents)
+        .where(and(eq(agents.projectId, ctx.project!.id), eq(agents.team, input.team)))
+        .orderBy(desc(agents.createdAt));
+    }),
+
   getById: projectProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {

@@ -964,8 +964,13 @@ function ArticleDetail({
       onDeleted();
     },
   });
+  const aiEnhanceMutation = trpc.wiki.aiEnhance.useMutation({
+    onSuccess: () => {
+      articleQuery.refetch();
+    },
+  });
 
-  const article = articleQuery.data as WikiArticle | undefined;
+  const article = articleQuery.data as (WikiArticle & { templateKey?: string | null }) | undefined;
 
   if (articleQuery.isLoading) {
     return (
@@ -1014,19 +1019,34 @@ function ArticleDetail({
               </div>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              if (confirm(tw('confirmDeleteArticle'))) {
-                deleteMutation.mutate({ id: article.id });
-              }
-            }}
-            disabled={deleteMutation.isPending}
-            aria-label={tw('deleteArticle')}
-          >
-            <Trash2 size={12} strokeWidth={1.5} />
-          </Button>
+          <div className="flex gap-1">
+            {article.templateKey && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => aiEnhanceMutation.mutate({ id: article.id })}
+                disabled={aiEnhanceMutation.isPending}
+              >
+                <Bot size={12} strokeWidth={1.5} className="mr-1" />
+                <span className="text-[9px]">
+                  {aiEnhanceMutation.isPending ? tw('enhancing') : tw('aiEnhance')}
+                </span>
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (confirm(tw('confirmDeleteArticle'))) {
+                  deleteMutation.mutate({ id: article.id });
+                }
+              }}
+              disabled={deleteMutation.isPending}
+              aria-label={tw('deleteArticle')}
+            >
+              <Trash2 size={12} strokeWidth={1.5} />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -1039,6 +1059,9 @@ function ArticleDetail({
 
       {deleteMutation.isError && (
         <p className="text-[10px] text-status-error">{tw('deleteError')}</p>
+      )}
+      {aiEnhanceMutation.isError && (
+        <p className="text-[10px] text-status-error">{tw('enhanceError')}</p>
       )}
     </div>
   );
@@ -1126,8 +1149,17 @@ function CompanyWikiTab() {
     },
   });
 
-  const categories = (categoriesQuery.data ?? []) as WikiCategory[];
+  const seedBlueprintsMutation = trpc.wiki.seedBlueprints.useMutation({
+    onSuccess: () => {
+      categoriesQuery.refetch();
+      articlesQuery.refetch();
+    },
+  });
+
+  const categories = (categoriesQuery.data ?? []) as (WikiCategory & { isBlueprint?: boolean })[];
   const articles = (articlesQuery.data ?? []) as WikiArticle[];
+
+  const hasBlueprintCategory = categories.some((c) => (c as any).isBlueprint);
 
   // Build category tree: root categories (no parent)
   const rootCategories = useMemo(
@@ -1157,7 +1189,25 @@ function CompanyWikiTab() {
   }
 
   return (
-    <div className="flex gap-4">
+    <div className="flex flex-col gap-4">
+      {/* Blueprint banner */}
+      {!hasBlueprintCategory && !categoriesQuery.isLoading && (
+        <div className="flex items-center justify-between border border-accent-cyan/30 bg-accent-cyan/5 px-4 py-3">
+          <div>
+            <p className="text-[11px] font-medium text-accent-cyan">{tw('blueprintBanner')}</p>
+            <p className="text-[9px] text-text-muted">{tw('blueprintBannerDesc')}</p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => seedBlueprintsMutation.mutate()}
+            disabled={seedBlueprintsMutation.isPending}
+          >
+            {seedBlueprintsMutation.isPending ? tw('creating') : tw('createBlueprints')}
+          </Button>
+        </div>
+      )}
+
+      <div className="flex gap-4">
       {/* Left sidebar: Category tree */}
       <div className="w-52 shrink-0">
         <div className="mb-2 flex items-center justify-between">
@@ -1330,6 +1380,7 @@ function CompanyWikiTab() {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
