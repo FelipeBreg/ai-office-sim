@@ -7,6 +7,65 @@
 
 
 ================================================================================
+COMMIT #65 — Dashboard Page: Commercial, Finance, Operations & Marketing Tabs
+================================================================================
+DATE: 2026-02-28
+HASH: 1b28140
+PHASE: Post-Phase 3 — Dashboard Consolidation
+
+WHAT CHANGED:
+  NEW DATABASE:
+  - `deals` table with deal_stage enum (prospect → closed_won/closed_lost)
+  - Fields: title, companyName, contactName, contactEmail, value, stage, sortOrder,
+    notes, crmProvider, crmExternalId, crmLastSyncAt, createdByAgentId
+  - Indexes: projectId, stage, (projectId, crmExternalId)
+  - Raw SQL deployed to Neon (drizzle-kit broken in WSL)
+
+  NEW ROUTERS:
+  - `deals` router: list, create, update, updateStage, delete (CRUD with Zod validation)
+  - `dashboard` router: finance (totals/daily/byModel/invoices), operations
+    (agentStatus/taskCompletion/approvalRates/actionSuccess), marketing
+    (whatsapp + email metrics by direction/status/daily/unique contacts)
+
+  NEW PAGES:
+  - /dashboard page shell with 4 tabs (Commercial, Finance, Operations, Marketing)
+  - Commercial tab: Kanban board with 6 stage columns, HTML5 drag-and-drop,
+    inline deal creation form, delete on hover
+  - Finance tab: stat cards + recharts AreaChart (daily cost) + BarChart (cost by model)
+    + invoice table with PDF links
+  - Operations tab: 2x2 metric widgets with proportional bars — agent status,
+    task completion, approval rates, action success rates
+  - Marketing tab: WhatsApp (green accent) + Email (cyan accent) sections with
+    volume cards, daily volume BarCharts, delivery status breakdown bars
+
+  SIDEBAR:
+  - Added Dashboard (LayoutDashboard icon) to Monitoring group after Approvals
+  - Removed Analytics from Monitoring group
+  - Removed Finance from Sectors group
+  - Updated Settings Navigation tab to match
+
+  DELETED:
+  - /analytics page (1008 lines) — replaced by Dashboard Finance/Operations tabs
+  - /finance page (209 lines) — replaced by Dashboard Finance tab
+
+  I18N:
+  - Added "dashboard" namespace (~90 keys) to en-US.json and pt-BR.json
+  - Added "dashboard" nav key to both locale files
+  - All placeholders and labels use i18n (no hardcoded strings)
+
+  DEPENDENCIES:
+  - Added recharts to web app
+
+FILES: 19 changed (+1908 -1244 lines)
+
+TECH NOTES:
+  - Recharts Tooltip formatter: value can be undefined, use (value ?? 0)
+  - Deal value validated with regex: /^\d{1,10}(\.\d{1,2})?$/
+  - Email unique recipients uses [1] array index (first recipient) — intentional
+  - Cleared .next/types cache after deleting analytics/finance pages
+
+
+================================================================================
 COMMIT #64 — Docs Restructure: Uniform Pattern + Atlas & Settings Content Update
 ================================================================================
 DATE: 2026-02-28
