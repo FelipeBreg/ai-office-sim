@@ -7,6 +7,32 @@
 
 
 ================================================================================
+COMMIT #67 — Review Fixes (Dashboard Overhaul)
+================================================================================
+DATE: 2026-02-28
+HASH: 1226ce1
+PHASE: Post-Phase 3 — Dashboard V2
+
+WHAT CHANGED:
+  SECURITY:
+  - Brand touchpoint URLs: only render <a href> for http(s) protocol,
+    prevents javascript: XSS via user-provided URLs
+
+  CLEANUP:
+  - Marketing funnel FunnelBar: removed redundant w-full class that was
+    overridden by inline style={{ width }}
+
+  DATABASE MIGRATION:
+  - Ran dashboard-overhaul.sql against Neon — all 4 new tables, 6 enums,
+    and ALTER statements are now live
+
+FILES: 2 modified
+  apps/web/.../dashboard/tabs/branding-tab.tsx
+  apps/web/.../dashboard/tabs/marketing-tab.tsx
+
+────────────────────────────────────────────────────────────────────────────────
+
+================================================================================
 COMMIT #66 — Dashboard Overhaul + Wiki Blueprints
 ================================================================================
 DATE: 2026-02-28
