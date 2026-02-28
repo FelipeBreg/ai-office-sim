@@ -11,9 +11,8 @@ import {
   GitBranch,
   GitMerge,
   ShieldCheck,
-  BarChart3,
+  LayoutDashboard,
   Target,
-  DollarSign,
   BookOpen,
   Settings,
   Wrench,
@@ -47,8 +46,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/office', labelKey: 'office', icon: Building2 },
       { href: '/approvals', labelKey: 'approvals', icon: ShieldCheck, hasBadge: true },
+      { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
       { href: '/strategy', labelKey: 'strategy', icon: Target },
-      { href: '/analytics', labelKey: 'analytics', icon: BarChart3 },
       { href: '/memory', labelKey: 'memory', icon: BookOpen },
     ],
   },
@@ -66,7 +65,6 @@ const NAV_GROUPS: NavGroup[] = [
     labelKey: 'groupSectors',
     items: [
       { href: '/devops', labelKey: 'devops', icon: GitMerge },
-      { href: '/finance', labelKey: 'finance', icon: DollarSign },
     ],
   },
 ];

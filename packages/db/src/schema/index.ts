@@ -20,3 +20,4 @@ export * from './company-templates.js';
 export * from './billing.js';
 export * from './devops.js';
 export * from './workflow-templates.js';
+export * from './deals.js';

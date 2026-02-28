@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import {
   Building2, Users, CreditCard, Bell, Key, Cpu, PanelLeft, Trash2, Plus, Send, Check,
-  ExternalLink, Download, FileText, Radio, ShieldCheck, Target, BarChart3, BookOpen,
-  GitBranch, Wrench, GitMerge, DollarSign, Settings as SettingsIcon,
+  ExternalLink, Download, FileText, Radio, ShieldCheck, LayoutDashboard, Target, BookOpen,
+  GitBranch, Wrench, GitMerge, Settings as SettingsIcon,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
@@ -787,8 +787,8 @@ const SETTINGS_NAV_GROUPS: NavGroupConfig[] = [
     items: [
       { href: '/office', label: 'Office', icon: Building2 },
       { href: '/approvals', label: 'Approvals', icon: ShieldCheck },
+      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/strategy', label: 'Strategy', icon: Target },
-      { href: '/analytics', label: 'Analytics', icon: BarChart3 },
       { href: '/memory', label: 'Memory', icon: BookOpen },
     ],
   },
@@ -806,7 +806,6 @@ const SETTINGS_NAV_GROUPS: NavGroupConfig[] = [
     label: 'Sectors',
     items: [
       { href: '/devops', label: 'DevOps', icon: GitMerge },
-      { href: '/finance', label: 'Finance', icon: DollarSign },
     ],
   },
 ];

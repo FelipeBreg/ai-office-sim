@@ -221,6 +221,16 @@ export const humanTaskPriorityEnum = pgEnum('human_task_priority', [
   'urgent',
 ]);
 
+// Deals (CRM)
+export const dealStageEnum = pgEnum('deal_stage', [
+  'prospect',
+  'qualified',
+  'proposal',
+  'negotiation',
+  'closed_won',
+  'closed_lost',
+]);
+
 // Tool Credentials (OAuth2)
 export const toolTypeEnum = pgEnum('tool_type', [
   'google_gmail',
