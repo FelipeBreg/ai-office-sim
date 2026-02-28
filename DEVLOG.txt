@@ -7,6 +7,83 @@
 
 
 ================================================================================
+COMMIT #68 — Workflow Engine Overhaul
+================================================================================
+DATE: 2026-02-28
+HASH: 9c63862
+PHASE: Post-Phase 3 — Workflow Engine
+
+WHAT CHANGED:
+  NEW FILES (16):
+  - packages/shared/src/types/workflow-nodes.ts — 6 typed node configs
+    (TriggerNodeConfig, AgentNodeConfig, ConditionNodeConfig, ApprovalNodeConfig,
+    DelayNodeConfig, OutputNodeConfig) as discriminated union on nodeType.
+    Runtime types: NodeInput, NodeOutput, WorkflowVariable, WorkflowDefinition.
+  - packages/db/src/migrations/workflow-engine.sql — ALTER TYPE + 4 new columns
+  - packages/ai/src/engine/workflow/types.ts — WorkflowRunContext, PausedException,
+    NodeHandler interface, WorkflowExecutionResult
+  - packages/ai/src/engine/workflow/graph.ts — topologicalSort (Kahn's algorithm),
+    getUpstreamOutputs, getDownstreamNodes
+  - packages/ai/src/engine/workflow/node-handler-registry.ts — Registry class
+  - packages/ai/src/engine/workflow/handlers/ — 6 handlers:
+    trigger (pass-through), agent (calls executeAgent with upstream context),
+    condition (llm_eval via Haiku / contains / json_path),
+    approval (throws PausedException), delay (throws PausedException),
+    output (log / webhook / email)
+  - packages/ai/src/engine/workflow/executor.ts — Main executeWorkflow():
+    topo-sort → walk DAG → execute handlers → persist node runs → handle
+    condition branching (skip untaken branches) → PausedException for pause/resume
+  - apps/worker/src/jobs/workflow-execution.ts — processWorkflowExecution:
+    load workflow → validate → execute → update status → delay re-enqueue
+  - apps/worker/src/workers/workflow-execution.worker.ts — concurrency: 3
+  - apps/web/src/components/workflows/VariablesPanel.tsx — CRUD for variables
+    with reference tracking (shows which nodes use each {{variable}})
+  - apps/web/src/components/workflows/RunWorkflowDialog.tsx — modal with
+    dynamic form fields per variable type (text/number/select)
+
+  MODIFIED FILES (21):
+  - packages/shared/src/types/index.ts — added 'waiting_approval' to
+    WorkflowRunStatus, re-exported all workflow node types
+  - packages/db/src/schema/enums.ts — 'waiting_approval' enum value
+  - packages/db/src/schema/workflows.ts — variables, pausedAtNodeId,
+    completedOutputs on workflowRuns; nodeType on workflowNodeRuns
+  - packages/queue — workflowExecutionJobSchema, WORKFLOW_EXECUTION queue
+    (3 attempts, 30s exponential backoff, keep 500)
+  - packages/ai/src/index.ts — export executeWorkflow, PausedException
+  - packages/api/src/routers/workflows.ts — trigger accepts variables +
+    validates required + enqueues BullMQ; added listRuns, getRunDetail,
+    resumeRun (approve/reject paused runs)
+  - apps/worker — wired createWorkflowExecutionWorker into workers array
+  - 6 node components — type-cast data to @ai-office/shared config types
+  - WorkflowEditor.tsx — nodeType discriminator in templates, variables
+    state, VariablesPanel toggle, onSave(nodes, edges, variables)
+  - ConfigPanel.tsx — real agent list via trpc.agents.list (replaced dummy
+    agents), promptTemplate textarea, conditionType selector (AI eval /
+    contains / JSON path), templateContent for output nodes
+  - workflows/[id]/page.tsx — RunWorkflowDialog, collapsible run history
+    panel with per-node output preview, approve/reject for paused runs
+  - en-US.json + pt-BR.json — ~30 new i18n keys each
+
+KEY DESIGN DECISIONS:
+  - Synchronous graph walk (not event-driven) — workflows are small DAGs
+    (5-12 nodes), Kahn's sort is simple and debuggable
+  - Agent handler calls executeAgent() directly (not via separate BullMQ
+    job) — avoids job-within-job complexity
+  - {{variable}} mustache syntax resolved at runtime before each node
+  - PausedException pattern for approval + delay — executor catches it,
+    saves state to DB, resumes later via re-enqueue
+  - Completed outputs stored on workflowRuns — enables resume from exact
+    point after pause without re-executing nodes
+
+MIGRATION REQUIRED:
+  Run workflow-engine.sql against Neon before deploying.
+
+FILES: 37 (16 new, 21 modified)
+LINES: +2052 / -140
+================================================================================
+
+
+================================================================================
 COMMIT #67 — Review Fixes (Dashboard Overhaul)
 ================================================================================
 DATE: 2026-02-28
