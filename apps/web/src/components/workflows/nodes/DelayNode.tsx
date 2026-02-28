@@ -3,12 +3,7 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Timer } from 'lucide-react';
-
-type DelayData = {
-  duration?: number;
-  unit?: 'minutes' | 'hours' | 'days';
-  label?: string;
-};
+import type { DelayNodeConfig } from '@ai-office/shared';
 
 function formatDelay(duration?: number, unit?: string): string {
   if (!duration || !unit) return 'Set delay...';
@@ -16,7 +11,7 @@ function formatDelay(duration?: number, unit?: string): string {
 }
 
 function DelayNode({ data, selected }: NodeProps) {
-  const d = data as DelayData;
+  const d = data as unknown as Partial<DelayNodeConfig>;
 
   return (
     <div

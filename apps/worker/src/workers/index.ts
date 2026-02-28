@@ -6,3 +6,4 @@ export { createEmbeddingGenerationWorker } from './embedding-generation.worker.j
 export { createNotificationWorker } from './notification.worker.js';
 export { createAnalyticsWorker } from './analytics.worker.js';
 export { createCleanupWorker } from './cleanup.worker.js';
+export { createWorkflowExecutionWorker } from './workflow-execution.worker.js';

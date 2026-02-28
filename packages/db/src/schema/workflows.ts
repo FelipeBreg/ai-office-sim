@@ -36,6 +36,9 @@ export const workflowRuns = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: 'cascade' }),
     status: workflowRunStatusEnum('status').notNull().default('running'),
+    variables: jsonb('variables').default({}),
+    pausedAtNodeId: text('paused_at_node_id'),
+    completedOutputs: jsonb('completed_outputs').default({}),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     error: text('error'),
@@ -57,6 +60,7 @@ export const workflowNodeRuns = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: 'cascade' }),
     nodeId: text('node_id').notNull(), // from React Flow
+    nodeType: text('node_type'),
     agentId: uuid('agent_id').references(() => agents.id, { onDelete: 'set null' }),
     status: workflowRunStatusEnum('status').notNull().default('running'),
     input: jsonb('input'),

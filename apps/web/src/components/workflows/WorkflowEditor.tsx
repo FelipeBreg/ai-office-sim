@@ -18,6 +18,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { nodeTypes } from './nodes';
 import { ConfigPanel } from './ConfigPanel';
+import { VariablesPanel } from './VariablesPanel';
 import { Button } from '@/components/ui/button';
 import {
   Zap,
@@ -26,12 +27,15 @@ import {
   ShieldCheck,
   Timer,
   FileOutput,
+  Variable,
 } from 'lucide-react';
+import type { WorkflowVariable } from '@ai-office/shared';
 
 interface WorkflowEditorProps {
   initialNodes?: Node[];
   initialEdges?: Edge[];
-  onSave?: (nodes: Node[], edges: Edge[]) => void;
+  initialVariables?: WorkflowVariable[];
+  onSave?: (nodes: Node[], edges: Edge[], variables: WorkflowVariable[]) => void;
 }
 
 const NODE_TEMPLATES: Record<
@@ -40,42 +44,42 @@ const NODE_TEMPLATES: Record<
 > = {
   trigger: {
     type: 'trigger',
-    data: { triggerType: 'manual' },
+    data: { nodeType: 'trigger', triggerType: 'manual' },
     icon: Zap,
     label: 'Trigger',
     color: '#2EA043',
   },
   agent: {
     type: 'agent',
-    data: { agentName: '' },
+    data: { nodeType: 'agent', agentId: '', agentName: '' },
     icon: Bot,
     label: 'Agent',
     color: '#3B82F6',
   },
   condition: {
     type: 'condition',
-    data: { condition: '' },
+    data: { nodeType: 'condition', conditionType: 'llm_eval', condition: '' },
     icon: GitBranch,
     label: 'Condition',
     color: '#D29922',
   },
   approval: {
     type: 'approval',
-    data: { approver: '' },
+    data: { nodeType: 'approval', approverRole: '' },
     icon: ShieldCheck,
     label: 'Approval',
     color: '#D29922',
   },
   delay: {
     type: 'delay',
-    data: { duration: 5, unit: 'minutes' },
+    data: { nodeType: 'delay', duration: 5, unit: 'minutes' },
     icon: Timer,
     label: 'Delay',
     color: '#484F58',
   },
   output: {
     type: 'output',
-    data: { outputType: 'log' },
+    data: { nodeType: 'output', outputType: 'log' },
     icon: FileOutput,
     label: 'Output',
     color: '#8B5CF6',
@@ -94,10 +98,17 @@ function getNextNodeId() {
   return `node_${Date.now()}_${nodeIdCounter}`;
 }
 
-export function WorkflowEditor({ initialNodes = [], initialEdges = [], onSave }: WorkflowEditorProps) {
+export function WorkflowEditor({
+  initialNodes = [],
+  initialEdges = [],
+  initialVariables = [],
+  onSave,
+}: WorkflowEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [variables, setVariables] = useState<WorkflowVariable[]>(initialVariables);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [showVariables, setShowVariables] = useState(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
@@ -111,6 +122,7 @@ export function WorkflowEditor({ initialNodes = [], initialEdges = [], onSave }:
 
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     setSelectedNodeId(node.id);
+    setShowVariables(false);
   }, []);
 
   const onPaneClick = useCallback(() => {
@@ -134,6 +146,7 @@ export function WorkflowEditor({ initialNodes = [], initialEdges = [], onSave }:
 
       setNodes((nds) => [...nds, newNode]);
       setSelectedNodeId(newNode.id);
+      setShowVariables(false);
     },
     [nodes.length, setNodes],
   );
@@ -153,7 +166,7 @@ export function WorkflowEditor({ initialNodes = [], initialEdges = [], onSave }:
 
   return (
     <div className="flex h-full w-full" ref={reactFlowWrapper}>
-      <div className={`relative flex-1 ${selectedNode ? '' : ''}`}>
+      <div className="relative flex-1">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -199,31 +212,50 @@ export function WorkflowEditor({ initialNodes = [], initialEdges = [], onSave }:
             }}
           />
           <Panel position="top-left" className="!m-3">
-            <div className="border border-border-default bg-bg-raised p-2 space-y-1.5">
-              <p className="text-[8px] uppercase tracking-[0.15em] text-text-muted mb-2">
-                Add Node
-              </p>
-              {Object.entries(NODE_TEMPLATES).map(([key, tpl]) => {
-                const Icon = tpl.icon;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => addNode(key)}
-                    className="flex w-full items-center gap-2 border border-border-default bg-bg-base px-2 py-1.5 text-[10px] text-text-secondary transition-colors hover:border-border-hover hover:text-text-primary"
-                  >
-                    <Icon size={11} strokeWidth={1.5} style={{ color: tpl.color }} />
-                    <span>{tpl.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            {showVariables ? (
+              <VariablesPanel
+                variables={variables}
+                onChange={setVariables}
+                nodes={nodes}
+                onClose={() => setShowVariables(false)}
+              />
+            ) : (
+              <div className="border border-border-default bg-bg-raised p-2 space-y-1.5">
+                <p className="text-[8px] uppercase tracking-[0.15em] text-text-muted mb-2">
+                  Add Node
+                </p>
+                {Object.entries(NODE_TEMPLATES).map(([key, tpl]) => {
+                  const Icon = tpl.icon;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => addNode(key)}
+                      className="flex w-full items-center gap-2 border border-border-default bg-bg-base px-2 py-1.5 text-[10px] text-text-secondary transition-colors hover:border-border-hover hover:text-text-primary"
+                    >
+                      <Icon size={11} strokeWidth={1.5} style={{ color: tpl.color }} />
+                      <span>{tpl.label}</span>
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setShowVariables(true)}
+                  className="flex w-full items-center gap-2 border border-border-default bg-bg-base px-2 py-1.5 text-[10px] text-accent-cyan transition-colors hover:border-border-hover"
+                >
+                  <Variable size={11} strokeWidth={1.5} />
+                  <span>Variables</span>
+                  {variables.length > 0 && (
+                    <span className="ml-auto text-[8px] text-text-muted">{variables.length}</span>
+                  )}
+                </button>
+              </div>
+            )}
           </Panel>
           {onSave && (
             <Panel position="top-right" className="!m-3">
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => onSave(nodes, edges)}
+                onClick={() => onSave(nodes, edges, variables)}
               >
                 Save
               </Button>

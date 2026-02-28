@@ -3,15 +3,10 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Bot } from 'lucide-react';
-
-type AgentData = {
-  agentName?: string;
-  agentId?: string;
-  label?: string;
-};
+import type { AgentNodeConfig } from '@ai-office/shared';
 
 function AgentNode({ data, selected }: NodeProps) {
-  const d = data as AgentData;
+  const d = data as unknown as Partial<AgentNodeConfig>;
 
   return (
     <div

@@ -64,6 +64,7 @@ export const workflowRunStatusEnum = pgEnum('workflow_run_status', [
   'completed',
   'failed',
   'cancelled',
+  'waiting_approval',
 ]);
 
 // Documents

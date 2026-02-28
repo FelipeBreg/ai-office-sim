@@ -19,6 +19,11 @@ export { DEFAULT_SAFETY_LIMITS } from './engine/types.js';
 export { checkApprovalRule } from './engine/approval-check.js';
 export type { ApprovalAction } from './engine/approval-check.js';
 
+// Workflow Engine
+export { executeWorkflow } from './engine/workflow/executor.js';
+export type { WorkflowRunContext, WorkflowExecutionResult } from './engine/workflow/types.js';
+export { PausedException } from './engine/workflow/types.js';
+
 // Tools
 export { toolRegistry } from './tools/registry.js';
 

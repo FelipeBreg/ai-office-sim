@@ -20,6 +20,7 @@ import {
   createNotificationWorker,
   createAnalyticsWorker,
   createCleanupWorker,
+  createWorkflowExecutionWorker,
 } from './workers/index.js';
 
 const PORT = Number(process.env.PORT ?? 4000);
@@ -47,6 +48,7 @@ const workers = [
   createNotificationWorker(),
   createAnalyticsWorker(),
   createCleanupWorker(),
+  createWorkflowExecutionWorker(),
 ];
 
 console.log(`[worker] Started ${workers.length} queue workers`);

@@ -9,6 +9,7 @@ import type {
   NotificationJob,
   AnalyticsJob,
   CleanupJob,
+  WorkflowExecutionJob,
 } from './jobs.js';
 
 // ── Queue names (single source of truth) ──
@@ -20,6 +21,7 @@ export const QUEUE_NAMES = {
   NOTIFICATION: 'notification',
   ANALYTICS: 'analytics',
   CLEANUP: 'cleanup',
+  WORKFLOW_EXECUTION: 'workflow-execution',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -68,6 +70,12 @@ const defaultJobOptions: Record<QueueName, DefaultJobOptions> = {
     removeOnComplete: { count: 50 },
     removeOnFail: false,
   },
+  [QUEUE_NAMES.WORKFLOW_EXECUTION]: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 30_000 },
+    removeOnComplete: { count: 500 },
+    removeOnFail: false,
+  },
 };
 
 // ── Queue factory ──
@@ -87,6 +95,7 @@ let _embeddingGeneration: Queue<EmbeddingGenerationJob> | null = null;
 let _notification: Queue<NotificationJob> | null = null;
 let _analytics: Queue<AnalyticsJob> | null = null;
 let _cleanup: Queue<CleanupJob> | null = null;
+let _workflowExecution: Queue<WorkflowExecutionJob> | null = null;
 
 export function getAgentExecutionQueue() {
   _agentExecution ??= createQueue<AgentExecutionJob>(QUEUE_NAMES.AGENT_EXECUTION);
@@ -123,6 +132,11 @@ export function getCleanupQueue() {
   return _cleanup;
 }
 
+export function getWorkflowExecutionQueue() {
+  _workflowExecution ??= createQueue<WorkflowExecutionJob>(QUEUE_NAMES.WORKFLOW_EXECUTION);
+  return _workflowExecution;
+}
+
 /** Get all queue instances (useful for bull-board) */
 export function getAllQueues() {
   return [
@@ -133,5 +147,6 @@ export function getAllQueues() {
     getNotificationQueue(),
     getAnalyticsQueue(),
     getCleanupQueue(),
+    getWorkflowExecutionQueue(),
   ];
 }

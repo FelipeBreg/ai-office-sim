@@ -3,15 +3,10 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { ShieldCheck } from 'lucide-react';
-
-type ApprovalData = {
-  approver?: string;
-  timeoutMinutes?: number;
-  label?: string;
-};
+import type { ApprovalNodeConfig } from '@ai-office/shared';
 
 function ApprovalNode({ data, selected }: NodeProps) {
-  const d = data as ApprovalData;
+  const d = data as unknown as Partial<ApprovalNodeConfig>;
 
   return (
     <div
@@ -31,7 +26,7 @@ function ApprovalNode({ data, selected }: NodeProps) {
             Approval
           </p>
           <p className="text-[8px] text-text-muted truncate max-w-[90px]">
-            {d.approver || 'Approval required'}
+            {d.approverRole || 'Approval required'}
           </p>
         </div>
       </div>

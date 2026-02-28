@@ -10,6 +10,7 @@ export {
   getNotificationQueue,
   getAnalyticsQueue,
   getCleanupQueue,
+  getWorkflowExecutionQueue,
   getAllQueues,
 } from './queues.js';
 export {
@@ -27,4 +28,6 @@ export {
   type NotificationJob,
   type AnalyticsJob,
   type CleanupJob,
+  workflowExecutionJobSchema,
+  type WorkflowExecutionJob,
 } from './jobs.js';

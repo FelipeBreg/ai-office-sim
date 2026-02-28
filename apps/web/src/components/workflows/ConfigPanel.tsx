@@ -4,6 +4,7 @@ import { type Node } from '@xyflow/react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { trpc } from '@/lib/trpc/client';
 
 interface ConfigPanelProps {
   node: Node;
@@ -12,11 +13,17 @@ interface ConfigPanelProps {
 }
 
 const TRIGGER_TYPES = ['scheduled', 'event', 'manual', 'webhook'] as const;
-const OUTPUT_TYPES = ['email', 'slack', 'webhook', 'log'] as const;
+const OUTPUT_TYPES = ['email', 'webhook', 'log'] as const;
 const DELAY_UNITS = ['minutes', 'hours', 'days'] as const;
+const CONDITION_TYPES = ['llm_eval', 'contains', 'json_path'] as const;
+const CONDITION_TYPE_LABELS: Record<string, string> = {
+  llm_eval: 'AI Eval',
+  contains: 'Contains',
+  json_path: 'JSON Path',
+};
 
 function TriggerConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelProps['onUpdate'] }) {
-  const data = node.data as { triggerType?: string; cronExpression?: string };
+  const data = node.data as { triggerType?: string; cronExpression?: string; eventName?: string };
   return (
     <div className="space-y-3">
       <div>
@@ -53,18 +60,28 @@ function TriggerConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelPr
           />
         </div>
       )}
+      {data.triggerType === 'event' && (
+        <div>
+          <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+            Event Name
+          </label>
+          <Input
+            value={(data.eventName as string) ?? ''}
+            onChange={(e) =>
+              onUpdate(node.id, { ...node.data, eventName: e.target.value })
+            }
+            placeholder="order.created"
+          />
+        </div>
+      )}
     </div>
   );
 }
 
 function AgentConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelProps['onUpdate'] }) {
-  const data = node.data as { agentName?: string; agentId?: string };
-  const dummyAgents = [
-    { id: 'agent-1', name: 'Research Agent' },
-    { id: 'agent-2', name: 'Writer Agent' },
-    { id: 'agent-3', name: 'Analyst Agent' },
-    { id: 'agent-4', name: 'Coordinator Agent' },
-  ];
+  const data = node.data as { agentName?: string; agentId?: string; promptTemplate?: string };
+  const { data: agents } = trpc.agents.list.useQuery();
+
   return (
     <div className="space-y-3">
       <div>
@@ -74,7 +91,7 @@ function AgentConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelProp
         <select
           value={data.agentId ?? ''}
           onChange={(e) => {
-            const agent = dummyAgents.find((a) => a.id === e.target.value);
+            const agent = agents?.find((a: { id: string; name: string }) => a.id === e.target.value);
             onUpdate(node.id, {
               ...node.data,
               agentId: e.target.value,
@@ -84,54 +101,126 @@ function AgentConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelProp
           className="w-full border border-border-default bg-bg-base px-2.5 py-1.5 text-xs text-text-primary transition-colors focus:border-accent-cyan focus:outline-none"
         >
           <option value="">Select agent...</option>
-          {dummyAgents.map((agent) => (
+          {agents?.map((agent: { id: string; name: string }) => (
             <option key={agent.id} value={agent.id}>
               {agent.name}
             </option>
           ))}
         </select>
       </div>
-    </div>
-  );
-}
-
-function ConditionConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelProps['onUpdate'] }) {
-  const data = node.data as { condition?: string };
-  return (
-    <div className="space-y-3">
       <div>
         <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
-          Condition
+          Prompt Template
         </label>
         <textarea
-          value={(data.condition as string) ?? ''}
-          onChange={(e) => onUpdate(node.id, { ...node.data, condition: e.target.value })}
-          placeholder="Describe the condition in plain language..."
+          value={(data.promptTemplate as string) ?? ''}
+          onChange={(e) => onUpdate(node.id, { ...node.data, promptTemplate: e.target.value })}
+          placeholder={'Use {{variable}} to reference workflow variables...'}
           rows={4}
-          className="w-full border border-border-default bg-bg-base px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted transition-colors focus:border-accent-cyan focus:outline-none resize-none"
+          className="w-full border border-border-default bg-bg-base px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted transition-colors focus:border-accent-cyan focus:outline-none resize-none font-mono"
         />
+        <p className="mt-1 text-[8px] text-text-muted">
+          Tip: Use {'{{variableName}}'} to inject variables
+        </p>
       </div>
     </div>
   );
 }
 
-function ApprovalConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelProps['onUpdate'] }) {
-  const data = node.data as { approver?: string; timeoutMinutes?: number };
+function ConditionConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelProps['onUpdate'] }) {
+  const data = node.data as {
+    conditionType?: string;
+    condition?: string;
+    jsonPath?: string;
+    expectedValue?: string;
+  };
+  const conditionType = data.conditionType ?? 'llm_eval';
+
   return (
     <div className="space-y-3">
       <div>
         <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
-          Approver
+          Condition Type
+        </label>
+        <div className="grid grid-cols-3 gap-1.5">
+          {CONDITION_TYPES.map((type) => (
+            <button
+              key={type}
+              onClick={() => onUpdate(node.id, { ...node.data, conditionType: type })}
+              className={`border px-2 py-1.5 text-[10px] transition-colors ${
+                conditionType === type
+                  ? 'border-[#D29922] bg-[#D29922]/10 text-[#D29922]'
+                  : 'border-border-default bg-bg-base text-text-secondary hover:border-border-hover'
+              }`}
+            >
+              {CONDITION_TYPE_LABELS[type]}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+          {conditionType === 'llm_eval' ? 'Condition (natural language)' : 'Search Text'}
+        </label>
+        <textarea
+          value={(data.condition as string) ?? ''}
+          onChange={(e) => onUpdate(node.id, { ...node.data, condition: e.target.value })}
+          placeholder={
+            conditionType === 'llm_eval'
+              ? 'Does the response indicate a positive sentiment?'
+              : conditionType === 'contains'
+                ? 'Text to search for...'
+                : 'Condition value...'
+          }
+          rows={3}
+          className="w-full border border-border-default bg-bg-base px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted transition-colors focus:border-accent-cyan focus:outline-none resize-none"
+        />
+      </div>
+      {conditionType === 'json_path' && (
+        <>
+          <div>
+            <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+              JSON Path
+            </label>
+            <Input
+              value={(data.jsonPath as string) ?? ''}
+              onChange={(e) => onUpdate(node.id, { ...node.data, jsonPath: e.target.value })}
+              placeholder="data.status"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+              Expected Value
+            </label>
+            <Input
+              value={(data.expectedValue as string) ?? ''}
+              onChange={(e) => onUpdate(node.id, { ...node.data, expectedValue: e.target.value })}
+              placeholder="success"
+            />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ApprovalConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelProps['onUpdate'] }) {
+  const data = node.data as { approverRole?: string; timeoutMinutes?: number; autoAction?: string };
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+          Approver Role
         </label>
         <select
-          value={(data.approver as string) ?? ''}
-          onChange={(e) => onUpdate(node.id, { ...node.data, approver: e.target.value })}
+          value={(data.approverRole as string) ?? ''}
+          onChange={(e) => onUpdate(node.id, { ...node.data, approverRole: e.target.value })}
           className="w-full border border-border-default bg-bg-base px-2.5 py-1.5 text-xs text-text-primary transition-colors focus:border-accent-cyan focus:outline-none"
         >
-          <option value="">Select approver...</option>
+          <option value="">Select role...</option>
+          <option value="owner">Owner</option>
           <option value="admin">Admin</option>
           <option value="manager">Manager</option>
-          <option value="team-lead">Team Lead</option>
         </select>
       </div>
       <div>
@@ -150,6 +239,26 @@ function ApprovalConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelP
           }
           placeholder="60"
         />
+      </div>
+      <div>
+        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+          Auto Action (on timeout)
+        </label>
+        <div className="grid grid-cols-2 gap-1.5">
+          {(['approve', 'reject'] as const).map((action) => (
+            <button
+              key={action}
+              onClick={() => onUpdate(node.id, { ...node.data, autoAction: action })}
+              className={`border px-2 py-1.5 text-[10px] transition-colors ${
+                data.autoAction === action
+                  ? 'border-[#D29922] bg-[#D29922]/10 text-[#D29922]'
+                  : 'border-border-default bg-bg-base text-text-secondary hover:border-border-hover'
+              }`}
+            >
+              {action}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -201,14 +310,14 @@ function DelayConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelProp
 }
 
 function OutputConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelProps['onUpdate'] }) {
-  const data = node.data as { outputType?: string; destination?: string };
+  const data = node.data as { outputType?: string; destination?: string; templateContent?: string };
   return (
     <div className="space-y-3">
       <div>
         <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
           Output Type
         </label>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
           {OUTPUT_TYPES.map((type) => (
             <button
               key={type}
@@ -224,22 +333,34 @@ function OutputConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelPro
           ))}
         </div>
       </div>
-      <div>
-        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
-          Destination
-        </label>
-        <Input
-          value={(data.destination as string) ?? ''}
-          onChange={(e) => onUpdate(node.id, { ...node.data, destination: e.target.value })}
-          placeholder={
-            data.outputType === 'email'
-              ? 'user@example.com'
-              : data.outputType === 'slack'
-                ? '#channel'
+      {data.outputType !== 'log' && (
+        <div>
+          <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+            Destination
+          </label>
+          <Input
+            value={(data.destination as string) ?? ''}
+            onChange={(e) => onUpdate(node.id, { ...node.data, destination: e.target.value })}
+            placeholder={
+              data.outputType === 'email'
+                ? 'user@example.com'
                 : data.outputType === 'webhook'
                   ? 'https://...'
                   : 'log name'
-          }
+            }
+          />
+        </div>
+      )}
+      <div>
+        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+          Template Content
+        </label>
+        <textarea
+          value={(data.templateContent as string) ?? ''}
+          onChange={(e) => onUpdate(node.id, { ...node.data, templateContent: e.target.value })}
+          placeholder={'Use {{variable}} to inject workflow variables...'}
+          rows={4}
+          className="w-full border border-border-default bg-bg-base px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted transition-colors focus:border-accent-cyan focus:outline-none resize-none font-mono"
         />
       </div>
     </div>

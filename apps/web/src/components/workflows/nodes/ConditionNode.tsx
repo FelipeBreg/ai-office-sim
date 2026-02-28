@@ -3,14 +3,10 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { GitBranch } from 'lucide-react';
-
-type ConditionData = {
-  condition?: string;
-  label?: string;
-};
+import type { ConditionNodeConfig } from '@ai-office/shared';
 
 function ConditionNode({ data, selected }: NodeProps) {
-  const d = data as ConditionData;
+  const d = data as unknown as Partial<ConditionNodeConfig>;
 
   return (
     <div

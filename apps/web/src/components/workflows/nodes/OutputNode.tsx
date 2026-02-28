@@ -2,23 +2,17 @@
 
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Mail, MessageSquare, Globe, FileText } from 'lucide-react';
+import { Mail, Globe, FileText } from 'lucide-react';
+import type { OutputNodeConfig } from '@ai-office/shared';
 
 const OUTPUT_ICONS = {
   email: Mail,
-  slack: MessageSquare,
   webhook: Globe,
   log: FileText,
 } as const;
 
-type OutputData = {
-  outputType?: 'email' | 'slack' | 'webhook' | 'log';
-  destination?: string;
-  label?: string;
-};
-
 function OutputNode({ data, selected }: NodeProps) {
-  const d = data as OutputData;
+  const d = data as unknown as Partial<OutputNodeConfig>;
   const outputType = d.outputType ?? 'log';
   const Icon = OUTPUT_ICONS[outputType] ?? FileText;
 

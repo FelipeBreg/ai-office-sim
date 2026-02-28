@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Clock, Zap, Hand, Globe } from 'lucide-react';
+import type { TriggerNodeConfig } from '@ai-office/shared';
 
 const TRIGGER_ICONS = {
   scheduled: Clock,
@@ -11,14 +12,8 @@ const TRIGGER_ICONS = {
   webhook: Globe,
 } as const;
 
-type TriggerData = {
-  triggerType: 'scheduled' | 'event' | 'manual' | 'webhook';
-  label?: string;
-  cronExpression?: string;
-};
-
 function TriggerNode({ data, selected }: NodeProps) {
-  const d = data as TriggerData;
+  const d = data as unknown as TriggerNodeConfig;
   const Icon = TRIGGER_ICONS[d.triggerType] ?? Zap;
 
   return (

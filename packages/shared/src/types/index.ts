@@ -46,7 +46,24 @@ export type StrategyStatus = 'planned' | 'active' | 'at_risk' | 'completed';
 export type KpiDirection = 'higher_is_better' | 'lower_is_better';
 
 // Workflow types
-export type WorkflowRunStatus = 'running' | 'completed' | 'failed' | 'cancelled';
+export type WorkflowRunStatus = 'running' | 'completed' | 'failed' | 'cancelled' | 'waiting_approval';
+
+// Workflow node types (re-export)
+export type {
+  TriggerNodeConfig,
+  AgentNodeConfig,
+  ConditionNodeConfig,
+  ApprovalNodeConfig,
+  DelayNodeConfig,
+  OutputNodeConfig,
+  WorkflowNodeConfig,
+  NodeInput,
+  NodeOutput,
+  WorkflowVariable,
+  WorkflowDefinitionNode,
+  WorkflowDefinitionEdge,
+  WorkflowDefinition,
+} from './workflow-nodes.js';
 
 // Document types
 export type DocumentSourceType = 'upload' | 'web' | 'api' | 'agent';

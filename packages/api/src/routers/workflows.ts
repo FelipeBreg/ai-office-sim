@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure, adminProcedure, enforceResourceLimit } from '../trpc.js';
-import { db, workflows, workflowRuns, eq, and, desc } from '@ai-office/db';
+import { db, workflows, workflowRuns, workflowNodeRuns, eq, and, desc } from '@ai-office/db';
+import { getWorkflowExecutionQueue } from '@ai-office/queue';
 import { TRPCError } from '@trpc/server';
+import type { WorkflowDefinition, WorkflowVariable } from '@ai-office/shared';
 
 export const workflowsRouter = createTRPCRouter({
   list: projectProcedure.query(async ({ ctx }) => {
@@ -88,7 +90,12 @@ export const workflowsRouter = createTRPCRouter({
     }),
 
   trigger: adminProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        variables: z.record(z.string()).optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const [workflow] = await db
         .select()
@@ -103,15 +110,148 @@ export const workflowsRouter = createTRPCRouter({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Workflow is inactive' });
       }
 
+      // Validate required variables
+      const definition = workflow.definition as WorkflowDefinition | null;
+      const definedVars: WorkflowVariable[] = definition?.variables ?? [];
+      const providedVars = input.variables ?? {};
+
+      for (const v of definedVars) {
+        if (v.required && !providedVars[v.key] && !v.defaultValue) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Required variable "${v.key}" is missing`,
+          });
+        }
+      }
+
+      // Merge defaults with provided values
+      const variables: Record<string, string> = {};
+      for (const v of definedVars) {
+        variables[v.key] = providedVars[v.key] ?? v.defaultValue ?? '';
+      }
+
       const [run] = await db
         .insert(workflowRuns)
         .values({
           workflowId: workflow.id,
           projectId: ctx.project!.id,
+          variables,
         })
         .returning();
 
-      // TODO: Enqueue workflow execution via BullMQ
+      // Enqueue workflow execution via BullMQ
+      await getWorkflowExecutionQueue().add(
+        `workflow-${workflow.id}-${run!.id}`,
+        {
+          workflowId: workflow.id,
+          workflowRunId: run!.id,
+          projectId: ctx.project!.id,
+          variables,
+        },
+      );
+
       return run!;
+    }),
+
+  listRuns: projectProcedure
+    .input(z.object({ workflowId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      return db
+        .select()
+        .from(workflowRuns)
+        .where(
+          and(
+            eq(workflowRuns.workflowId, input.workflowId),
+            eq(workflowRuns.projectId, ctx.project!.id),
+          ),
+        )
+        .orderBy(desc(workflowRuns.startedAt));
+    }),
+
+  getRunDetail: projectProcedure
+    .input(z.object({ runId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const [run] = await db
+        .select()
+        .from(workflowRuns)
+        .where(
+          and(
+            eq(workflowRuns.id, input.runId),
+            eq(workflowRuns.projectId, ctx.project!.id),
+          ),
+        )
+        .limit(1);
+
+      if (!run) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Workflow run not found' });
+      }
+
+      const nodeRuns = await db
+        .select()
+        .from(workflowNodeRuns)
+        .where(eq(workflowNodeRuns.workflowRunId, run.id))
+        .orderBy(workflowNodeRuns.startedAt);
+
+      return { run, nodeRuns };
+    }),
+
+  resumeRun: adminProcedure
+    .input(
+      z.object({
+        runId: z.string().uuid(),
+        approved: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [run] = await db
+        .select()
+        .from(workflowRuns)
+        .where(
+          and(
+            eq(workflowRuns.id, input.runId),
+            eq(workflowRuns.projectId, ctx.project!.id),
+            eq(workflowRuns.status, 'waiting_approval'),
+          ),
+        )
+        .limit(1);
+
+      if (!run) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No paused workflow run found',
+        });
+      }
+
+      if (!input.approved) {
+        // Reject: mark as cancelled
+        await db
+          .update(workflowRuns)
+          .set({ status: 'cancelled', completedAt: new Date() })
+          .where(eq(workflowRuns.id, run.id));
+        return { status: 'cancelled' as const };
+      }
+
+      // Approve: re-enqueue from the paused node
+      await db
+        .update(workflowRuns)
+        .set({ status: 'running', pausedAtNodeId: null })
+        .where(eq(workflowRuns.id, run.id));
+
+      const variables = (run.variables as Record<string, string>) ?? {};
+      const completedOutputs = (run.completedOutputs as Record<string, unknown>) ?? {};
+
+      await getWorkflowExecutionQueue().add(
+        `workflow-resume-${run.id}`,
+        {
+          workflowId: run.workflowId,
+          workflowRunId: run.id,
+          projectId: ctx.project!.id,
+          variables,
+          resumeFromNodeId: run.pausedAtNodeId ?? undefined,
+          completedOutputs,
+        },
+      );
+
+      return { status: 'resumed' as const };
     }),
 });

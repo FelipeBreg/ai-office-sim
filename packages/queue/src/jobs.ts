@@ -55,6 +55,17 @@ export const analyticsJobSchema = z.object({
 });
 export type AnalyticsJob = z.infer<typeof analyticsJobSchema>;
 
+// ── Workflow Execution ──
+export const workflowExecutionJobSchema = z.object({
+  workflowId: z.string().uuid(),
+  workflowRunId: z.string().uuid(),
+  projectId: z.string().uuid(),
+  variables: z.record(z.string()).default({}),
+  resumeFromNodeId: z.string().optional(),
+  completedOutputs: z.record(z.unknown()).optional(),
+});
+export type WorkflowExecutionJob = z.infer<typeof workflowExecutionJobSchema>;
+
 // ── Cleanup ──
 export const cleanupJobSchema = z.object({
   type: z.enum(['expired_sessions', 'old_action_logs', 'stale_jobs']),
