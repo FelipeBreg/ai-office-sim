@@ -7,6 +7,46 @@
 
 
 ================================================================================
+COMMIT #87 — Wire Process Agent Templates + Department Category Filters
+================================================================================
+Hash:     112d63c
+Date:     2026-03-02
+Scope:    apps/web (agents/new, workflows/templates, messages)
+
+WHAT CHANGED:
+  • AGENT WIZARD — Template Browser (agents/new/page.tsx, +338 lines)
+    – New "From Template" / "From Scratch" toggle at Step 0 (default: template)
+    – 14 department filter chips (All + 12 depts + Cross-Dept)
+    – Template card grid showing icon, bilingual name, archetype badge,
+      tool count, RAG doc count for all 55 process agent templates
+    – Clicking a template pre-fills: name, archetype, system prompts (EN+PT-BR),
+      tools, team, and trigger type
+    – "From Scratch" mode preserves original 20-archetype grid unchanged
+    – Added ~60 icon mappings in TEMPLATE_ICON_MAP for all template icons
+    – Imported PROCESS_AGENT_TEMPLATES + getAgentTemplatesByDepartment from shared
+
+  • WORKFLOW TEMPLATES — Department Categories (workflows/templates/page.tsx, +117 lines)
+    – Expanded category filters from 6 → 17 (added juridico, tributario,
+      contabilidade, rh, vendas, operacoes, atendimento, ti, compliance,
+      tesouraria, planejamento)
+    – Added ~50 new lucide icon mappings to ICON_MAP for 88 workflow templates
+    – Made filter row scrollable (overflow-x-auto + scrollbar-none + shrink-0)
+
+  • I18N (en-US.json + pt-BR.json, +32 keys each)
+    – workflowTemplates: 11 new categoryXxx keys for department filters
+    – agentWizard: 21 new keys (mode toggle, dept labels, template UI strings)
+
+WHY:
+  Commit #86 added 55 agent templates, 62 RAG docs, and 76 workflow templates
+  but the UI didn't surface them. Agent creation used 20 hardcoded archetypes
+  with generic prompts, and workflow templates only filtered by 6 categories.
+  Now users can browse all templates by department and create agents with
+  rich pre-configured prompts, tools, and RAG document references.
+
+TYPECHECK: 13/13 ✓
+
+
+================================================================================
 COMMIT #86 — Template Agents, RAG Docs, Workflows & Department Templates
 ================================================================================
 Hash:     cd27483
