@@ -7,6 +7,45 @@
 
 
 ================================================================================
+COMMIT #86 — Template Agents, RAG Docs, Workflows & Department Templates
+================================================================================
+Hash:     cd27483
+Date:     2026-03-02
+Scope:    packages/shared, packages/db, packages/api
+
+WHAT CHANGED:
+  • NEW process-agent-templates.ts (1611 lines)
+    – 55 unique agent role templates with bilingual system prompts
+    – Maps all roles to 20 existing archetypes (no DB migration)
+    – Tools, RAG document refs, trigger types, approval flags per agent
+    – Helpers: getAgentTemplatesByDepartment(), getAgentTemplateBySlug()
+
+  • NEW rag-document-templates.ts (913 lines)
+    – 62 knowledge base document category templates across 12 departments
+    – Each has slug, bilingual names, description, file types, examples
+    – Helper: getRagTemplatesByDepartment()
+
+  • EXPANDED workflow-templates.ts (302 → 584 lines)
+    – 76 new department-specific workflow templates (total: 88)
+    – 15 compact flow pattern helpers (f3, f4a, f4m, f4p, f5ca, etc.)
+    – Covers: juridico(7), tributario(8), contabilidade(7), rh(9),
+      vendas(6), marketing(8), operacoes(6), atendimento(5), ti(5),
+      compliance(5), tesouraria(5), planejamento(5)
+
+  • UPDATED company-templates.ts (+235 lines)
+    – Extended CompanyTemplateAgent interface (systemPromptEn/PtBr, ragDocuments)
+    – 13 new department templates + empresa-completa-br (all 55 agents)
+    – Explicit slug-list approach for cross-department agent sharing
+
+  • UPDATED company-templates router
+    – Provisioning now sets systemPromptEn/PtBr on created agents
+
+  • UPDATED shared/index.ts — re-exports for new modules
+
+TYPECHECK: 13/13 pass
+────────────────────────────────────────────────────────────────────────────────
+
+================================================================================
 COMMIT #85 — Human Approval Indicators on All 76 Process Cards
 ================================================================================
 DATE: 2026-03-02
