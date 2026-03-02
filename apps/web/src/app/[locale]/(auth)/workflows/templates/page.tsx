@@ -19,6 +19,54 @@ import {
   LayoutGrid,
   Loader2,
   Bot,
+  FileText,
+  Calculator,
+  Compass,
+  Calendar,
+  Clock,
+  CreditCard,
+  DollarSign,
+  TrendingUp,
+  Search,
+  ShieldCheck,
+  Lock,
+  Smile,
+  Award,
+  Clipboard,
+  Layers,
+  Landmark,
+  Target,
+  Share2,
+  ShoppingCart,
+  Settings,
+  Server,
+  Code,
+  Truck,
+  Users,
+  UserCheck,
+  Mail,
+  GitMerge,
+  CheckCircle,
+  BookOpen,
+  BarChart,
+  Heart,
+  Activity,
+  Map,
+  PenTool,
+  Repeat,
+  RefreshCw,
+  CheckSquare,
+  Box,
+  Book,
+  ArrowUp,
+  Gift,
+  Star,
+  Sun,
+  Terminal,
+  Tag,
+  Scissors,
+  Edit3,
+  Layout,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
@@ -35,22 +83,74 @@ const ICON_MAP: Record<string, LucideIcon> = {
   headphones: Headphones,
   filter: Filter,
   'bar-chart-2': BarChart2,
+  'bar-chart': BarChart,
   'file-check': FileCheck,
+  'file-text': FileText,
   'alert-triangle': AlertTriangle,
   megaphone: Megaphone,
   eye: Eye,
   package: Package,
   archive: Archive,
   'user-plus': UserPlus,
+  'user-check': UserCheck,
   shield: Shield,
+  'shield-check': ShieldCheck,
   receipt: Receipt,
+  calculator: Calculator,
+  compass: Compass,
+  calendar: Calendar,
+  clock: Clock,
+  'credit-card': CreditCard,
+  'dollar-sign': DollarSign,
+  'trending-up': TrendingUp,
+  search: Search,
+  lock: Lock,
+  smile: Smile,
+  award: Award,
+  clipboard: Clipboard,
+  layers: Layers,
+  landmark: Landmark,
+  target: Target,
+  'share-2': Share2,
+  'shopping-cart': ShoppingCart,
+  settings: Settings,
+  server: Server,
+  code: Code,
+  truck: Truck,
+  users: Users,
+  mail: Mail,
+  'git-merge': GitMerge,
+  'check-circle': CheckCircle,
+  'check-square': CheckSquare,
+  'book-open': BookOpen,
+  book: Book,
+  heart: Heart,
+  activity: Activity,
+  map: Map,
+  'pen-tool': PenTool,
+  repeat: Repeat,
+  'refresh-cw': RefreshCw,
+  box: Box,
+  'arrow-up': ArrowUp,
+  gift: Gift,
+  star: Star,
+  sun: Sun,
+  terminal: Terminal,
+  tag: Tag,
+  scissors: Scissors,
+  'edit-3': Edit3,
+  layout: Layout,
 };
 
 /* -------------------------------------------------------------------------- */
 /*  Categories                                                                */
 /* -------------------------------------------------------------------------- */
 
-const CATEGORIES = ['all', 'universal', 'marketing', 'ecommerce', 'saas', 'finance'] as const;
+const CATEGORIES = [
+  'all', 'universal', 'marketing', 'ecommerce', 'saas', 'finance',
+  'juridico', 'tributario', 'contabilidade', 'rh', 'vendas',
+  'operacoes', 'atendimento', 'ti', 'compliance', 'tesouraria', 'planejamento',
+] as const;
 type Category = (typeof CATEGORIES)[number];
 
 const CATEGORY_LABEL_KEY: Record<Category, string> = {
@@ -60,6 +160,17 @@ const CATEGORY_LABEL_KEY: Record<Category, string> = {
   ecommerce: 'categoryEcommerce',
   saas: 'categorySaas',
   finance: 'categoryFinance',
+  juridico: 'categoryJuridico',
+  tributario: 'categoryTributario',
+  contabilidade: 'categoryContabilidade',
+  rh: 'categoryRh',
+  vendas: 'categoryVendas',
+  operacoes: 'categoryOperacoes',
+  atendimento: 'categoryAtendimento',
+  ti: 'categoryTi',
+  compliance: 'categoryCompliance',
+  tesouraria: 'categoryTesouraria',
+  planejamento: 'categoryPlanejamento',
 };
 
 /* -------------------------------------------------------------------------- */
@@ -248,13 +359,13 @@ export default function WorkflowTemplatesPage() {
       </div>
 
       {/* Category filter tabs */}
-      <div className="flex items-center gap-1 border-b border-border-default px-4 py-2">
+      <div className="flex items-center gap-1 overflow-x-auto border-b border-border-default px-4 py-2 scrollbar-none">
         {CATEGORIES.map((cat) => (
           <button
             key={cat}
             type="button"
             onClick={() => setActiveCategory(cat)}
-            className={`px-3 py-1 text-[10px] font-medium uppercase tracking-wider transition-colors ${
+            className={`shrink-0 px-3 py-1 text-[10px] font-medium uppercase tracking-wider transition-colors ${
               activeCategory === cat
                 ? 'border border-accent-cyan bg-accent-cyan/10 text-accent-cyan'
                 : 'border border-transparent text-text-muted hover:text-text-secondary'

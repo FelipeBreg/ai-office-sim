@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import {
   Headset,
   TrendingUp,
@@ -29,7 +29,55 @@ import {
   BarChart4,
   Handshake,
   Rocket,
+  FileText,
+  Calculator,
+  Compass,
+  Calendar,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Shield,
+  ShieldCheck,
+  Lock,
+  Smile,
+  Award,
+  Clipboard,
+  Layers,
+  Landmark,
+  Target,
+  Settings,
+  Server,
+  Code,
+  Truck,
+  HeartPulse,
+  Headphones,
+  Filter,
+  Eye,
+  Archive,
+  Receipt,
+  Percent,
+  GitMerge,
+  GitBranch,
+  CheckCircle,
+  BookOpen,
+  BarChart,
+  MessageCircle,
+  LifeBuoy,
+  Layout,
+  Database,
+  Zap,
+  Edit,
+  FileCheck,
+  FilePlus,
+  PieChart,
+  AlertTriangle,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import {
+  PROCESS_AGENT_TEMPLATES,
+  getAgentTemplatesByDepartment,
+} from '@ai-office/shared';
+import type { ProcessAgentTemplate } from '@ai-office/shared';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -236,6 +284,89 @@ const ARCHETYPE_DEFAULT_PROMPTS_PTBR: Record<Archetype, string> = {
 };
 
 /* -------------------------------------------------------------------------- */
+/*  Template constants                                                        */
+/* -------------------------------------------------------------------------- */
+
+const DEPARTMENTS = [
+  { id: 'all', labelKey: 'deptAll' },
+  { id: 'juridico', labelKey: 'deptJuridico' },
+  { id: 'tributario', labelKey: 'deptTributario' },
+  { id: 'contabilidade', labelKey: 'deptContabilidade' },
+  { id: 'rh', labelKey: 'deptRh' },
+  { id: 'vendas', labelKey: 'deptVendas' },
+  { id: 'marketing', labelKey: 'deptMarketing' },
+  { id: 'operacoes', labelKey: 'deptOperacoes' },
+  { id: 'atendimento', labelKey: 'deptAtendimento' },
+  { id: 'ti', labelKey: 'deptTi' },
+  { id: 'compliance', labelKey: 'deptCompliance' },
+  { id: 'tesouraria', labelKey: 'deptTesouraria' },
+  { id: 'planejamento', labelKey: 'deptPlanejamento' },
+  { id: 'cross-department', labelKey: 'deptCrossDepartment' },
+] as const;
+
+const TEMPLATE_ICON_MAP: Record<string, LucideIcon> = {
+  headphones: Headphones,
+  filter: Filter,
+  'bar-chart-2': BarChart3,
+  'bar-chart': BarChart,
+  'file-check': FileCheck,
+  'file-text': FileText,
+  'file-plus': FilePlus,
+  'alert-triangle': AlertTriangle,
+  megaphone: Megaphone,
+  eye: Eye,
+  package: Package,
+  archive: Archive,
+  'user-plus': UserCheck,
+  shield: Shield,
+  'shield-check': ShieldCheck,
+  receipt: Receipt,
+  calculator: Calculator,
+  compass: Compass,
+  calendar: Calendar,
+  clock: Clock,
+  'credit-card': CreditCard,
+  'dollar-sign': DollarSign,
+  'trending-up': TrendingUp,
+  search: Search,
+  lock: Lock,
+  smile: Smile,
+  award: Award,
+  clipboard: Clipboard,
+  'clipboard-check': ClipboardList,
+  layers: Layers,
+  landmark: Landmark,
+  target: Target,
+  'share-2': Share2,
+  share: Share2,
+  'shopping-cart': ShoppingCart,
+  settings: Settings,
+  server: Server,
+  code: Code,
+  truck: Truck,
+  users: Users,
+  mail: Mail,
+  'git-merge': GitMerge,
+  'git-branch': GitBranch,
+  'check-circle': CheckCircle,
+  'book-open': BookOpen,
+  heart: Sparkles,
+  'heart-pulse': HeartPulse,
+  'life-buoy': LifeBuoy,
+  layout: Layout,
+  'message-circle': MessageCircle,
+  scale: Scale,
+  'pen-tool': PenTool,
+  palette: PenTool,
+  edit: Edit,
+  'pie-chart': PieChart,
+  percent: Percent,
+  database: Database,
+  zap: Zap,
+  timer: Clock,
+};
+
+/* -------------------------------------------------------------------------- */
 /*  Slug helper                                                               */
 /* -------------------------------------------------------------------------- */
 
@@ -318,6 +449,13 @@ function StepNameArchetype({
   slug,
   archetype,
   setArchetype,
+  creationMode,
+  setCreationMode,
+  deptFilter,
+  setDeptFilter,
+  onTemplateSelect,
+  selectedTemplateSlug,
+  locale,
   t,
 }: {
   name: string;
@@ -325,10 +463,44 @@ function StepNameArchetype({
   slug: string;
   archetype: Archetype | null;
   setArchetype: (v: Archetype) => void;
-  t: (key: string) => string;
+  creationMode: 'template' | 'scratch';
+  setCreationMode: (v: 'template' | 'scratch') => void;
+  deptFilter: string;
+  setDeptFilter: (v: string) => void;
+  onTemplateSelect: (tpl: ProcessAgentTemplate) => void;
+  selectedTemplateSlug: string | null;
+  locale: string;
+  t: (key: string, values?: Record<string, string | number>) => string;
 }) {
+  const filteredTemplates = useMemo(() => {
+    if (deptFilter === 'all') return PROCESS_AGENT_TEMPLATES;
+    return getAgentTemplatesByDepartment(deptFilter);
+  }, [deptFilter]);
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Mode toggle */}
+      <div className="flex gap-1">
+        {(['template', 'scratch'] as const).map((mode) => {
+          const isActive = creationMode === mode;
+          const labelKey = mode === 'template' ? 'modeTemplate' : 'modeScratch';
+          return (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setCreationMode(mode)}
+              className={`px-4 py-1.5 text-[10px] font-medium uppercase tracking-wider transition-colors ${
+                isActive
+                  ? 'border border-accent-cyan bg-accent-cyan/10 text-accent-cyan'
+                  : 'border border-border-default text-text-muted hover:border-border-hover hover:text-text-secondary'
+              }`}
+            >
+              {t(labelKey)}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Name input */}
       <div>
         <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
@@ -350,38 +522,113 @@ function StepNameArchetype({
         )}
       </div>
 
-      {/* Archetype grid */}
-      <div>
-        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
-          {t('archetypeLabel')}
-        </label>
-        <p className="mb-3 text-[9px] text-text-muted">{t('archetypeHint')}</p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-          {ARCHETYPES.map((a) => {
-            const Icon = a.icon;
-            const isSelected = archetype === a.id;
+      {/* Template mode */}
+      {creationMode === 'template' && (
+        <div>
+          <p className="mb-3 text-[9px] text-text-muted">{t('templateHint')}</p>
 
-            return (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => setArchetype(a.id)}
-                className={`flex flex-col items-center gap-2 border p-3 text-center transition-colors ${
-                  isSelected
-                    ? 'border-accent-cyan bg-accent-cyan/5 text-accent-cyan'
-                    : 'border-border-default bg-bg-base text-text-secondary hover:border-border-hover hover:text-text-primary'
-                }`}
-              >
-                <Icon size={18} strokeWidth={1.2} />
-                <span className="text-[10px] font-medium">{t(a.nameKey)}</span>
-                <span className="text-[8px] leading-tight text-text-muted">
-                  {t(a.descKey)}
-                </span>
-              </button>
-            );
-          })}
+          {/* Department filter chips */}
+          <div className="mb-3 flex flex-wrap gap-1">
+            {DEPARTMENTS.map((dept) => {
+              const isActive = deptFilter === dept.id;
+              return (
+                <button
+                  key={dept.id}
+                  type="button"
+                  onClick={() => setDeptFilter(dept.id)}
+                  className={`px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider transition-colors ${
+                    isActive
+                      ? 'border border-accent-cyan bg-accent-cyan/10 text-accent-cyan'
+                      : 'border border-border-default text-text-muted hover:border-border-hover hover:text-text-secondary'
+                  }`}
+                >
+                  {t(dept.labelKey)}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Template grid */}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredTemplates.map((tpl) => {
+              const Icon = TEMPLATE_ICON_MAP[tpl.icon] ?? Sparkles;
+              const isSelected = selectedTemplateSlug === tpl.slug;
+              const displayName = locale === 'pt-BR' ? tpl.namePtBr : tpl.nameEn;
+
+              return (
+                <button
+                  key={tpl.slug}
+                  type="button"
+                  onClick={() => onTemplateSelect(tpl)}
+                  className={`flex flex-col gap-2 border p-3 text-left transition-colors ${
+                    isSelected
+                      ? 'border-accent-cyan bg-accent-cyan/5'
+                      : 'border-border-default bg-bg-base hover:border-border-hover'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon size={14} strokeWidth={1.5} className={isSelected ? 'text-accent-cyan' : 'text-text-secondary'} />
+                    <span className={`text-[10px] font-medium truncate ${isSelected ? 'text-accent-cyan' : 'text-text-primary'}`}>
+                      {displayName}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default">{tpl.archetype}</Badge>
+                    <span className="text-[8px] text-text-muted">
+                      {t('templateToolCount', { count: tpl.tools.length })}
+                    </span>
+                    {tpl.ragDocuments.length > 0 && (
+                      <span className="text-[8px] text-text-muted">
+                        {t('templateRagCount', { count: tpl.ragDocuments.length })}
+                      </span>
+                    )}
+                  </div>
+                  {isSelected && (
+                    <span className="text-[8px] font-medium text-accent-cyan">
+                      {t('templateSelected')}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Scratch mode: archetype grid */}
+      {creationMode === 'scratch' && (
+        <div>
+          <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+            {t('archetypeLabel')}
+          </label>
+          <p className="mb-3 text-[9px] text-text-muted">{t('archetypeHint')}</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            {ARCHETYPES.map((a) => {
+              const Icon = a.icon;
+              const isSelected = archetype === a.id;
+
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => setArchetype(a.id)}
+                  className={`flex flex-col items-center gap-2 border p-3 text-center transition-colors ${
+                    isSelected
+                      ? 'border-accent-cyan bg-accent-cyan/5 text-accent-cyan'
+                      : 'border-border-default bg-bg-base text-text-secondary hover:border-border-hover hover:text-text-primary'
+                  }`}
+                >
+                  <Icon size={18} strokeWidth={1.2} />
+                  <span className="text-[10px] font-medium">{t(a.nameKey)}</span>
+                  <span className="text-[8px] leading-tight text-text-muted">
+                    {t(a.descKey)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -899,6 +1146,7 @@ function StepReview({
 
 export default function AgentWizardPage() {
   const t = useTranslations('agentWizard');
+  const locale = useLocale();
   const router = useRouter();
 
   /* ---- Wizard step ---- */
@@ -907,6 +1155,9 @@ export default function AgentWizardPage() {
   /* ---- Step 0 state ---- */
   const [name, setName] = useState('');
   const [archetype, setArchetype] = useState<Archetype | null>(null);
+  const [creationMode, setCreationMode] = useState<'template' | 'scratch'>('template');
+  const [deptFilter, setDeptFilter] = useState('all');
+  const [selectedTemplateSlug, setSelectedTemplateSlug] = useState<string | null>(null);
 
   /* ---- Step 1 state ---- */
   const [promptEn, setPromptEn] = useState('');
@@ -931,10 +1182,26 @@ export default function AgentWizardPage() {
   /* ---- Derived ---- */
   const slug = useMemo(() => toSlug(name), [name]);
 
+  /* ---- Template selection handler ---- */
+  const handleTemplateSelect = useCallback(
+    (tpl: ProcessAgentTemplate) => {
+      setSelectedTemplateSlug(tpl.slug);
+      setName(locale === 'pt-BR' ? tpl.namePtBr : tpl.nameEn);
+      setArchetype(tpl.archetype as Archetype);
+      setPromptEn(tpl.systemPromptEn);
+      setPromptPtBr(tpl.systemPromptPtBr);
+      setSelectedTools(new Set(tpl.tools));
+      setTeam((tpl.team ?? 'none') as Team);
+      setTriggerType(tpl.triggerType as TriggerType);
+    },
+    [locale],
+  );
+
   /* ---- Archetype selection handler with prefill ---- */
   const handleArchetypeSelect = useCallback(
     (id: Archetype) => {
       setArchetype(id);
+      setSelectedTemplateSlug(null);
 
       // Pre-fill prompts
       setPromptEn(ARCHETYPE_DEFAULT_PROMPTS_EN[id]);
@@ -1060,6 +1327,13 @@ export default function AgentWizardPage() {
               slug={slug}
               archetype={archetype}
               setArchetype={handleArchetypeSelect}
+              creationMode={creationMode}
+              setCreationMode={setCreationMode}
+              deptFilter={deptFilter}
+              setDeptFilter={setDeptFilter}
+              onTemplateSelect={handleTemplateSelect}
+              selectedTemplateSlug={selectedTemplateSlug}
+              locale={locale}
               t={t}
             />
           )}
