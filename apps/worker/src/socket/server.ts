@@ -2,6 +2,8 @@ import { Server } from 'socket.io';
 import type { Server as HttpServer } from 'http';
 import { verifyToken } from '@clerk/backend';
 import { db, users, projects, eq, and } from '@ai-office/db';
+import { getAgentExecutionQueue } from '@ai-office/queue';
+import { randomUUID } from 'crypto';
 import type {
   ServerToClientEvents,
   ClientToServerEvents,
@@ -128,9 +130,15 @@ export function createSocketServer(httpServer: HttpServer): TypedSocketServer {
       }
 
       console.log(`[socket] ${socket.id} triggered agent ${agentId}`);
-      // TODO: Enqueue agent-execution job via BullMQ
-      void agentId;
-      void payload;
+
+      const sessionId = randomUUID();
+      const queue = getAgentExecutionQueue();
+      void queue.add(`manual-${agentId}`, {
+        agentId,
+        projectId: [...socket.rooms].find((r) => r.startsWith('project:'))?.replace('project:', '') ?? '',
+        sessionId,
+        triggerPayload: payload as Record<string, unknown> | undefined,
+      });
     });
 
     socket.on('disconnect', (reason) => {

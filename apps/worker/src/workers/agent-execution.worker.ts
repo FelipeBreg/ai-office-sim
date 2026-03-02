@@ -1,6 +1,7 @@
 import { QUEUE_NAMES, agentExecutionJobSchema } from '@ai-office/queue';
 import type { AgentExecutionJob } from '@ai-office/queue';
 import { createTypedWorker } from './create-worker.js';
+import { processAgentExecution } from '../jobs/agent-execution.js';
 
 export function createAgentExecutionWorker() {
   return createTypedWorker<AgentExecutionJob>({
@@ -13,7 +14,8 @@ export function createAgentExecutionWorker() {
         `[agent-execution] Processing: agent=${agentId} session=${sessionId}`,
       );
 
-      // TODO (P0-7.5): Load agent config, build context, invoke executor
+      await processAgentExecution(job.data);
+
       await job.updateProgress(100);
       return { status: 'completed', agentId, projectId, sessionId };
     },

@@ -97,7 +97,7 @@ export { getValidAccessToken } from './tools/oauth2-helper.js';
 
 // Memory
 export { loadMemory, saveMemory, searchMemory } from './memory/individual.js';
-export { ingestDocument, deleteDocument, splitIntoChunks } from './memory/ingest.js';
+export { ingestDocument, deleteDocument, splitIntoChunks, generateEmbeddings } from './memory/ingest.js';
 export type { IngestDocumentParams, IngestResult, DocumentSourceType } from './memory/ingest.js';
 export { ragSearch } from './memory/rag-search.js';
 export type { RagSearchParams, RagSearchResult } from './memory/rag-search.js';

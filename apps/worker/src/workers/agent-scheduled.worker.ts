@@ -1,6 +1,7 @@
-import { QUEUE_NAMES, agentScheduledJobSchema } from '@ai-office/queue';
+import { QUEUE_NAMES, agentScheduledJobSchema, getAgentExecutionQueue } from '@ai-office/queue';
 import type { AgentScheduledJob } from '@ai-office/queue';
 import { createTypedWorker } from './create-worker.js';
+import { randomUUID } from 'crypto';
 
 export function createAgentScheduledWorker() {
   return createTypedWorker<AgentScheduledJob>({
@@ -11,9 +12,21 @@ export function createAgentScheduledWorker() {
       const { agentId, projectId } = job.data;
       console.log(`[agent-scheduled] Processing: agent=${agentId}`);
 
-      // TODO: Enqueue an agent-execution job with a fresh sessionId
+      const sessionId = randomUUID();
+      const queue = getAgentExecutionQueue();
+
+      await queue.add(`scheduled-${agentId}`, {
+        agentId,
+        projectId,
+        sessionId,
+      });
+
+      console.log(
+        `[agent-scheduled] Enqueued execution: agent=${agentId} session=${sessionId}`,
+      );
+
       await job.updateProgress(100);
-      return { status: 'completed', agentId, projectId };
+      return { status: 'completed', agentId, projectId, sessionId };
     },
   });
 }

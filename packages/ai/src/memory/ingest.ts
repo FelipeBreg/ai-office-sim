@@ -81,7 +81,7 @@ export function splitIntoChunks(text: string): string[] {
  * Generate embeddings for an array of texts using OpenAI API.
  * Returns array of float arrays (one per input text).
  */
-async function generateEmbeddings(texts: string[]): Promise<number[][]> {
+export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY env var is required for embedding generation');

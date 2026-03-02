@@ -8,6 +8,7 @@ import {
 import type { AgentContext, AgentSession } from '@ai-office/ai';
 import * as Sentry from '@sentry/node';
 import { randomUUID } from 'crypto';
+import { emitToProject } from '../socket/server.js';
 
 interface AgentExecutionJobData {
   agentId: string;
@@ -99,7 +100,20 @@ export async function processAgentExecution(
       status: 'running',
     };
 
-    // 6. Execute
+    // 6. Emit session started
+    emitToProject(projectId, 'agent:session_started', {
+      agentId,
+      sessionId,
+      triggerType: 'manual',
+    });
+
+    emitToProject(projectId, 'agent:status_changed', {
+      agentId,
+      status: 'working',
+      timestamp: new Date().toISOString(),
+    });
+
+    // 7. Execute
     const result = await executeAgent(context, session, {
       ...DEFAULT_SAFETY_LIMITS,
       maxActionsPerSession: agent.maxActionsPerSession,
@@ -115,7 +129,21 @@ export async function processAgentExecution(
       `duration=${result.durationMs}ms`,
     );
 
-    // 7. Update agent status
+    // 8. Emit session complete
+    emitToProject(projectId, 'agent:session_complete', {
+      agentId,
+      sessionId,
+      actionCount: result.actions.length,
+      tokensUsed: result.totalTokens,
+    });
+
+    emitToProject(projectId, 'agent:status_changed', {
+      agentId,
+      status: result.status === 'completed' ? 'idle' : 'error',
+      timestamp: new Date().toISOString(),
+    });
+
+    // 9. Update agent status
     await db
       .update(agents)
       .set({ status: result.status === 'completed' ? 'idle' : 'error' })
@@ -125,6 +153,20 @@ export async function processAgentExecution(
     console.error(`[agent-execution] Session ${sessionId} failed:`, err);
     Sentry.captureException(err, {
       tags: { agentId, projectId, sessionId },
+    });
+
+    // Emit error event
+    emitToProject(projectId, 'agent:error', {
+      agentId,
+      sessionId,
+      error: err instanceof Error ? err.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    });
+
+    emitToProject(projectId, 'agent:status_changed', {
+      agentId,
+      status: 'error',
+      timestamp: new Date().toISOString(),
     });
 
     // Update agent status to error
