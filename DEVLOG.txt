@@ -7,6 +7,45 @@
 
 
 ================================================================================
+COMMIT #88 — Fix PT-BR Prompts + Add Missing Template Tools
+================================================================================
+Hash:     868b919
+Date:     2026-03-02
+Scope:    packages/shared, apps/web (agents/new, messages)
+
+WHAT CHANGED:
+  • PT-BR SYSTEM PROMPTS (process-agent-templates.ts, 55 templates)
+    – All 55 systemPromptPtBr fields were 1-2 sentence summaries while EN
+      prompts had detailed multi-paragraph instructions with thresholds,
+      formulas, and step-by-step procedures
+    – Expanded all 55 to full Portuguese translations matching EN detail level
+    – Departments: juridico (2), tributario (5), contabilidade (5), rh (1),
+      vendas (9), marketing (11), operacoes (6), atendimento (5), ti (5),
+      compliance (3), planejamento (1), cross-department (2)
+
+  • MISSING TOOLS (agents/new/page.tsx, +10 tools)
+    – Templates reference 26 unique tool IDs but wizard TOOLS array only had 16
+    – Added 10 missing tools: create_document, generate_document, schedule_event,
+      log_message, create_human_task, create_deploy_request,
+      create_pr_review_request, google_ads, meta_marketing,
+      send_conversation_message
+    – Step 3 now correctly shows all tools referenced by selected template
+
+  • I18N (en-US.json + pt-BR.json, +11 keys each)
+    – 10 new tool name+description key pairs for the missing tools
+    – Tool descriptions in Portuguese properly translated
+
+FILES MODIFIED (4):
+  packages/shared/src/constants/process-agent-templates.ts   +103 -56
+  apps/web/src/app/[locale]/(auth)/agents/new/page.tsx       +10
+  apps/web/messages/en-US.json                               +20
+  apps/web/messages/pt-BR.json                               +20
+
+TYPECHECK: 13/13 pass
+────────────────────────────────────────────────────────────────────────────────
+
+
+================================================================================
 COMMIT #87 — Wire Process Agent Templates + Department Category Filters
 ================================================================================
 Hash:     112d63c
