@@ -7,6 +7,56 @@
 
 
 ================================================================================
+COMMIT #81 — generate_document Tool + Email Inbound Polling Worker
+================================================================================
+DATE: 2026-03-02
+HASH: e0ef9ac
+PHASE: Integration Roadmap — Phase 4.1 + Phase 2.6 (final gaps)
+
+SUMMARY:
+  Two features closing the remaining Phase 2-4 gaps:
+
+  1) generate_document tool — HTML template rendering engine with {{variable}}
+     placeholders and print-ready A4 CSS styling. Agents can now generate
+     contracts, proposals, reports, DRE, SOPs, DARFs, etc. Content is saved
+     to the knowledge base via ingestDocument (auto-chunked + embedded).
+     Format option: 'html' (default) or 'pdf' (print-ready HTML for browser
+     print-to-PDF). Registered as 26th tool.
+
+  2) Email inbound polling worker — new BullMQ queue (email-inbound) with
+     IMAP polling for all connected email accounts. On new unread email:
+     stores raw record in email_messages, find-or-creates a conversation
+     by (projectId, 'email', fromEmail), inserts conversation_message with
+     direction='inbound', and emits conversation:new_message Socket.IO event.
+     Deduplicates by providerMessageId. Reopens resolved/closed conversations.
+     Registered as 11th worker.
+
+NEW FILES (2):
+  packages/ai/src/tools/documents/generate-document.ts — generate_document tool
+  apps/worker/src/workers/email-inbound.worker.ts      — IMAP polling worker
+
+MODIFIED FILES (6):
+  packages/ai/src/tools/registry.ts  — register generate_document (26 tools)
+  packages/queue/src/jobs.ts         — add emailInboundJobSchema
+  packages/queue/src/queues.ts       — add EMAIL_INBOUND queue + getter
+  packages/queue/src/index.ts        — export new job/queue
+  apps/worker/src/workers/index.ts   — export createEmailInboundWorker
+  apps/worker/src/index.ts           — register 11th worker
+
+TYPECHECK: 13/13 passed
+
+INTEGRATION ROADMAP STATUS:
+  Phase 1: Wire the engine         ✅ (commit #75)
+  Phase 2: Messaging screen        ✅ (commit #76 + #81 email inbound)
+  Phase 3: Calendar screen         ✅ (commit #77)
+  Phase 4: Missing tools/workers   ✅ (commit #78 + #81 generate_document)
+  Phase 5: Seed archetypes         ✅ (commit #79)
+  DB Migration                     ✅ (commit #80)
+  Phase 6: External integrations   ⏳ (ongoing, long-term)
+
+────────────────────────────────────────────────────────────────────────────────
+
+================================================================================
 COMMIT #80 — DB Migration: Messaging + Calendar Tables + Archetype Seed
 ================================================================================
 DATE: 2026-03-02
