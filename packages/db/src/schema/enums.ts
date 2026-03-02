@@ -269,6 +269,40 @@ export const conversationContentTypeEnum = pgEnum('conversation_content_type', [
   'template',
 ]);
 
+// Calendar
+export const calendarEventTypeEnum = pgEnum('calendar_event_type', [
+  'deadline',
+  'agent_run',
+  'meeting',
+  'reminder',
+  'renewal',
+  'obligation',
+  'custom',
+]);
+export const calendarEventStatusEnum = pgEnum('calendar_event_status', [
+  'scheduled',
+  'completed',
+  'cancelled',
+  'overdue',
+]);
+export const calendarEventSourceTypeEnum = pgEnum('calendar_event_source_type', [
+  'manual',
+  'agent',
+  'workflow',
+  'system',
+]);
+export const calendarEventPriorityEnum = pgEnum('calendar_event_priority', [
+  'low',
+  'medium',
+  'high',
+  'urgent',
+]);
+export const calendarReminderChannelEnum = pgEnum('calendar_reminder_channel', [
+  'in_app',
+  'email',
+  'whatsapp',
+]);
+
 // Tool Credentials (OAuth2)
 export const toolTypeEnum = pgEnum('tool_type', [
   'google_gmail',

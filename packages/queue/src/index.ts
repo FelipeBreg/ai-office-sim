@@ -11,6 +11,8 @@ export {
   getAnalyticsQueue,
   getCleanupQueue,
   getWorkflowExecutionQueue,
+  getCalendarReminderQueue,
+  getCalendarRecurrenceQueue,
   getAllQueues,
 } from './queues.js';
 export {
@@ -21,6 +23,8 @@ export {
   notificationJobSchema,
   analyticsJobSchema,
   cleanupJobSchema,
+  calendarReminderJobSchema,
+  calendarRecurrenceJobSchema,
   type AgentExecutionJob,
   type AgentScheduledJob,
   type ToolExecutionJob,
@@ -28,6 +32,8 @@ export {
   type NotificationJob,
   type AnalyticsJob,
   type CleanupJob,
+  type CalendarReminderJob,
+  type CalendarRecurrenceJob,
   workflowExecutionJobSchema,
   type WorkflowExecutionJob,
 } from './jobs.js';

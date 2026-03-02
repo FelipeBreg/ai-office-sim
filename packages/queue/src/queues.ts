@@ -10,6 +10,8 @@ import type {
   AnalyticsJob,
   CleanupJob,
   WorkflowExecutionJob,
+  CalendarReminderJob,
+  CalendarRecurrenceJob,
 } from './jobs.js';
 
 // ── Queue names (single source of truth) ──
@@ -22,6 +24,8 @@ export const QUEUE_NAMES = {
   ANALYTICS: 'analytics',
   CLEANUP: 'cleanup',
   WORKFLOW_EXECUTION: 'workflow-execution',
+  CALENDAR_REMINDER: 'calendar-reminder',
+  CALENDAR_RECURRENCE: 'calendar-recurrence',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -76,6 +80,18 @@ const defaultJobOptions: Record<QueueName, DefaultJobOptions> = {
     removeOnComplete: { count: 500 },
     removeOnFail: false,
   },
+  [QUEUE_NAMES.CALENDAR_REMINDER]: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 60_000 },
+    removeOnComplete: { count: 100 },
+    removeOnFail: false,
+  },
+  [QUEUE_NAMES.CALENDAR_RECURRENCE]: {
+    attempts: 2,
+    backoff: { type: 'exponential', delay: 120_000 },
+    removeOnComplete: { count: 50 },
+    removeOnFail: false,
+  },
 };
 
 // ── Queue factory ──
@@ -96,6 +112,8 @@ let _notification: Queue<NotificationJob> | null = null;
 let _analytics: Queue<AnalyticsJob> | null = null;
 let _cleanup: Queue<CleanupJob> | null = null;
 let _workflowExecution: Queue<WorkflowExecutionJob> | null = null;
+let _calendarReminder: Queue<CalendarReminderJob> | null = null;
+let _calendarRecurrence: Queue<CalendarRecurrenceJob> | null = null;
 
 export function getAgentExecutionQueue() {
   _agentExecution ??= createQueue<AgentExecutionJob>(QUEUE_NAMES.AGENT_EXECUTION);
@@ -137,6 +155,16 @@ export function getWorkflowExecutionQueue() {
   return _workflowExecution;
 }
 
+export function getCalendarReminderQueue() {
+  _calendarReminder ??= createQueue<CalendarReminderJob>(QUEUE_NAMES.CALENDAR_REMINDER);
+  return _calendarReminder;
+}
+
+export function getCalendarRecurrenceQueue() {
+  _calendarRecurrence ??= createQueue<CalendarRecurrenceJob>(QUEUE_NAMES.CALENDAR_RECURRENCE);
+  return _calendarRecurrence;
+}
+
 /** Get all queue instances (useful for bull-board) */
 export function getAllQueues() {
   return [
@@ -148,5 +176,7 @@ export function getAllQueues() {
     getAnalyticsQueue(),
     getCleanupQueue(),
     getWorkflowExecutionQueue(),
+    getCalendarReminderQueue(),
+    getCalendarRecurrenceQueue(),
   ];
 }

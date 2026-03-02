@@ -20,6 +20,7 @@ import { checkNfeStatusTool } from './finance/nfe.js';
 import { createDeployRequestTool } from './devops/create-deploy-request.js';
 import { createPrReviewRequestTool } from './devops/create-pr-review-request.js';
 import { createHumanTaskTool } from './devops/create-human-task.js';
+import { scheduleEventTool } from './calendar/schedule-event.js';
 
 // Convert Zod schema to JSON Schema for Anthropic tool format
 function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
@@ -203,3 +204,6 @@ toolRegistry.register(checkNfeStatusTool);
 toolRegistry.register(createDeployRequestTool);
 toolRegistry.register(createPrReviewRequestTool);
 toolRegistry.register(createHumanTaskTool);
+
+// ── Calendar ──
+toolRegistry.register(scheduleEventTool);

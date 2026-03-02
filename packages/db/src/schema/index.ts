@@ -26,3 +26,4 @@ export * from './marketing-campaigns.js';
 export * from './brand-touchpoints.js';
 export * from './financial-records.js';
 export * from './conversations.js';
+export * from './calendar.js';

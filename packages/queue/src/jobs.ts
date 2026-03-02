@@ -66,6 +66,18 @@ export const workflowExecutionJobSchema = z.object({
 });
 export type WorkflowExecutionJob = z.infer<typeof workflowExecutionJobSchema>;
 
+// ── Calendar Reminder ──
+export const calendarReminderJobSchema = z.object({
+  type: z.enum(['send_reminders', 'mark_overdue']),
+});
+export type CalendarReminderJob = z.infer<typeof calendarReminderJobSchema>;
+
+// ── Calendar Recurrence ──
+export const calendarRecurrenceJobSchema = z.object({
+  horizonDays: z.number().int().positive().default(30),
+});
+export type CalendarRecurrenceJob = z.infer<typeof calendarRecurrenceJobSchema>;
+
 // ── Cleanup ──
 export const cleanupJobSchema = z.object({
   type: z.enum(['expired_sessions', 'old_action_logs', 'stale_jobs']),

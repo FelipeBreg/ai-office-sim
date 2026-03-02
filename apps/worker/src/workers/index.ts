@@ -7,3 +7,5 @@ export { createNotificationWorker } from './notification.worker.js';
 export { createAnalyticsWorker } from './analytics.worker.js';
 export { createCleanupWorker } from './cleanup.worker.js';
 export { createWorkflowExecutionWorker } from './workflow-execution.worker.js';
+export { createCalendarReminderWorker } from './calendar-reminder.worker.js';
+export { createCalendarRecurrenceWorker } from './calendar-recurrence.worker.js';
