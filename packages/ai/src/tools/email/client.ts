@@ -234,39 +234,161 @@ class SmtpClient implements EmailClient {
   }
 }
 
-// ── SendGrid Provider (stub) ──
+// ── SendGrid Provider ──
 
 class SendGridClient implements EmailClient {
-  constructor(_credentials: SendGridCredentials) {}
+  private apiKey: string;
 
-  async sendEmail(_params: SendEmailParams): Promise<SendEmailResult> {
-    return { providerMessageId: '', status: 'failed', error: 'SendGrid provider not yet implemented' };
+  constructor(credentials: SendGridCredentials) {
+    if (!credentials.apiKey) {
+      throw new Error('SendGrid requires an API key');
+    }
+    this.apiKey = credentials.apiKey;
+  }
+
+  async sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
+    try {
+      const payload = {
+        personalizations: [
+          {
+            to: params.to.map((email) => ({ email })),
+            ...(params.cc?.length ? { cc: params.cc.map((email) => ({ email })) } : {}),
+            ...(params.bcc?.length ? { bcc: params.bcc.map((email) => ({ email })) } : {}),
+          },
+        ],
+        from: { email: params.from },
+        ...(params.replyTo ? { reply_to: { email: params.replyTo } } : {}),
+        subject: params.subject,
+        content: [
+          ...(params.text ? [{ type: 'text/plain', value: params.text }] : []),
+          { type: 'text/html', value: params.html },
+        ],
+        ...(params.headers ? { headers: params.headers } : {}),
+      };
+
+      const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+      });
+
+      if (res.ok || res.status === 202) {
+        const messageId = res.headers.get('x-message-id') ?? '';
+        return { providerMessageId: messageId, status: 'sent' };
+      }
+
+      const errorBody = await res.text().catch(() => '');
+      return {
+        providerMessageId: '',
+        status: 'failed',
+        error: `SendGrid ${res.status}: ${errorBody.slice(0, 500)}`,
+      };
+    } catch (err) {
+      return {
+        providerMessageId: '',
+        status: 'failed',
+        error: err instanceof Error ? err.message : 'SendGrid send failed',
+      };
+    }
   }
 
   async readEmails(_params: ReadEmailParams): Promise<ReadEmailResult> {
-    return { emails: [], error: 'SendGrid read not supported — use SMTP provider for IMAP access' };
+    return { emails: [], error: 'SendGrid is send-only — use SMTP provider for IMAP inbox access' };
   }
 
   async verifyConnection(): Promise<EmailConnectionStatus> {
-    return { connected: false, error: 'SendGrid provider not yet implemented' };
+    try {
+      const res = await fetch('https://api.sendgrid.com/v3/user/email', {
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+        signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+      });
+      return res.ok
+        ? { connected: true }
+        : { connected: false, error: `SendGrid API returned ${res.status}` };
+    } catch (err) {
+      return {
+        connected: false,
+        error: err instanceof Error ? err.message : 'SendGrid verification failed',
+      };
+    }
   }
 }
 
-// ── AWS SES Provider (stub) ──
+// ── AWS SES Provider (via Nodemailer SES transport) ──
 
 class AwsSesClient implements EmailClient {
-  constructor(_credentials: AwsSesCredentials) {}
+  private transporter: Transporter;
 
-  async sendEmail(_params: SendEmailParams): Promise<SendEmailResult> {
-    return { providerMessageId: '', status: 'failed', error: 'AWS SES provider not yet implemented' };
+  constructor(credentials: AwsSesCredentials) {
+    if (!credentials.accessKeyId || !credentials.secretAccessKey || !credentials.region) {
+      throw new Error('AWS SES requires accessKeyId, secretAccessKey, and region');
+    }
+    // Nodemailer supports SES via its built-in SES transport using SMTP
+    // We use the SES SMTP endpoint: email-smtp.<region>.amazonaws.com
+    this.transporter = createTransport({
+      host: `email-smtp.${credentials.region}.amazonaws.com`,
+      port: 587,
+      secure: false,
+      auth: {
+        user: credentials.accessKeyId,
+        pass: credentials.secretAccessKey,
+      },
+      connectionTimeout: PROVIDER_TIMEOUT_MS,
+      greetingTimeout: PROVIDER_TIMEOUT_MS,
+      socketTimeout: PROVIDER_TIMEOUT_MS,
+    });
+  }
+
+  async sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
+    try {
+      const info = await this.transporter.sendMail({
+        from: params.from,
+        to: params.to.join(', '),
+        cc: params.cc?.join(', '),
+        bcc: params.bcc?.join(', '),
+        replyTo: params.replyTo,
+        subject: params.subject,
+        html: params.html,
+        text: params.text,
+        headers: params.headers,
+        attachments: params.attachments?.map((a) => ({
+          filename: a.filename,
+          path: a.path,
+          contentType: a.contentType,
+        })),
+      });
+
+      return {
+        providerMessageId: info.messageId ?? '',
+        status: 'sent',
+      };
+    } catch (err) {
+      return {
+        providerMessageId: '',
+        status: 'failed',
+        error: err instanceof Error ? err.message : 'AWS SES send failed',
+      };
+    }
   }
 
   async readEmails(_params: ReadEmailParams): Promise<ReadEmailResult> {
-    return { emails: [], error: 'AWS SES read not supported — use SMTP provider for IMAP access' };
+    return { emails: [], error: 'AWS SES is send-only — use SMTP provider for IMAP inbox access' };
   }
 
   async verifyConnection(): Promise<EmailConnectionStatus> {
-    return { connected: false, error: 'AWS SES provider not yet implemented' };
+    try {
+      await this.transporter.verify();
+      return { connected: true };
+    } catch (err) {
+      return {
+        connected: false,
+        error: err instanceof Error ? err.message : 'AWS SES verification failed',
+      };
+    }
   }
 }
 

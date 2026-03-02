@@ -307,6 +307,9 @@ export const calendarReminderChannelEnum = pgEnum('calendar_reminder_channel', [
 export const toolTypeEnum = pgEnum('tool_type', [
   'google_gmail',
   'google_sheets',
+  'google_calendar',
+  'google_ads',
+  'meta_marketing',
   'rdstation_crm',
   'rdstation_marketing',
 ]);

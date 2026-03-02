@@ -11,12 +11,20 @@ import {
   type OAuth2Provider,
 } from '@ai-office/shared';
 
-type ToolType = 'google_gmail' | 'google_sheets' | 'rdstation_crm' | 'rdstation_marketing';
+type ToolType =
+  | 'google_gmail'
+  | 'google_sheets'
+  | 'google_calendar'
+  | 'google_ads'
+  | 'meta_marketing'
+  | 'rdstation_crm'
+  | 'rdstation_marketing';
 
 const REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refresh 5 minutes before expiry
 
 function getProvider(toolType: ToolType): OAuth2Provider {
   if (toolType.startsWith('google_')) return 'google';
+  if (toolType === 'meta_marketing') return 'meta';
   if (toolType.startsWith('rdstation_')) return 'rdstation';
   throw new Error(`Unknown tool type: ${toolType}`);
 }
@@ -33,6 +41,13 @@ function getOAuth2Config(provider: OAuth2Provider): OAuth2Config | null {
     const clientId = process.env.RDSTATION_OAUTH_CLIENT_ID;
     const clientSecret = process.env.RDSTATION_OAUTH_CLIENT_SECRET;
     const redirectUri = process.env.RDSTATION_OAUTH_REDIRECT_URI;
+    if (!clientId || !clientSecret || !redirectUri) return null;
+    return { clientId, clientSecret, redirectUri };
+  }
+  if (provider === 'meta') {
+    const clientId = process.env.META_APP_ID;
+    const clientSecret = process.env.META_APP_SECRET;
+    const redirectUri = process.env.META_OAUTH_REDIRECT_URI;
     if (!clientId || !clientSecret || !redirectUri) return null;
     return { clientId, clientSecret, redirectUri };
   }

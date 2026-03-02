@@ -10,6 +10,9 @@ import {
   and,
   desc,
   gte,
+  lt,
+  sql,
+  count,
 } from '@ai-office/db';
 import { createTypedWorker } from './create-worker.js';
 
@@ -154,10 +157,119 @@ export function createAnalyticsWorker() {
           return { status: 'completed', type, date, learningsCreated: count };
         }
 
-        case 'daily_aggregation':
-        case 'cost_report':
+        case 'daily_aggregation': {
+          const dayStart = new Date(date);
+          dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(date);
+          dayEnd.setHours(23, 59, 59, 999);
+
+          // Aggregate action logs for the day
+          const [stats] = await db
+            .select({
+              totalActions: count(),
+              totalTokens: sql<number>`COALESCE(SUM(${actionLogs.tokensUsed}), 0)`,
+              totalCost: sql<string>`COALESCE(SUM(${actionLogs.costUsd}), 0)::text`,
+              avgDuration: sql<number>`COALESCE(AVG(${actionLogs.durationMs}), 0)`,
+              completedCount: sql<number>`COUNT(*) FILTER (WHERE ${actionLogs.status} = 'completed')`,
+              failedCount: sql<number>`COUNT(*) FILTER (WHERE ${actionLogs.status} = 'failed')`,
+            })
+            .from(actionLogs)
+            .where(
+              and(
+                eq(actionLogs.projectId, projectId),
+                gte(actionLogs.createdAt, dayStart),
+                lt(actionLogs.createdAt, dayEnd),
+              ),
+            );
+
+          // Count unique sessions (agent runs)
+          const [sessionStats] = await db
+            .select({
+              uniqueSessions: sql<number>`COUNT(DISTINCT ${actionLogs.sessionId})`,
+              uniqueAgents: sql<number>`COUNT(DISTINCT ${actionLogs.agentId})`,
+            })
+            .from(actionLogs)
+            .where(
+              and(
+                eq(actionLogs.projectId, projectId),
+                gte(actionLogs.createdAt, dayStart),
+                lt(actionLogs.createdAt, dayEnd),
+              ),
+            );
+
+          console.log(
+            `[analytics] Daily aggregation for ${date}: actions=${stats?.totalActions} cost=$${stats?.totalCost} sessions=${sessionStats?.uniqueSessions}`,
+          );
+          await job.updateProgress(100);
+          return {
+            status: 'completed',
+            type,
+            date,
+            totalActions: Number(stats?.totalActions ?? 0),
+            totalTokens: Number(stats?.totalTokens ?? 0),
+            totalCostUsd: stats?.totalCost ?? '0',
+            avgDurationMs: Math.round(Number(stats?.avgDuration ?? 0)),
+            completedActions: Number(stats?.completedCount ?? 0),
+            failedActions: Number(stats?.failedCount ?? 0),
+            uniqueSessions: Number(sessionStats?.uniqueSessions ?? 0),
+            uniqueAgents: Number(sessionStats?.uniqueAgents ?? 0),
+          };
+        }
+
+        case 'cost_report': {
+          // Aggregate costs by agent for the reporting period (last 30 days from date)
+          const reportEnd = new Date(date);
+          reportEnd.setHours(23, 59, 59, 999);
+          const reportStart = new Date(date);
+          reportStart.setDate(reportStart.getDate() - 30);
+          reportStart.setHours(0, 0, 0, 0);
+
+          const costByAgent = await db
+            .select({
+              agentId: actionLogs.agentId,
+              agentName: agents.name,
+              totalCost: sql<string>`COALESCE(SUM(${actionLogs.costUsd}), 0)::text`,
+              totalTokens: sql<number>`COALESCE(SUM(${actionLogs.tokensUsed}), 0)`,
+              actionCount: count(),
+            })
+            .from(actionLogs)
+            .innerJoin(agents, eq(actionLogs.agentId, agents.id))
+            .where(
+              and(
+                eq(actionLogs.projectId, projectId),
+                gte(actionLogs.createdAt, reportStart),
+                lt(actionLogs.createdAt, reportEnd),
+              ),
+            )
+            .groupBy(actionLogs.agentId, agents.name)
+            .orderBy(sql`SUM(${actionLogs.costUsd}) DESC NULLS LAST`);
+
+          const totalCost = costByAgent.reduce(
+            (sum, row) => sum + Number(row.totalCost),
+            0,
+          );
+
+          console.log(
+            `[analytics] Cost report: ${costByAgent.length} agents, total=$${totalCost.toFixed(4)}`,
+          );
+          await job.updateProgress(100);
+          return {
+            status: 'completed',
+            type,
+            periodStart: reportStart.toISOString().slice(0, 10),
+            periodEnd: date,
+            totalCostUsd: totalCost.toFixed(6),
+            agentBreakdown: costByAgent.map((r) => ({
+              agentId: r.agentId,
+              agentName: r.agentName,
+              costUsd: r.totalCost,
+              tokens: Number(r.totalTokens),
+              actions: Number(r.actionCount),
+            })),
+          };
+        }
+
         default:
-          // TODO: Implement daily aggregation and cost report
           await job.updateProgress(100);
           return { status: 'completed', type, date };
       }
