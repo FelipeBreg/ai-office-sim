@@ -11,6 +11,7 @@ import { tiContent } from './content/ti';
 import { complianceContent } from './content/compliance';
 import { tesourariaContent } from './content/tesouraria';
 import { planejamentoContent } from './content/planejamento';
+import { coberturaContent } from './content/cobertura';
 
 export const blueprintContent: Record<string, React.ReactNode> = {
   'visao-geral': visaoGeralContent,
@@ -26,4 +27,5 @@ export const blueprintContent: Record<string, React.ReactNode> = {
   compliance: complianceContent,
   tesouraria: tesourariaContent,
   planejamento: planejamentoContent,
+  cobertura: coberturaContent,
 };

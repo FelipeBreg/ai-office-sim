@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Landmark,
   Target,
+  CheckSquare,
 } from 'lucide-react';
 
 import type { ReferenceTopic, ReferenceSubtopic } from '../../_components/reference-types';
@@ -181,4 +182,5 @@ export const blueprintTopics: BlueprintTopic[] = [
       { id: 'reunioes-diretoria', label: 'Reuniões de Diretoria' },
     ],
   },
+  { slug: 'cobertura', label: 'Cobertura do Sim', icon: CheckSquare },
 ];
