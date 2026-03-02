@@ -7,6 +7,47 @@
 
 
 ================================================================================
+COMMIT #77 — Calendar Screen (Phase 3)
+================================================================================
+DATE: 2026-03-02
+HASH: 095dc69
+PHASE: Integration Roadmap — Phase 3 (Calendar Screen)
+
+SUMMARY:
+  Full scheduling center: month grid + agenda view, DOS aesthetic.
+  DB tables for calendar_events (7 types: deadline, agent_run, meeting,
+  reminder, renewal, obligation, custom) and calendar_reminders.
+  tRPC router with 8 procedures. New schedule_event agent tool registered
+  in the tool registry — agents can now schedule deadlines, meetings, and
+  reminders autonomously. Two BullMQ workers: calendar-reminder (5min
+  repeatable, sends in-app/email/whatsapp reminders, marks overdue) and
+  calendar-recurrence (daily, expands recurring events 30-day horizon).
+  Frontend /calendar page with month grid, agenda list, event detail panel.
+
+NEW FILES (6):
+  packages/db/src/schema/calendar.ts                  — events + reminders tables
+  packages/api/src/routers/calendar.ts                — calendar tRPC router
+  packages/ai/src/tools/calendar/schedule-event.ts    — schedule_event agent tool
+  apps/worker/src/workers/calendar-reminder.worker.ts — reminder + overdue worker
+  apps/worker/src/workers/calendar-recurrence.worker.ts — recurrence expansion
+  apps/web/src/app/[locale]/(auth)/calendar/page.tsx  — calendar page
+
+MODIFIED FILES (9):
+  packages/db/src/schema/enums.ts       — 5 calendar enums
+  packages/db/src/schema/index.ts       — export calendar tables
+  packages/queue/src/jobs.ts            — 2 new job schemas
+  packages/queue/src/queues.ts          — 2 new queues + getters
+  packages/queue/src/index.ts           — export new queues/jobs
+  packages/ai/src/tools/registry.ts     — register schedule_event tool
+  packages/api/src/root.ts              — register calendar router
+  apps/worker/src/workers/index.ts      — export new workers
+  apps/worker/src/index.ts              — register 2 new workers (10 total)
+
+TOOL COUNT: 22 (was 21, +schedule_event)
+WORKER COUNT: 10 (was 8, +calendar-reminder, +calendar-recurrence)
+
+
+================================================================================
 COMMIT #76 — Messaging Screen (Phase 2)
 ================================================================================
 DATE: 2026-03-02
