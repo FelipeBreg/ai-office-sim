@@ -1,0 +1,191 @@
+import {
+  Globe,
+  Scale,
+  Receipt,
+  Calculator,
+  Users,
+  TrendingUp,
+  Megaphone,
+  Cog,
+  Headphones,
+  Monitor,
+  ShieldCheck,
+  Landmark,
+  Target,
+} from 'lucide-react';
+
+export interface BlueprintSubtopic {
+  id: string;
+  label: string;
+}
+
+export interface BlueprintTopic {
+  slug: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  subtopics?: BlueprintSubtopic[];
+}
+
+export const blueprintTopics: BlueprintTopic[] = [
+  { slug: 'visao-geral', label: 'Visão Geral', icon: Globe },
+  {
+    slug: 'legal',
+    label: 'Jurídico & Constituição',
+    icon: Scale,
+    subtopics: [
+      { id: 'cnpj', label: 'CNPJ' },
+      { id: 'tipos-empresa', label: 'Tipos de Empresa' },
+      { id: 'contrato-social', label: 'Contrato Social' },
+      { id: 'junta-comercial', label: 'Junta Comercial' },
+      { id: 'alvaras', label: 'Alvarás' },
+      { id: 'marcas-patentes', label: 'Marcas/Patentes' },
+      { id: 'contratos', label: 'Contratos' },
+    ],
+  },
+  {
+    slug: 'fiscal',
+    label: 'Tributário & Fiscal',
+    icon: Receipt,
+    subtopics: [
+      { id: 'regimes', label: 'Regimes Tributários' },
+      { id: 'simples-nacional', label: 'Simples Nacional' },
+      { id: 'lucro-presumido', label: 'Lucro Presumido' },
+      { id: 'lucro-real', label: 'Lucro Real' },
+      { id: 'notas-fiscais', label: 'NF-e/NFS-e' },
+      { id: 'obrigacoes-acessorias', label: 'Obrigações Acessórias' },
+      { id: 'sped', label: 'SPED' },
+      { id: 'dctf-darf', label: 'DCTF/DARF' },
+    ],
+  },
+  {
+    slug: 'contabilidade',
+    label: 'Contabilidade & Finanças',
+    icon: Calculator,
+    subtopics: [
+      { id: 'dre', label: 'DRE' },
+      { id: 'balanco', label: 'Balanço' },
+      { id: 'fluxo-caixa', label: 'Fluxo de Caixa' },
+      { id: 'contas-receber', label: 'Contas a Receber' },
+      { id: 'contas-pagar', label: 'Contas a Pagar' },
+      { id: 'conciliacao', label: 'Conciliação' },
+      { id: 'orcamento', label: 'Orçamento' },
+    ],
+  },
+  {
+    slug: 'rh',
+    label: 'RH & Dept. Pessoal',
+    icon: Users,
+    subtopics: [
+      { id: 'admissao', label: 'Admissão CLT' },
+      { id: 'onboarding', label: 'Onboarding' },
+      { id: 'folha', label: 'Folha de Pagamento' },
+      { id: 'beneficios', label: 'Benefícios' },
+      { id: 'fgts-inss', label: 'FGTS/INSS' },
+      { id: 'decimo-ferias', label: '13º/Férias' },
+      { id: 'rescisao', label: 'Rescisão' },
+      { id: 'esocial', label: 'eSocial' },
+      { id: 'seguranca-trabalho', label: 'Segurança do Trabalho' },
+    ],
+  },
+  {
+    slug: 'comercial',
+    label: 'Vendas & Comercial',
+    icon: TrendingUp,
+    subtopics: [
+      { id: 'crm-pipeline', label: 'CRM/Pipeline' },
+      { id: 'prospeccao', label: 'Prospecção' },
+      { id: 'propostas', label: 'Propostas' },
+      { id: 'contratos-comerciais', label: 'Contratos' },
+      { id: 'follow-up', label: 'Follow-up' },
+      { id: 'pos-venda', label: 'Pós-Venda' },
+    ],
+  },
+  {
+    slug: 'marketing',
+    label: 'Marketing',
+    icon: Megaphone,
+    subtopics: [
+      { id: 'branding', label: 'Branding' },
+      { id: 'digital', label: 'Marketing Digital' },
+      { id: 'redes-sociais', label: 'Redes Sociais' },
+      { id: 'conteudo', label: 'Conteúdo' },
+      { id: 'ads', label: 'Anúncios Pagos' },
+      { id: 'seo', label: 'SEO' },
+      { id: 'email-marketing', label: 'Email Marketing' },
+      { id: 'funil', label: 'Funil de Conversão' },
+    ],
+  },
+  {
+    slug: 'operacoes',
+    label: 'Operações & Processos',
+    icon: Cog,
+    subtopics: [
+      { id: 'cadeia-suprimentos', label: 'Cadeia de Suprimentos' },
+      { id: 'estoque', label: 'Estoque' },
+      { id: 'logistica', label: 'Logística' },
+      { id: 'qualidade', label: 'Qualidade' },
+      { id: 'sops', label: 'SOPs' },
+      { id: 'kpis-operacionais', label: 'KPIs' },
+    ],
+  },
+  {
+    slug: 'atendimento',
+    label: 'Atendimento ao Cliente',
+    icon: Headphones,
+    subtopics: [
+      { id: 'canais', label: 'Canais' },
+      { id: 'sla', label: 'SLA' },
+      { id: 'tickets', label: 'Tickets' },
+      { id: 'escalacao', label: 'Escalação' },
+      { id: 'nps-csat', label: 'NPS/CSAT' },
+    ],
+  },
+  {
+    slug: 'ti',
+    label: 'TI & Tecnologia',
+    icon: Monitor,
+    subtopics: [
+      { id: 'infraestrutura', label: 'Infraestrutura' },
+      { id: 'seguranca-ti', label: 'Segurança' },
+      { id: 'lgpd', label: 'LGPD' },
+      { id: 'dev-lifecycle', label: 'Dev Lifecycle' },
+      { id: 'devops-cicd', label: 'DevOps/CI-CD' },
+    ],
+  },
+  {
+    slug: 'compliance',
+    label: 'Compliance & Governança',
+    icon: ShieldCheck,
+    subtopics: [
+      { id: 'regulatorio', label: 'Regulatório' },
+      { id: 'auditoria', label: 'Auditoria' },
+      { id: 'riscos', label: 'Gestão de Riscos' },
+      { id: 'controles-internos', label: 'Controles Internos' },
+      { id: 'anticorrupcao', label: 'Anticorrupção' },
+    ],
+  },
+  {
+    slug: 'tesouraria',
+    label: 'Tesouraria & Financeiro',
+    icon: Landmark,
+    subtopics: [
+      { id: 'gestao-caixa', label: 'Gestão de Caixa' },
+      { id: 'pix-boleto', label: 'Pix/Boleto' },
+      { id: 'credito', label: 'Crédito' },
+      { id: 'investimentos', label: 'Investimentos' },
+      { id: 'cobranca', label: 'Cobrança' },
+    ],
+  },
+  {
+    slug: 'planejamento',
+    label: 'Planejamento Estratégico',
+    icon: Target,
+    subtopics: [
+      { id: 'okrs', label: 'OKRs' },
+      { id: 'bsc', label: 'BSC' },
+      { id: 'swot', label: 'SWOT' },
+      { id: 'planejamento-anual', label: 'Planejamento Anual' },
+      { id: 'reunioes-diretoria', label: 'Reuniões de Diretoria' },
+    ],
+  },
+];
