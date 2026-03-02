@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
-import { db, financialRecords, eq, and, gte, sql, desc } from '@ai-office/db';
+import { db, financialRecords, eq, and, gte, lt, sql, desc } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 
 const TYPES = ['revenue', 'expense', 'tax', 'investment'] as const;
@@ -117,7 +117,7 @@ export const financialRecordsRouter = createTRPCRouter({
           and(
             eq(financialRecords.projectId, projectId),
             gte(financialRecords.createdAt, prevSince),
-            sql`${financialRecords.createdAt} < ${since}`,
+            lt(financialRecords.createdAt, since),
           ),
         )
         .groupBy(financialRecords.type),

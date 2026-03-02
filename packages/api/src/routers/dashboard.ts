@@ -16,6 +16,7 @@ import {
   eq,
   and,
   gte,
+  lt,
   sql,
   count,
   desc,
@@ -64,7 +65,7 @@ export const dashboardRouter = createTRPCRouter({
           and(
             eq(actionLogs.projectId, projectId),
             gte(actionLogs.createdAt, prevSince),
-            sql`${actionLogs.createdAt} < ${since}`,
+            lt(actionLogs.createdAt, since),
           ),
         )
         .then((r) => Number(r[0]?.totalCost ?? 0)),
@@ -93,7 +94,7 @@ export const dashboardRouter = createTRPCRouter({
           and(
             eq(deals.projectId, projectId),
             gte(deals.createdAt, prevSince),
-            sql`${deals.createdAt} < ${since}`,
+            lt(deals.createdAt, since),
           ),
         )
         .then((r) => r[0]!),
@@ -136,7 +137,7 @@ export const dashboardRouter = createTRPCRouter({
           and(
             eq(financialRecords.projectId, projectId),
             gte(financialRecords.createdAt, prevSince),
-            sql`${financialRecords.createdAt} < ${since}`,
+            lt(financialRecords.createdAt, since),
           ),
         )
         .groupBy(financialRecords.type),

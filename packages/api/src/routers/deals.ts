@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
-import { db, deals, pipelineStages, eq, and, asc, desc, gte, sql, count } from '@ai-office/db';
+import { db, deals, pipelineStages, eq, and, asc, desc, gte, lt, sql, count } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 
 const DEAL_STAGES = [
@@ -164,7 +164,7 @@ export const dealsRouter = createTRPCRouter({
             and(
               eq(deals.projectId, projectId),
               gte(deals.createdAt, prevSince),
-              sql`${deals.createdAt} < ${since}`,
+              lt(deals.createdAt, since),
             ),
           ),
       ]);
