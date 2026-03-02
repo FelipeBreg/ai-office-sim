@@ -7,6 +7,43 @@
 
 
 ================================================================================
+COMMIT #80 — DB Migration: Messaging + Calendar Tables + Archetype Seed
+================================================================================
+DATE: 2026-03-02
+HASH: b5d06c0
+PHASE: Integration Roadmap — DB Migration (Phases 2-3 applied to Neon)
+
+SUMMARY:
+  Ran SQL migration against Neon production database to create all new
+  tables and enums from Phases 2-3. Created 11 new enums (6 conversation +
+  5 calendar), 4 new tables (conversations, conversation_messages,
+  calendar_events, calendar_reminders) with 9 indexes and proper FK
+  constraints. Seeded all 20 agent archetypes into agent_archetypes table
+  with bilingual system prompts (EN + PT-BR), default tools, trigger types,
+  icons, and categories.
+
+  DB now has: 42 tables, 55 enums, 20 archetypes.
+
+NEW FILES (1):
+  packages/db/src/migrations/messaging-calendar.sql — idempotent migration
+
+DB CHANGES APPLIED:
+  Enums (11):   conversation_channel, conversation_status, conversation_priority,
+                conversation_message_direction, conversation_sender_type,
+                conversation_content_type, calendar_event_type,
+                calendar_event_status, calendar_event_source_type,
+                calendar_event_priority, calendar_reminder_channel
+  Tables (4):   conversations (18 cols), conversation_messages (9 cols),
+                calendar_events (20 cols), calendar_reminders (6 cols)
+  Indexes (9):  conv_project_status, conv_project_channel, conv_project_contact,
+                conv_msg_conversation, cal_event_project_start,
+                cal_event_project_status, cal_event_project_type,
+                cal_reminder_event, cal_reminder_pending
+  Seed:         20 archetypes in agent_archetypes (5 existing + 15 new)
+
+────────────────────────────────────────────────────────────────────────────────
+
+================================================================================
 COMMIT #79 — Seed 15 Agent Archetypes with Real System Prompts (Phase 5)
 ================================================================================
 DATE: 2026-03-02
