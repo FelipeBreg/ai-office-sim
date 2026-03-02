@@ -21,6 +21,8 @@ import { createDeployRequestTool } from './devops/create-deploy-request.js';
 import { createPrReviewRequestTool } from './devops/create-pr-review-request.js';
 import { createHumanTaskTool } from './devops/create-human-task.js';
 import { scheduleEventTool } from './calendar/schedule-event.js';
+import { createDocumentTool } from './documents/create-document.js';
+import { sendConversationMessageTool } from './messaging/send-conversation-message.js';
 
 // Convert Zod schema to JSON Schema for Anthropic tool format
 function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
@@ -207,3 +209,9 @@ toolRegistry.register(createHumanTaskTool);
 
 // ── Calendar ──
 toolRegistry.register(scheduleEventTool);
+
+// ── Documents ──
+toolRegistry.register(createDocumentTool);
+
+// ── Messaging ──
+toolRegistry.register(sendConversationMessageTool);
