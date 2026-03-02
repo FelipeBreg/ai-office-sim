@@ -22,6 +22,7 @@ import { createPrReviewRequestTool } from './devops/create-pr-review-request.js'
 import { createHumanTaskTool } from './devops/create-human-task.js';
 import { scheduleEventTool } from './calendar/schedule-event.js';
 import { createDocumentTool } from './documents/create-document.js';
+import { generateDocumentTool } from './documents/generate-document.js';
 import { sendConversationMessageTool } from './messaging/send-conversation-message.js';
 
 // Convert Zod schema to JSON Schema for Anthropic tool format
@@ -212,6 +213,7 @@ toolRegistry.register(scheduleEventTool);
 
 // ── Documents ──
 toolRegistry.register(createDocumentTool);
+toolRegistry.register(generateDocumentTool);
 
 // ── Messaging ──
 toolRegistry.register(sendConversationMessageTool);

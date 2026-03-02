@@ -23,6 +23,7 @@ import {
   createWorkflowExecutionWorker,
   createCalendarReminderWorker,
   createCalendarRecurrenceWorker,
+  createEmailInboundWorker,
 } from './workers/index.js';
 
 const PORT = Number(process.env.PORT ?? 4000);
@@ -53,6 +54,7 @@ const workers = [
   createWorkflowExecutionWorker(),
   createCalendarReminderWorker(),
   createCalendarRecurrenceWorker(),
+  createEmailInboundWorker(),
 ];
 
 console.log(`[worker] Started ${workers.length} queue workers`);

@@ -12,6 +12,7 @@ import type {
   WorkflowExecutionJob,
   CalendarReminderJob,
   CalendarRecurrenceJob,
+  EmailInboundJob,
 } from './jobs.js';
 
 // ── Queue names (single source of truth) ──
@@ -26,6 +27,7 @@ export const QUEUE_NAMES = {
   WORKFLOW_EXECUTION: 'workflow-execution',
   CALENDAR_REMINDER: 'calendar-reminder',
   CALENDAR_RECURRENCE: 'calendar-recurrence',
+  EMAIL_INBOUND: 'email-inbound',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -92,6 +94,12 @@ const defaultJobOptions: Record<QueueName, DefaultJobOptions> = {
     removeOnComplete: { count: 50 },
     removeOnFail: false,
   },
+  [QUEUE_NAMES.EMAIL_INBOUND]: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 60_000 },
+    removeOnComplete: { count: 100 },
+    removeOnFail: false,
+  },
 };
 
 // ── Queue factory ──
@@ -114,6 +122,7 @@ let _cleanup: Queue<CleanupJob> | null = null;
 let _workflowExecution: Queue<WorkflowExecutionJob> | null = null;
 let _calendarReminder: Queue<CalendarReminderJob> | null = null;
 let _calendarRecurrence: Queue<CalendarRecurrenceJob> | null = null;
+let _emailInbound: Queue<EmailInboundJob> | null = null;
 
 export function getAgentExecutionQueue() {
   _agentExecution ??= createQueue<AgentExecutionJob>(QUEUE_NAMES.AGENT_EXECUTION);
@@ -165,6 +174,11 @@ export function getCalendarRecurrenceQueue() {
   return _calendarRecurrence;
 }
 
+export function getEmailInboundQueue() {
+  _emailInbound ??= createQueue<EmailInboundJob>(QUEUE_NAMES.EMAIL_INBOUND);
+  return _emailInbound;
+}
+
 /** Get all queue instances (useful for bull-board) */
 export function getAllQueues() {
   return [
@@ -178,5 +192,6 @@ export function getAllQueues() {
     getWorkflowExecutionQueue(),
     getCalendarReminderQueue(),
     getCalendarRecurrenceQueue(),
+    getEmailInboundQueue(),
   ];
 }

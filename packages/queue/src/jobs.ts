@@ -78,6 +78,13 @@ export const calendarRecurrenceJobSchema = z.object({
 });
 export type CalendarRecurrenceJob = z.infer<typeof calendarRecurrenceJobSchema>;
 
+// ── Email Inbound Polling ──
+export const emailInboundJobSchema = z.object({
+  type: z.enum(['poll_all', 'poll_project']),
+  projectId: z.string().uuid().optional(),
+});
+export type EmailInboundJob = z.infer<typeof emailInboundJobSchema>;
+
 // ── Cleanup ──
 export const cleanupJobSchema = z.object({
   type: z.enum(['expired_sessions', 'old_action_logs', 'stale_jobs']),
