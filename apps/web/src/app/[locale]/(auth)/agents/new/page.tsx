@@ -185,6 +185,16 @@ const TOOLS: { id: string; nameKey: string; descKey: string }[] = [
   { id: 'append_to_spreadsheet', nameKey: 'toolAppendSpreadsheet', descKey: 'toolAppendSpreadsheetDesc' },
   { id: 'monitor_pix_transactions', nameKey: 'toolMonitorPix', descKey: 'toolMonitorPixDesc' },
   { id: 'check_nfe_status', nameKey: 'toolCheckNfe', descKey: 'toolCheckNfeDesc' },
+  { id: 'create_document', nameKey: 'toolCreateDocument', descKey: 'toolCreateDocumentDesc' },
+  { id: 'generate_document', nameKey: 'toolGenerateDocument', descKey: 'toolGenerateDocumentDesc' },
+  { id: 'schedule_event', nameKey: 'toolScheduleEvent', descKey: 'toolScheduleEventDesc' },
+  { id: 'log_message', nameKey: 'toolLogMessage', descKey: 'toolLogMessageDesc' },
+  { id: 'create_human_task', nameKey: 'toolCreateHumanTask', descKey: 'toolCreateHumanTaskDesc' },
+  { id: 'create_deploy_request', nameKey: 'toolCreateDeployRequest', descKey: 'toolCreateDeployRequestDesc' },
+  { id: 'create_pr_review_request', nameKey: 'toolCreatePrReview', descKey: 'toolCreatePrReviewDesc' },
+  { id: 'google_ads', nameKey: 'toolGoogleAds', descKey: 'toolGoogleAdsDesc' },
+  { id: 'meta_marketing', nameKey: 'toolMetaMarketing', descKey: 'toolMetaMarketingDesc' },
+  { id: 'send_conversation_message', nameKey: 'toolSendConversation', descKey: 'toolSendConversationDesc' },
 ];
 
 const TRIGGER_OPTIONS: {
