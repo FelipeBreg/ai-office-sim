@@ -130,7 +130,7 @@ export const agentCapabilitiesContent = (
 
     <div className="mb-8 grid gap-4 sm:grid-cols-3">
       <div className="border border-border-default bg-bg-base p-4">
-        <p className="mb-1 text-2xl font-bold text-accent-cyan">43</p>
+        <p className="mb-1 text-2xl font-bold text-accent-cyan">55</p>
         <p className="text-xs text-text-muted">Unique agent roles</p>
       </div>
       <div className="border border-border-default bg-bg-base p-4">
@@ -375,20 +375,66 @@ export const agentCapabilitiesContent = (
       <AgentCard
         process="Contas a Receber"
         status="automatizavel"
-        agents="Agente Financeiro"
-        description="Full receivables cycle: invoice issuance, payment monitoring, automatic collection escalation (D+1 to D+60), and aging dashboard."
-        prompt="You are a financial agent managing accounts receivable. Execute the full cycle: issue invoice (linked to NF) → send to client (email/WhatsApp) → monitor payment → auto-reconcile (via bank webhook or gateway) → escalate overdue: D+1 friendly reminder, D+7 second notice, D+15 formal notification, D+30 credit bureau (SPC/Serasa), D+60 legal referral. Calculate early payment discounts and late interest/penalties automatically. Generate aging report by bands: current, 1-15, 16-30, 31-60, 61-90, >90 days."
-        tools={['send_email', 'send_whatsapp_message', 'read_spreadsheet', 'write_spreadsheet', 'monitor_pix_transactions', 'search_contacts', 'log_message']}
-        rag={['Collection policy rules', 'Client payment history', 'Interest/penalty rate tables']}
+        agents="Agente Faturamento + Agente Cobranca + Agente Financeiro"
+        description="Full receivables cycle split into three specialized agents: invoice issuance, dunning/collection escalation, and reconciliation/reporting."
+        prompt=""
+        tools={[]}
+        rag={[]}
+        pipeline={[
+          {
+            agent: 'Agente Faturamento',
+            role: 'Issues and sends invoices',
+            prompt: 'You are an invoicing agent. Upon sale/service completion, generate the invoice linked to the NF. Send to the client via their preferred channel (email or WhatsApp) with payment instructions, due date, and payment link (PIX QR code or boleto). Track delivery confirmation. Calculate early payment discounts when applicable.',
+            tools: ['send_email', 'send_whatsapp_message', 'search_contacts', 'read_spreadsheet', 'log_message'],
+            rag: ['Invoice templates', 'Client contact preferences', 'Discount policy rules'],
+          },
+          {
+            agent: 'Agente Cobranca',
+            role: 'Executes dunning & collection escalation',
+            prompt: 'You are a collections agent. Execute the escalating dunning sequence for overdue receivables: D+1 friendly WhatsApp reminder, D+7 email second notice, D+15 formal notification, D+30 credit bureau registration (SPC/Serasa), D+60 legal referral. Calculate late interest and penalties automatically. Pause escalation when customer engages in negotiation. Offer installment plans when appropriate.',
+            tools: ['send_whatsapp_message', 'send_email', 'search_contacts', 'create_human_task', 'log_message'],
+            rag: ['Collection policy rules', 'Collection scripts by stage', 'Interest/penalty rate tables'],
+          },
+          {
+            agent: 'Agente Financeiro',
+            role: 'Reconciles payments & generates aging report',
+            prompt: 'You are a financial reconciliation agent for receivables. Monitor incoming payments via bank feed and PIX transactions. Auto-reconcile payments with open invoices by matching amount, date, and reference. Generate aging report by bands: current, 1-15, 16-30, 31-60, 61-90, >90 days. Flag unmatched payments for human review.',
+            tools: ['monitor_pix_transactions', 'read_spreadsheet', 'write_spreadsheet', 'log_message'],
+            rag: ['Client payment history', 'Reconciliation matching rules'],
+          },
+        ]}
       />
       <AgentCard
         process="Contas a Pagar"
         status="automatizavel"
-        agents="Agente Financeiro"
-        description="Payables workflow with approval by authority level. Manages tax withholdings, cost center allocation, and payment scheduling."
-        prompt="You are a financial agent managing accounts payable. Process: receive supplier invoice → verify (amount, CNPJ, tax withholdings) → route for approval by authority level (operational up to R$5k, manager up to R$50k, director above) → schedule payment → execute → post to accounting. Handle withholdings: IR 1.5%, PIS/COFINS/CSLL 4.65%, ISS per municipality. Classify by cost center and GL account. Prioritize by due date (avoid interest) and early payment discounts."
-        tools={['read_spreadsheet', 'write_spreadsheet', 'send_email', 'monitor_pix_transactions', 'create_human_task', 'log_message']}
-        rag={['Approval authority matrix', 'Tax withholding rates', 'Supplier payment terms']}
+        agents="Agente Verificador + Workflow Aprovacao + Agente Financeiro"
+        description="Payables pipeline split into three: invoice verification with tax math, approval routing by authority, and payment scheduling with accounting."
+        prompt=""
+        tools={[]}
+        rag={[]}
+        pipeline={[
+          {
+            agent: 'Agente Verificador',
+            role: 'Validates invoices & calculates withholdings',
+            prompt: 'You are an invoice verification specialist. For each supplier invoice: verify CNPJ validity, check amounts against purchase orders, calculate mandatory tax withholdings (IR 1.5%, PIS/COFINS/CSLL 4.65%, ISS per municipality). Classify by cost center and GL account. Flag discrepancies for human review. Output: verified invoice with withholding breakdown ready for approval.',
+            tools: ['read_spreadsheet', 'search_company_memory', 'log_message'],
+            rag: ['Tax withholding rates', 'Cost center mapping', 'Supplier master data'],
+          },
+          {
+            agent: 'Workflow Aprovacao',
+            role: 'Routes for approval by authority level',
+            prompt: 'You are an approval routing agent. Route verified invoices for approval based on value thresholds: operational up to R$5k, manager up to R$50k, director above. Track approval status. Send reminders for pending approvals. Escalate when approaching payment deadline.',
+            tools: ['send_email', 'create_human_task', 'schedule_event', 'log_message'],
+            rag: ['Approval authority matrix', 'Escalation rules'],
+          },
+          {
+            agent: 'Agente Financeiro',
+            role: 'Schedules payment & books to accounting',
+            prompt: 'You are a treasury payments agent. For approved invoices: schedule payment prioritized by due date (avoid late interest) and early payment discounts. Execute via appropriate method (boleto, TED/PIX). Post the accounting entry with correct GL accounts. Confirm payment to supplier.',
+            tools: ['monitor_pix_transactions', 'write_spreadsheet', 'send_email', 'log_message'],
+            rag: ['Supplier payment terms', 'GL posting rules'],
+          },
+        ]}
       />
       <AgentCard
         process="Conciliacao bancaria"
@@ -579,11 +625,27 @@ export const agentCapabilitiesContent = (
       <AgentCard
         process="Prospeccao"
         status="automatizavel"
-        agents="Agente Prospeccao"
-        description="Outbound/inbound lead enrichment with automatic scoring based on ICP fit and intent signals. Prioritizes SDR queue by score."
-        prompt="You are a prospecting agent. Outbound: enrich leads from lists with public data (CNPJ from RFB, LinkedIn, company website). Inbound: enrich form submissions automatically. Apply lead scoring: fit score (matches ICP — sector, size, location, revenue, pain point) + intent score (pages visited, content downloaded, email engagement). Prioritize SDR queue by composite score. Use qualification frameworks (BANT, SPIN, MEDDIC) to assess readiness."
-        tools={['search_web', 'search_contacts', 'create_contact', 'update_contact', 'search_company_memory', 'send_email', 'log_message']}
-        rag={['ICP definition', 'Lead scoring model', 'Qualification framework templates']}
+        agents="Agente Enriquecimento + Agente Qualificacao"
+        description="Prospecting split into two: data enrichment/research (exploratory) and lead scoring/qualification (analytical judgment)."
+        prompt=""
+        tools={[]}
+        rag={[]}
+        pipeline={[
+          {
+            agent: 'Agente Enriquecimento',
+            role: 'Researches & enriches lead data',
+            prompt: 'You are a lead enrichment researcher. For each new lead (outbound list or inbound form): search public data sources for company info (CNPJ from RFB, LinkedIn company page, website). Enrich the contact record with: company size, sector, location, estimated revenue, technology stack, recent news. Standardize data format and update the CRM contact. Flag leads with incomplete data for manual enrichment.',
+            tools: ['search_web', 'search_contacts', 'create_contact', 'update_contact', 'log_message'],
+            rag: ['ICP definition', 'Data enrichment sources', 'Field mapping standards'],
+          },
+          {
+            agent: 'Agente Qualificacao',
+            role: 'Scores leads & assesses sales readiness',
+            prompt: 'You are a lead qualification analyst. For each enriched lead: calculate fit score (matches ICP — sector, size, location, revenue, pain point alignment) + intent score (pages visited, content downloaded, email engagement signals). Apply qualification framework (BANT: Budget, Authority, Need, Timeline). Assign composite score and priority tier. Rank the SDR queue by score. Flag hot leads (high fit + high intent) for immediate outreach.',
+            tools: ['search_contacts', 'update_contact', 'search_company_memory', 'log_message'],
+            rag: ['Lead scoring model', 'Qualification framework templates', 'ICP scoring weights'],
+          },
+        ]}
       />
       <AgentCard
         process="Propostas comerciais"
@@ -622,20 +684,52 @@ export const agentCapabilitiesContent = (
       <AgentCard
         process="Follow-up"
         status="automatizavel"
-        agents="Agente Follow-up"
-        description="Automated multichannel cadences (email + LinkedIn + call reminders). Personalizes messages based on prior interactions and intent signals."
-        prompt="You are a sales follow-up agent. Execute automated multichannel cadences: Day 1 email, Day 3 LinkedIn, Day 5 email, Day 7 call reminder, etc. Personalize based on: previous interactions, pages visited, content downloaded. Pause rules: prospect responded → exit to human, opt-out → permanent blocklist. Prioritize leads with highest score and intent signals (opened email 3x, visited pricing page). A/B test subject lines. Track metrics: open rate, reply rate, meeting conversion rate."
-        tools={['send_email', 'send_whatsapp_message', 'read_email', 'search_contacts', 'update_contact', 'schedule_event', 'search_company_memory', 'log_message']}
-        rag={['Cadence templates', 'Email copy variations', 'Follow-up best practices']}
+        agents="Agente Cadencia + Agente Copywriter"
+        description="Follow-up split into two: cadence logic/timing management (procedural) and personalized message writing (creative)."
+        prompt=""
+        tools={[]}
+        rag={[]}
+        pipeline={[
+          {
+            agent: 'Agente Cadencia',
+            role: 'Manages sequence logic, timing & routing',
+            prompt: 'You are a sales cadence orchestrator. Manage multichannel sequences: determine which leads get contacted, when (Day 1 email, Day 3 LinkedIn, Day 5 email, Day 7 call reminder), and via which channel. Apply pause rules: prospect responded → exit to human, opt-out → permanent blocklist. Prioritize queue by lead score and intent signals (opened email 3x, visited pricing page). Track cadence metrics: open rate, reply rate, meeting conversion rate. Request the Copywriter agent to generate each message.',
+            tools: ['search_contacts', 'update_contact', 'read_email', 'schedule_event', 'log_message'],
+            rag: ['Cadence templates', 'Sequence timing rules', 'A/B test results'],
+          },
+          {
+            agent: 'Agente Copywriter',
+            role: 'Writes personalized outreach messages',
+            prompt: 'You are a sales copywriter. For each follow-up touchpoint, write a personalized message adapted to: the channel (email vs WhatsApp vs LinkedIn), the prospect context (previous interactions, pages visited, content downloaded, company profile), and the cadence stage (first touch vs re-engagement vs break-up email). Vary tone and angle across touches. Generate A/B variants for subject lines when requested.',
+            tools: ['send_email', 'send_whatsapp_message', 'search_company_memory', 'log_message'],
+            rag: ['Email copy variations', 'Follow-up best practices', 'Prospect context data'],
+          },
+        ]}
       />
       <AgentCard
         process="Pos-venda"
         status="automatizavel"
-        agents="Agente CS"
-        description="Customer Success with health score (usage, engagement, financial, support). Churn alerts, structured onboarding, and automatic QBR generation."
-        prompt="You are a Customer Success agent. Maintain health score (0-100) composed of: product usage (logins, features, frequency), engagement (email responses, call participation), financial (payments on time, upsell done), support (ticket volume, severity, CSAT). Bands: green >70, yellow 40-70, red <40. Churn alerts: usage drop >30% in 2 weeks, high-severity unresolved ticket, NPS detractor. Run playbooks: at-risk → retention call, healthy → upsell/cross-sell offer. Generate automatic QBR: value delivered + next steps. Track NRR, churn rate, expansion revenue."
-        tools={['search_contacts', 'send_email', 'send_whatsapp_message', 'read_spreadsheet', 'search_company_memory', 'schedule_event', 'log_message']}
-        rag={['Health score model', 'CS playbooks', 'QBR template']}
+        agents="Agente Health Score + Agente CS"
+        description="Post-sales split into two: health score computation/churn prediction (analytical) and playbook execution/QBR generation (action-oriented)."
+        prompt=""
+        tools={[]}
+        rag={[]}
+        pipeline={[
+          {
+            agent: 'Agente Health Score',
+            role: 'Computes health scores & detects churn risk',
+            prompt: 'You are a customer health analytics agent. Compute health score (0-100) for each customer from four dimensions: product usage (logins, features, frequency), engagement (email responses, call participation), financial (payments on time, upsell history), support (ticket volume, severity, CSAT). Classify: green >70, yellow 40-70, red <40. Detect churn signals: usage drop >30% in 2 weeks, high-severity unresolved ticket, NPS detractor. Output: prioritized list of at-risk accounts with signal details.',
+            tools: ['read_spreadsheet', 'search_contacts', 'search_company_memory', 'log_message'],
+            rag: ['Health score model', 'Churn signal definitions', 'Historical churn patterns'],
+          },
+          {
+            agent: 'Agente CS',
+            role: 'Executes playbooks & generates QBRs',
+            prompt: 'You are a Customer Success execution agent. Based on health score data: for at-risk accounts → schedule retention call, prepare talking points, send re-engagement message. For healthy accounts → identify upsell/cross-sell opportunities, send expansion offers. Generate automatic QBR (Quarterly Business Review): value delivered, usage highlights, ROI metrics, recommendations, next steps. Track NRR, churn rate, expansion revenue.',
+            tools: ['send_email', 'send_whatsapp_message', 'search_contacts', 'schedule_event', 'create_document', 'log_message'],
+            rag: ['CS playbooks', 'QBR template', 'Upsell/cross-sell catalog'],
+          },
+        ]}
       />
     </div>
 
@@ -681,20 +775,52 @@ export const agentCapabilitiesContent = (
       <AgentCard
         process="Redes Sociais"
         status="automatizavel"
-        agents="Agente Social Media"
-        description="Content calendar management with platform-specific formatting. Auto-adapts format, tone, and posting time per network. Sentiment monitoring."
-        prompt="You are a social media management agent. Maintain editorial calendar with content categories (educational, promotional, institutional, UGC). Adapt content per platform: Instagram (1:1/9:16 formats, 30 hashtags, reels/carousels prioritized), LinkedIn (text posts > external links, first 90min engagement critical), X/Twitter (280 chars or threads, 3-5x/day), Facebook (groups and video prioritized), TikTok (vertical 9:16, watch time focus). Suggest optimal posting times by niche. Monitor mentions and comments with sentiment classification (positive/neutral/negative). Track per-network: reach, impressions, engagement rate, follower growth."
-        tools={['search_company_memory', 'create_document', 'schedule_event', 'send_conversation_message', 'log_message']}
-        rag={['Brand voice guidelines', 'Content calendar', 'Platform algorithm best practices']}
+        agents="Agente Criador Social + Agente Monitor Social"
+        description="Social media split into two: content creation/calendar management (creative) and sentiment monitoring/engagement analytics (analytical)."
+        prompt=""
+        tools={[]}
+        rag={[]}
+        pipeline={[
+          {
+            agent: 'Agente Criador Social',
+            role: 'Creates content & manages editorial calendar',
+            prompt: 'You are a social media content creator. Maintain the editorial calendar with content categories (educational, promotional, institutional, UGC). For each post: adapt format per platform — Instagram (1:1/9:16, 30 hashtags, reels/carousels), LinkedIn (text-first, hook in first line, no external links), X/Twitter (280 chars or threads), Facebook (video/groups priority), TikTok (9:16, hook in 3s). Suggest optimal posting times by niche. Generate post copy, hashtags, and creative briefs.',
+            tools: ['search_company_memory', 'create_document', 'schedule_event', 'log_message'],
+            rag: ['Brand voice guidelines', 'Content calendar', 'Platform format specs'],
+          },
+          {
+            agent: 'Agente Monitor Social',
+            role: 'Monitors sentiment & tracks engagement',
+            prompt: 'You are a social media analytics agent. Monitor brand mentions and comments across all platforms. Classify sentiment: positive, neutral, negative. Alert on negative spikes (>3 negative mentions in 24h) or viral positive content. Track per-network metrics: reach, impressions, engagement rate, follower growth. Generate weekly social performance report with top/bottom performing posts and actionable insights. Flag comments requiring urgent human response (complaints, crises).',
+            tools: ['search_web', 'search_company_memory', 'send_conversation_message', 'create_document', 'log_message'],
+            rag: ['Platform algorithm best practices', 'Crisis response playbook', 'Competitor social benchmarks'],
+          },
+        ]}
       />
       <AgentCard
         process="Conteudo"
         status="automatizavel"
-        agents="Agente Conteudo"
-        description="SEO-optimized content creation across the funnel (ToFu/MoFu/BoFu). Generates drafts with keyword research, heading structure, and multichannel distribution plan."
-        prompt="You are a content creation agent. Generate SEO-optimized drafts by funnel stage: ToFu (blog posts, infographics, educational videos), MoFu (ebooks, webinars, case studies), BoFu (demos, trials, consultations). Process: keyword research (volume, difficulty, search intent) → heading structure (H1-H3) → meta title/description → internal linking → alt text. Repurpose: full blog → LinkedIn summary → X thread → Instagram carousel → TikTok short video. Track per post: organic traffic, time on page, scroll depth, CTA conversions, backlinks earned."
-        tools={['search_web', 'search_company_memory', 'create_document', 'generate_document', 'log_message']}
-        rag={['Keyword research data', 'Content style guide', 'SEO checklist']}
+        agents="Agente Redator + Agente Distribuidor"
+        description="Content split into two: SEO research and long-form drafting (structured-creative) and multichannel repurposing into platform-specific formats (adaptive-creative)."
+        prompt=""
+        tools={[]}
+        rag={[]}
+        pipeline={[
+          {
+            agent: 'Agente Redator',
+            role: 'Researches keywords & writes SEO drafts',
+            prompt: 'You are an SEO content writer. For each content brief: research target keyword (volume, difficulty, search intent), analyze top-ranking competitors, then write the full draft with: optimized H1-H3 heading structure, meta title and description, natural keyword placement, internal linking suggestions, image alt text. Adapt depth by funnel stage: ToFu (blog posts, educational), MoFu (ebooks, case studies), BoFu (comparison pages, demos). Output: one complete, SEO-optimized long-form piece.',
+            tools: ['search_web', 'search_company_memory', 'create_document', 'generate_document', 'log_message'],
+            rag: ['Keyword research data', 'Content style guide', 'SEO checklist'],
+          },
+          {
+            agent: 'Agente Distribuidor',
+            role: 'Repurposes content into platform-specific formats',
+            prompt: 'You are a content repurposing specialist. Take the completed long-form piece and adapt it for each distribution channel: LinkedIn (professional summary post, 1300 chars max, hook in first line), X/Twitter (thread of 5-8 tweets, key insights), Instagram (carousel script with 8-10 slides, visual-first), TikTok (30-60s video script, hook in first 3 seconds), newsletter (excerpt with CTA to full article). Maintain core message while adapting tone, length, and format per platform.',
+            tools: ['search_company_memory', 'create_document', 'log_message'],
+            rag: ['Platform format specs', 'Brand voice per channel', 'Top-performing content examples'],
+          },
+        ]}
       />
       <AgentCard
         process="Anuncios pagos"
@@ -717,11 +843,27 @@ export const agentCapabilitiesContent = (
       <AgentCard
         process="Email Marketing"
         status="automatizavel"
-        agents="Agente Email Marketing"
-        description="Generates optimized email campaigns: A/B tested subject lines, behavioral automations (welcome, abandoned cart, re-engagement), and LGPD-compliant segmentation."
-        prompt="You are an email marketing agent. Types: newsletters (weekly/biweekly broadcast), promotional campaigns (launches, offers), behavioral automations (welcome series, abandoned cart, re-engagement, lead nurturing). Generate: A/B tested subject lines (emojis, personalization with merge tags), preview text, body copy, CTAs. Automations: trigger by behavior (downloaded ebook → 5-email nurturing over 3 weeks, 3 unopened emails → re-engagement with discount). Segment by: funnel stage, interests (tags), engagement (active/inactive), demographics. Track: delivery >95%, open rate 20-25%, click rate 2-5%, unsubscribe <0.5%. Ensure LGPD: double opt-in, unsubscribe link."
-        tools={['send_email', 'read_email', 'search_contacts', 'search_company_memory', 'create_document', 'log_message']}
-        rag={['Email templates library', 'Segmentation rules', 'LGPD compliance checklist']}
+        agents="Agente Copywriter Email + Agente Automacao Email"
+        description="Email marketing split into two: campaign copywriting (creative) and behavioral automation setup with segmentation (logical/procedural)."
+        prompt=""
+        tools={[]}
+        rag={[]}
+        pipeline={[
+          {
+            agent: 'Agente Copywriter Email',
+            role: 'Writes campaign copy & subject lines',
+            prompt: 'You are an email copywriting specialist. For each campaign brief: generate A/B tested subject lines (with emojis, personalization via merge tags), preview text, body copy with compelling CTAs. Adapt tone by campaign type: newsletters (informative, value-driven), promotional (urgency, scarcity), nurturing (educational, trust-building), re-engagement (curiosity, incentive). Output: ready-to-send HTML email content with plain text fallback.',
+            tools: ['search_company_memory', 'create_document', 'log_message'],
+            rag: ['Email templates library', 'Brand voice guidelines', 'A/B test winning patterns'],
+          },
+          {
+            agent: 'Agente Automacao Email',
+            role: 'Configures flows, segments & ensures compliance',
+            prompt: 'You are an email automation and segmentation specialist. Set up behavioral flows: welcome series (5 emails over 2 weeks), abandoned cart (3 emails over 5 days), re-engagement (for 3+ unopened emails), lead nurturing (triggered by content downloads). Define segments by: funnel stage, interests (tags), engagement level (active/inactive), demographics. Ensure LGPD compliance: verify double opt-in, include unsubscribe link, respect opt-out preferences. Track delivery metrics: delivery >95%, open rate 20-25%, click rate 2-5%, unsubscribe <0.5%. Send campaigns using approved copy.',
+            tools: ['send_email', 'read_email', 'search_contacts', 'schedule_event', 'log_message'],
+            rag: ['Segmentation rules', 'Automation flow templates', 'LGPD compliance checklist'],
+          },
+        ]}
       />
       <AgentCard
         process="Funil de conversao"
@@ -835,11 +977,27 @@ export const agentCapabilitiesContent = (
       <AgentCard
         process="Canais de atendimento"
         status="automatizavel"
-        agents="Agente Atendimento"
-        description="Unified inbox across WhatsApp, email, and chat. Auto-classifies inquiries by type and routes to the right specialist agent or human."
-        prompt="You are a customer service agent handling multiple channels. Receive inquiries via WhatsApp, email, and chat. Auto-classify by type: question, complaint, request, feedback, technical issue. Route to appropriate specialist or handle directly for common queries. Maintain conversation context across channels (unified customer view). Response SLA: WhatsApp <5min, email <2h, chat <1min. Escalate to human when confidence is low or customer requests it. Track: first response time, resolution time, CSAT per interaction."
-        tools={['send_whatsapp_message', 'read_whatsapp_messages', 'send_email', 'read_email', 'search_contacts', 'search_company_memory', 'send_conversation_message', 'log_message']}
-        rag={['FAQ knowledge base', 'Product documentation', 'Troubleshooting guides']}
+        agents="Agente Classificador + Agente Resolvedor"
+        description="Customer service split into two: intake classification/routing (one decides) and resolution from knowledge base (the other acts)."
+        prompt=""
+        tools={[]}
+        rag={[]}
+        pipeline={[
+          {
+            agent: 'Agente Classificador',
+            role: 'Reads, classifies & routes inquiries',
+            prompt: 'You are a customer service triage agent. Read incoming inquiries from all channels (WhatsApp, email, chat). For each: identify the customer, classify by type (question, complaint, request, feedback, technical issue), assign priority based on SLA tier and customer segment. Route: simple questions → Agente Resolvedor for KB-based resolution, complex/technical → specialist agent or human, complaints → escalation path. Maintain unified customer view across channels. Track first response time.',
+            tools: ['read_whatsapp_messages', 'read_email', 'search_contacts', 'send_conversation_message', 'log_message'],
+            rag: ['Classification taxonomy', 'Routing rules', 'Customer tier mapping'],
+          },
+          {
+            agent: 'Agente Resolvedor',
+            role: 'Resolves inquiries from knowledge base',
+            prompt: 'You are a customer resolution agent. For each classified inquiry routed to you: search the knowledge base and FAQ for the answer, craft a clear and helpful response adapted to the customer channel (concise for WhatsApp, detailed for email). Confirm resolution with the customer. If unable to resolve with available knowledge (confidence <80%), escalate back to human with full context. Track resolution rate and CSAT.',
+            tools: ['search_company_memory', 'send_whatsapp_message', 'send_email', 'create_human_task', 'log_message'],
+            rag: ['FAQ knowledge base', 'Product documentation', 'Troubleshooting guides'],
+          },
+        ]}
       />
       <AgentCard
         process="SLA"
