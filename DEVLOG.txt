@@ -7,6 +7,40 @@
 
 
 ================================================================================
+COMMIT #75 — Wire Phase 1 Engine Stubs
+================================================================================
+DATE: 2026-03-02
+HASH: 93567e2
+PHASE: Integration Roadmap — Phase 1 (Wire the Engine)
+
+SUMMARY:
+  All 6 Phase 1 P0 blockers resolved. Every worker stub now has a real
+  implementation: agent-execution delegates to processAgentExecution(),
+  agent-scheduled generates sessionId and enqueues, notification worker
+  emits Socket.IO events, embedding worker loads chunks + calls OpenAI
+  text-embedding-3-small + stores pgvector. Socket.IO trigger:agent handler
+  enqueues BullMQ jobs. Agent execution job emits real-time events for
+  session_started, session_complete, status_changed, and error.
+
+FILES CHANGED (9):
+  apps/worker/src/workers/agent-execution.worker.ts   — call processAgentExecution()
+  apps/worker/src/workers/agent-scheduled.worker.ts   — generate UUID, enqueue job
+  apps/worker/src/workers/notification.worker.ts      — emit Socket.IO per type
+  apps/worker/src/workers/embedding-generation.worker.ts — full embed pipeline
+  apps/worker/src/socket/server.ts                    — wire trigger:agent → BullMQ
+  apps/worker/src/jobs/agent-execution.ts             — emit realtime events
+  packages/ai/src/memory/ingest.ts                    — export generateEmbeddings
+  packages/ai/src/index.ts                            — re-export generateEmbeddings
+  packages/db/src/index.ts                            — add isNull operator
+
+WHAT THIS UNBLOCKS:
+  - Agents can actually run when triggered via UI or scheduled cron
+  - Real-time dashboard updates (agent working/idle/error indicators)
+  - Document embedding generation (RAG pipeline end-to-end)
+  - Approval notifications reach the frontend via Socket.IO
+
+
+================================================================================
 COMMIT #71 — Refactor: Unify Docs/Blueprint Shared Components
 ================================================================================
 DATE: 2026-03-02
