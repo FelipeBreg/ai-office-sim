@@ -1,4 +1,10 @@
 import type { MarketFocus } from '../types/index.js';
+import {
+  PROCESS_AGENT_TEMPLATES,
+  getAgentTemplatesByDepartment,
+  getAgentTemplateBySlug,
+} from './process-agent-templates.js';
+import type { ProcessAgentTemplate } from './process-agent-templates.js';
 
 /** Agent spec for template provisioning */
 export interface CompanyTemplateAgent {
@@ -6,6 +12,9 @@ export interface CompanyTemplateAgent {
   nameEn: string;
   namePtBr: string;
   tools: string[];
+  systemPromptEn?: string;
+  systemPromptPtBr?: string;
+  ragDocuments?: string[];
 }
 
 /** Workflow spec for template provisioning */
@@ -28,6 +37,22 @@ export interface CompanyTemplateDefinition {
   sortOrder: number;
   defaultAgents: CompanyTemplateAgent[];
   defaultWorkflows: CompanyTemplateWorkflow[];
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Helper: map process agent templates to company template agents             */
+/* -------------------------------------------------------------------------- */
+
+function toCompanyAgent(t: ProcessAgentTemplate): CompanyTemplateAgent {
+  return {
+    archetype: t.archetype,
+    nameEn: t.nameEn,
+    namePtBr: t.namePtBr,
+    tools: t.tools,
+    systemPromptEn: t.systemPromptEn,
+    systemPromptPtBr: t.systemPromptPtBr,
+    ragDocuments: t.ragDocuments,
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -186,11 +211,205 @@ const BLANK_CANVAS: CompanyTemplateDefinition = {
 };
 
 /* -------------------------------------------------------------------------- */
+/*  Department templates (BR) — agents from PROCESS_AGENT_TEMPLATES           */
+/* -------------------------------------------------------------------------- */
+
+interface DeptConfig {
+  slug: string;
+  nameEn: string;
+  namePtBr: string;
+  descriptionEn: string;
+  descriptionPtBr: string;
+  agentSlugs: string[];
+  sector: string;
+  icon: string;
+  sortOrder: number;
+}
+
+function buildDeptTemplate(cfg: DeptConfig): CompanyTemplateDefinition {
+  const agents = cfg.agentSlugs
+    .map(s => getAgentTemplateBySlug(s))
+    .filter((t): t is ProcessAgentTemplate => t !== undefined)
+    .map(toCompanyAgent);
+  return {
+    slug: cfg.slug,
+    nameEn: cfg.nameEn,
+    namePtBr: cfg.namePtBr,
+    descriptionEn: cfg.descriptionEn,
+    descriptionPtBr: cfg.descriptionPtBr,
+    sector: cfg.sector,
+    marketFocus: 'br',
+    icon: cfg.icon,
+    sortOrder: cfg.sortOrder,
+    defaultAgents: agents,
+    defaultWorkflows: [],
+  };
+}
+
+const EMPRESA_COMPLETA_BR: CompanyTemplateDefinition = {
+  slug: 'empresa-completa-br',
+  nameEn: 'Complete Company (BR)',
+  namePtBr: 'Empresa Completa',
+  descriptionEn: 'Full Brazilian company with all 55 agents across 12 departments — legal, tax, accounting, HR, sales, marketing, operations, support, IT, compliance, treasury, and planning.',
+  descriptionPtBr: 'Empresa brasileira completa com todos os 55 agentes em 12 departamentos — jurídico, tributário, contabilidade, RH, vendas, marketing, operações, atendimento, TI, compliance, tesouraria e planejamento.',
+  sector: 'general',
+  marketFocus: 'br',
+  icon: 'building',
+  sortOrder: 20,
+  defaultAgents: PROCESS_AGENT_TEMPLATES.map(toCompanyAgent),
+  defaultWorkflows: [],
+};
+
+const DEPT_JURIDICO = buildDeptTemplate({
+  slug: 'dept-juridico',
+  nameEn: 'Legal Department',
+  namePtBr: 'Departamento Jurídico',
+  descriptionEn: 'Legal department with contract drafting, trademark monitoring, compliance, and corporate formation agents.',
+  descriptionPtBr: 'Departamento jurídico com agentes de contratos, marcas, compliance e constituição empresarial.',
+  agentSlugs: ['agente-juridico', 'agente-compliance', 'agente-financeiro', 'workflow-orchestrator', 'dashboard-reporter'],
+  sector: 'legal',
+  icon: 'scale',
+  sortOrder: 21,
+});
+
+const DEPT_TRIBUTARIO = buildDeptTemplate({
+  slug: 'dept-tributario',
+  nameEn: 'Tax Department',
+  namePtBr: 'Departamento Tributário',
+  descriptionEn: 'Tax department with Simples Nacional, Lucro Presumido/Real computation, NF-e issuance, and SPED filing agents.',
+  descriptionPtBr: 'Departamento tributário com agentes de apuração Simples/Presumido/Real, emissão de NF-e e SPED.',
+  agentSlugs: ['agente-contador', 'agente-fiscal', 'agente-faturamento', 'calendario-fiscal', 'agente-contabil'],
+  sector: 'finance',
+  icon: 'receipt',
+  sortOrder: 22,
+});
+
+const DEPT_CONTABILIDADE = buildDeptTemplate({
+  slug: 'dept-contabilidade',
+  nameEn: 'Accounting Department',
+  namePtBr: 'Departamento de Contabilidade',
+  descriptionEn: 'Accounting department with DRE, balance sheet, cash flow, accounts receivable/payable, and budget management agents.',
+  descriptionPtBr: 'Departamento contábil com agentes de DRE, balanço, fluxo de caixa, contas a receber/pagar e orçamento.',
+  agentSlugs: ['agente-financeiro', 'agente-tesoureiro', 'agente-cobranca', 'agente-verificador', 'agente-controller', 'agente-contador', 'agente-faturamento'],
+  sector: 'finance',
+  icon: 'calculator',
+  sortOrder: 23,
+});
+
+const DEPT_RH = buildDeptTemplate({
+  slug: 'dept-rh',
+  nameEn: 'HR Department',
+  namePtBr: 'Departamento de RH',
+  descriptionEn: 'HR department with CLT hiring, onboarding, payroll, benefits, eSocial, and workplace safety agents.',
+  descriptionPtBr: 'Departamento de RH com agentes de admissão CLT, onboarding, folha, benefícios, eSocial e segurança do trabalho.',
+  agentSlugs: ['agente-rh', 'agente-financeiro', 'agente-contabil', 'workflow-orchestrator'],
+  sector: 'hr',
+  icon: 'users',
+  sortOrder: 24,
+});
+
+const DEPT_VENDAS = buildDeptTemplate({
+  slug: 'dept-vendas',
+  nameEn: 'Sales Department',
+  namePtBr: 'Departamento de Vendas',
+  descriptionEn: 'Sales department with CRM pipeline, lead prospecting, proposal generation, contract management, and post-sales agents.',
+  descriptionPtBr: 'Departamento de vendas com agentes de CRM, prospecção, propostas, contratos e pós-venda.',
+  agentSlugs: ['agente-crm', 'agente-enriquecimento', 'agente-qualificacao', 'agente-propostas', 'agente-contratos', 'agente-cadencia', 'agente-copywriter', 'agente-health-score', 'agente-cs'],
+  sector: 'sales',
+  icon: 'trending-up',
+  sortOrder: 25,
+});
+
+const DEPT_MARKETING = buildDeptTemplate({
+  slug: 'dept-marketing',
+  nameEn: 'Marketing Department',
+  namePtBr: 'Departamento de Marketing',
+  descriptionEn: 'Marketing department with branding, social media, content, SEO, paid ads, email marketing, and conversion agents.',
+  descriptionPtBr: 'Departamento de marketing com agentes de branding, redes sociais, conteúdo, SEO, ads, email marketing e conversão.',
+  agentSlugs: ['agente-branding', 'agente-analytics', 'agente-criador-social', 'agente-monitor-social', 'agente-redator', 'agente-distribuidor', 'agente-ads', 'agente-seo', 'agente-copywriter-email', 'agente-automacao-email', 'agente-cro'],
+  sector: 'marketing',
+  icon: 'megaphone',
+  sortOrder: 26,
+});
+
+const DEPT_OPERACOES = buildDeptTemplate({
+  slug: 'dept-operacoes',
+  nameEn: 'Operations Department',
+  namePtBr: 'Departamento de Operações',
+  descriptionEn: 'Operations department with procurement, inventory, logistics, quality management, SOPs, and KPI agents.',
+  descriptionPtBr: 'Departamento de operações com agentes de compras, estoque, logística, qualidade, SOPs e KPIs.',
+  agentSlugs: ['agente-compras', 'agente-estoque', 'agente-logistica', 'agente-qualidade', 'agente-processos', 'agente-bi'],
+  sector: 'operations',
+  icon: 'cog',
+  sortOrder: 27,
+});
+
+const DEPT_ATENDIMENTO = buildDeptTemplate({
+  slug: 'dept-atendimento',
+  nameEn: 'Customer Service Department',
+  namePtBr: 'Departamento de Atendimento',
+  descriptionEn: 'Customer service department with triage, resolution, SLA monitoring, ticket management, and NPS/CSAT agents.',
+  descriptionPtBr: 'Departamento de atendimento com agentes de triagem, resolução, SLA, tickets e NPS/CSAT.',
+  agentSlugs: ['agente-classificador', 'agente-resolvedor', 'motor-de-sla', 'agente-suporte', 'agente-cx'],
+  sector: 'support',
+  icon: 'headphones',
+  sortOrder: 28,
+});
+
+const DEPT_TI = buildDeptTemplate({
+  slug: 'dept-ti',
+  nameEn: 'IT Department',
+  namePtBr: 'Departamento de TI',
+  descriptionEn: 'IT department with infrastructure monitoring, security, LGPD compliance, dev lifecycle, and DevOps agents.',
+  descriptionPtBr: 'Departamento de TI com agentes de infraestrutura, segurança, LGPD, dev lifecycle e DevOps.',
+  agentSlugs: ['agente-infraestrutura', 'agente-seguranca', 'agente-compliance-lgpd', 'agente-dev', 'agente-devops'],
+  sector: 'technology',
+  icon: 'monitor',
+  sortOrder: 29,
+});
+
+const DEPT_COMPLIANCE = buildDeptTemplate({
+  slug: 'dept-compliance',
+  nameEn: 'Compliance Department',
+  namePtBr: 'Departamento de Compliance',
+  descriptionEn: 'Compliance department with regulatory monitoring, internal audit, risk management, internal controls, and anti-corruption agents.',
+  descriptionPtBr: 'Departamento de compliance com agentes de regulatório, auditoria, riscos, controles internos e anticorrupção.',
+  agentSlugs: ['agente-compliance', 'agente-auditoria', 'agente-riscos', 'agente-controles', 'dashboard-reporter', 'workflow-orchestrator'],
+  sector: 'compliance',
+  icon: 'shield-check',
+  sortOrder: 30,
+});
+
+const DEPT_TESOURARIA = buildDeptTemplate({
+  slug: 'dept-tesouraria',
+  nameEn: 'Treasury Department',
+  namePtBr: 'Departamento de Tesouraria',
+  descriptionEn: 'Treasury department with cash management, PIX/boleto collections, credit analysis, investments, and dunning agents.',
+  descriptionPtBr: 'Departamento de tesouraria com agentes de gestão de caixa, cobrança PIX/boleto, crédito, investimentos e cobrança.',
+  agentSlugs: ['agente-tesoureiro', 'agente-cobranca', 'agente-financeiro', 'agente-verificador', 'workflow-orchestrator'],
+  sector: 'finance',
+  icon: 'landmark',
+  sortOrder: 31,
+});
+
+const DEPT_PLANEJAMENTO = buildDeptTemplate({
+  slug: 'dept-planejamento',
+  nameEn: 'Planning Department',
+  namePtBr: 'Departamento de Planejamento',
+  descriptionEn: 'Strategic planning department with OKR management, Balanced Scorecard, SWOT analysis, annual planning, and board meeting prep agents.',
+  descriptionPtBr: 'Departamento de planejamento com agentes de OKR, BSC, SWOT, planejamento anual e reuniões de diretoria.',
+  agentSlugs: ['agente-planejamento', 'agente-controller', 'dashboard-reporter', 'workflow-orchestrator'],
+  sector: 'strategy',
+  icon: 'target',
+  sortOrder: 32,
+});
+
+/* -------------------------------------------------------------------------- */
 /*  Exports                                                                   */
 /* -------------------------------------------------------------------------- */
 
 export const COMPANY_TEMPLATES: CompanyTemplateDefinition[] = [
-  // BR
+  // BR — industry
   AGENCIA_MARKETING_BR,
   ECOMMERCE_BR,
   ESCRITORIO_ADVOCACIA,
@@ -198,6 +417,20 @@ export const COMPANY_TEMPLATES: CompanyTemplateDefinition[] = [
   MARKETING_AGENCY_GLOBAL,
   SOFTWARE_STARTUP,
   ECOMMERCE_GLOBAL,
+  // BR — departments
+  EMPRESA_COMPLETA_BR,
+  DEPT_JURIDICO,
+  DEPT_TRIBUTARIO,
+  DEPT_CONTABILIDADE,
+  DEPT_RH,
+  DEPT_VENDAS,
+  DEPT_MARKETING,
+  DEPT_OPERACOES,
+  DEPT_ATENDIMENTO,
+  DEPT_TI,
+  DEPT_COMPLIANCE,
+  DEPT_TESOURARIA,
+  DEPT_PLANEJAMENTO,
   // Universal
   BLANK_CANVAS,
 ];

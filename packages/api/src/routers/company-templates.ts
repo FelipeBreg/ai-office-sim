@@ -65,6 +65,8 @@ export const companyTemplatesRouter = createTRPCRouter({
         slug: slugify(spec.nameEn),
         archetype: spec.archetype as typeof agents.$inferInsert['archetype'],
         tools: spec.tools,
+        systemPromptEn: spec.systemPromptEn ?? null,
+        systemPromptPtBr: spec.systemPromptPtBr ?? null,
         status: 'idle' as const,
         isActive: true,
       }));
