@@ -7,6 +7,37 @@
 
 
 ================================================================================
+COMMIT #84 — Split 9 Overloaded Agents into Multi-Agent Pipelines
+================================================================================
+DATE: 2026-03-02
+HASH: 48f48fe
+
+SUMMARY:
+Analyzed all 76 processes for agent overload (too many tools, mixed cognitive
+modes, dual time horizons). Split 9 single-agent processes into focused
+multi-agent pipelines. Each agent now has one cognitive mode: analytical,
+creative, or procedural.
+
+SPLITS:
+1. Contas a Receber → Agente Faturamento + Agente Cobranca + Agente Financeiro
+2. Contas a Pagar → Agente Verificador + Workflow Aprovacao + Agente Financeiro
+3. Prospeccao → Agente Enriquecimento + Agente Qualificacao
+4. Follow-up → Agente Cadencia + Agente Copywriter
+5. Pos-venda → Agente Health Score + Agente CS
+6. Canais de atendimento → Agente Classificador + Agente Resolvedor
+7. Email Marketing → Agente Copywriter Email + Agente Automacao Email
+8. Conteudo → Agente Redator + Agente Distribuidor
+9. Redes Sociais → Agente Criador Social + Agente Monitor Social
+
+FILES CHANGED:
+~ apps/web/.../docs/_lib/content/agent-capabilities.tsx (+204 -46 lines)
+  - 9 AgentCards converted from single-agent to pipeline format
+  - Overview stats updated: 43 → 55 unique agent roles
+
+TYPECHECK: web pass
+
+
+================================================================================
 COMMIT #83 — Docs: Agents & Capabilities (76 Process-to-Agent Mappings)
 ================================================================================
 DATE: 2026-03-02
