@@ -31,17 +31,10 @@ export { StatusBadge, SectionHeading, FeatureList, LimitationList, QuickStart };
 /*  TOC structure                                                      */
 /* ------------------------------------------------------------------ */
 
-export interface DocSubtopic {
-  id: string;
-  label: string;
-}
+import type { ReferenceTopic, ReferenceSubtopic } from '../../_components/reference-types';
 
-export interface DocTopic {
-  slug: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  subtopics?: DocSubtopic[];
-}
+export type DocSubtopic = ReferenceSubtopic;
+export type DocTopic = ReferenceTopic;
 
 export const topics: DocTopic[] = [
   { slug: 'overview', label: 'Overview', icon: Globe },

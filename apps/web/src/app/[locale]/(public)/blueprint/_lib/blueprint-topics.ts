@@ -14,17 +14,10 @@ import {
   Target,
 } from 'lucide-react';
 
-export interface BlueprintSubtopic {
-  id: string;
-  label: string;
-}
+import type { ReferenceTopic, ReferenceSubtopic } from '../../_components/reference-types';
 
-export interface BlueprintTopic {
-  slug: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  subtopics?: BlueprintSubtopic[];
-}
+export type BlueprintSubtopic = ReferenceSubtopic;
+export type BlueprintTopic = ReferenceTopic;
 
 export const blueprintTopics: BlueprintTopic[] = [
   { slug: 'visao-geral', label: 'Visão Geral', icon: Globe },
