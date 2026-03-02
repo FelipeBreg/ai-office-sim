@@ -7,6 +7,57 @@
 
 
 ================================================================================
+COMMIT #82 — Phase 6 External Integrations + Wire Remaining Stubs
+================================================================================
+DATE: 2026-03-02
+HASH: f483508
+
+SUMMARY:
+  Complete Phase 6 external integrations and wire all remaining worker stubs.
+  3 new API tools (Google Calendar, Meta Marketing, Google Ads), full Meta OAuth2
+  flow, and real implementations for tool-execution + analytics workers.
+
+CHANGES:
+  Workers wired:
+  - tool-execution.worker.ts: stub → real (toolRegistry.get + execute + update actionLog)
+  - analytics.worker.ts: daily_aggregation (SQL aggregates for actions/tokens/cost/duration)
+  - analytics.worker.ts: cost_report (30-day breakdown by agent with JOIN)
+
+  Email clients:
+  - SendGrid: fetch-based POST to api.sendgrid.com + verify via /v3/user/email
+  - AWS SES: Nodemailer with SES SMTP endpoint email-smtp.<region>.amazonaws.com
+
+  New tools (29 total):
+  - sync_google_calendar: list/create/delete via Calendar API v3
+  - meta_marketing: list accounts, campaigns, insights, pause/resume via Graph API v21.0
+  - google_ads: campaign metrics + status via Ads API v18 searchStream
+
+  OAuth2:
+  - Meta provider: auth URL, token exchange (GET), long-lived token refresh (fb_exchange_token)
+  - Google Calendar scopes: calendar + calendar.events
+  - Google Ads scope: adwords
+  - Meta scopes: ads_management, ads_read, business_management, pages_read_engagement
+  - oauth2-helper: meta branch in getOAuth2Config (META_APP_ID, META_APP_SECRET)
+
+  DB migration:
+  - ALTER TYPE tool_type ADD VALUE: google_calendar, google_ads, meta_marketing
+
+FILES CHANGED (10):
+  M  apps/worker/src/workers/analytics.worker.ts
+  M  apps/worker/src/workers/tool-execution.worker.ts
+  M  packages/ai/src/tools/email/client.ts
+  M  packages/ai/src/tools/oauth2-helper.ts
+  M  packages/ai/src/tools/registry.ts
+  A  packages/ai/src/tools/ads/google-ads.ts
+  A  packages/ai/src/tools/ads/meta-marketing.ts
+  A  packages/ai/src/tools/calendar/google-calendar.ts
+  M  packages/db/src/schema/enums.ts
+  M  packages/shared/src/utils/oauth2.ts
+
+TYPECHECK: 13/13 ✓
+────────────────────────────────────────────────────────────────────────────────
+
+================================================================================
 COMMIT #81 — generate_document Tool + Email Inbound Polling Worker
 ================================================================================
 DATE: 2026-03-02
