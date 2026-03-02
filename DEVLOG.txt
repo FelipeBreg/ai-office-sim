@@ -7,6 +7,45 @@
 
 
 ================================================================================
+COMMIT #76 — Messaging Screen (Phase 2)
+================================================================================
+DATE: 2026-03-02
+HASH: 389b8d3
+PHASE: Integration Roadmap — Phase 2 (Messaging Screen)
+
+SUMMARY:
+  Full multichannel messaging inbox: Chatwoot-style, DOS aesthetic.
+  DB tables for unified conversations + messages across WhatsApp/email/webchat.
+  tRPC router with 7 procedures (list, get, send, assign, updateStatus,
+  markRead, search). Frontend page at /messaging with master/detail split,
+  channel filter tabs, status filters, message thread with direction-based
+  border colors, compose bar with internal note toggle. WhatsApp webhook
+  now creates/updates unified conversations on every inbound message.
+  Socket.IO events added for real-time conversation updates.
+
+NEW FILES (3):
+  packages/db/src/schema/conversations.ts             — conversations + messages tables
+  packages/api/src/routers/messaging.ts               — messaging tRPC router
+  apps/web/src/app/[locale]/(auth)/messaging/page.tsx — messaging inbox page
+
+MODIFIED FILES (8):
+  packages/db/src/schema/enums.ts                     — 6 new conversation enums
+  packages/db/src/schema/index.ts                     — export conversations
+  packages/realtime/src/events.ts                     — 3 conversation events
+  packages/api/src/root.ts                            — register messaging router
+  apps/web/src/components/layout/sidebar.tsx           — Messaging + Calendar nav
+  apps/web/messages/en-US.json                        — i18n keys
+  apps/web/messages/pt-BR.json                        — i18n keys
+  apps/web/src/app/api/webhooks/whatsapp/route.ts     — conversation upsert
+
+WHAT THIS UNBLOCKS:
+  - All WhatsApp conversations visible in unified inbox
+  - Users can reply, add internal notes, assign, resolve conversations
+  - Foundation for email inbound integration (same conversation model)
+  - Agents can participate in conversations via future send_conversation_message tool
+
+
+================================================================================
 COMMIT #75 — Wire Phase 1 Engine Stubs
 ================================================================================
 DATE: 2026-03-02
