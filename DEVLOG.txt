@@ -7,6 +7,33 @@
 
 
 ================================================================================
+COMMIT #78 — Missing Tools + Output Node + Cleanup Worker (Phase 4)
+================================================================================
+DATE: 2026-03-02
+HASH: 688b020
+PHASE: Integration Roadmap — Phase 4 (Missing Tools & Workers)
+
+SUMMARY:
+  Two new agent tools: create_document (saves to knowledge base with auto
+  chunking + embedding via ingestDocument) and send_conversation_message
+  (agents can reply in unified inbox conversations). Workflow output node
+  email type now actually sends email — loads email connection from DB,
+  decrypts credentials, sends via provider. Cleanup worker implements
+  deletion of expired sessions and old action logs.
+
+NEW FILES (2):
+  packages/ai/src/tools/documents/create-document.ts         — create_document tool
+  packages/ai/src/tools/messaging/send-conversation-message.ts — send_conversation_message tool
+
+MODIFIED FILES (3):
+  packages/ai/src/tools/registry.ts                          — register 2 new tools
+  packages/ai/src/engine/workflow/handlers/output.handler.ts  — wire email sending
+  apps/worker/src/workers/cleanup.worker.ts                  — implement 3 cleanup types
+
+TOOL COUNT: 24 (was 22, +create_document, +send_conversation_message)
+
+
+================================================================================
 COMMIT #77 — Calendar Screen (Phase 3)
 ================================================================================
 DATE: 2026-03-02
