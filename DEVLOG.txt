@@ -4204,6 +4204,24 @@ VERIFICATION:
 COMMIT #54 — Wire Agent Trigger to BullMQ Execution Queue
 ================================================================================
 DATE: 2026-03-02
+HASH: 6b321c2
+PHASE: Post-Phase 3 — Blueprint Coverage Matrix Enhancement
+
+WHAT CHANGED:
+  - Added complexity dimension (tarefa / workflow / integração) to all 76 processes
+  - Added frequency dimension (diário → anual / por-demanda) to all 76 processes
+  - New summary card rows for complexity breakdown and frequency distribution
+  - Legend updated with complexity descriptions
+  - Tables now have 6 columns: Processo, Status, Complexidade, Frequência, Recurso, Observação
+
+FILES: 1 changed, +194 -98
+  - MODIFIED: apps/web/src/app/[locale]/(public)/blueprint/_lib/content/cobertura.tsx
+
+VERIFICATION:
+  - turbo typecheck --force: 0 errors
+
+================================================================================
+DATE: 2026-03-02
 HASH: fe0f615
 PHASE: Post-Phase 3 — Blueprint Coverage Matrix
 
