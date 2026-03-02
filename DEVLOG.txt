@@ -7,6 +7,42 @@
 
 
 ================================================================================
+COMMIT #70 — Blueprint Empresarial Public Reference Page
+================================================================================
+DATE: 2026-03-02
+HASH: 6e89874
+PHASE: Post-Phase 3 — Usability / Content
+
+SUMMARY:
+  New public /blueprint route with 13 topics covering all Brazilian business
+  processes — structured by department with steps, roles, periodicity, tools,
+  and legal requirements. Lives outside the authenticated app as a reference
+  page, mirroring the /docs architecture.
+
+WHAT CHANGED:
+  - Extracted shared components (SectionHeading, FeatureList, LimitationList,
+    QuickStart, StatusBadge) from docs-data.tsx → reference-components.tsx
+  - Created blueprint scaffolding: topics definition, sidebar, layout, routes
+  - New components: ProcessCard (periodicity/tools/legal metadata card),
+    SimMapping (cyan left-border callout for AI Office Sim mapping)
+  - 13 content files: visão geral, jurídico, fiscal, contabilidade, RH,
+    comercial, marketing, operações, atendimento, TI, compliance, tesouraria,
+    planejamento estratégico
+  - Updated middleware.ts to add /blueprint as public route
+  - Added "Blueprint" nav link to landing page
+
+FILES (25 changed, +3249 -104):
+  New: (public)/_components/reference-components.tsx
+  New: blueprint/ (layout, page, [topic]/page, sidebar, process-card, sim-mapping)
+  New: blueprint/_lib/ (blueprint-topics.ts, blueprint-content.tsx, 13 content files)
+  Mod: docs/_lib/docs-data.tsx (import shared components from new location)
+  Mod: middleware.ts (+2 public routes for /blueprint)
+  Mod: [locale]/page.tsx (+Blueprint nav link)
+
+TYPECHECK: turbo typecheck --force → 13/13 tasks pass, 0 errors
+
+
+================================================================================
 COMMIT #69 — Fix Dashboard/Deals/Finance 500 Errors (Date Serialization Bug)
 ================================================================================
 DATE: 2026-03-01
