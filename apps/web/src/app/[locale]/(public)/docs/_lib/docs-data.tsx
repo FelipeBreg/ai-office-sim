@@ -18,6 +18,7 @@ import {
   Settings,
   HelpCircle,
   Compass,
+  Users,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -26,6 +27,8 @@ import {
 
 import { StatusBadge, SectionHeading, FeatureList, LimitationList, QuickStart } from '../../_components/reference-components';
 export { StatusBadge, SectionHeading, FeatureList, LimitationList, QuickStart };
+
+import { agentCapabilitiesContent } from './content/agent-capabilities';
 
 /* ------------------------------------------------------------------ */
 /*  TOC structure                                                      */
@@ -247,6 +250,26 @@ export const topics: DocTopic[] = [
       { id: 'backend', label: 'Backend' },
       { id: 'ai-stack', label: 'AI' },
       { id: 'infrastructure', label: 'Infrastructure' },
+    ],
+  },
+  {
+    slug: 'agent-capabilities',
+    label: 'Agents & Capabilities',
+    icon: Users,
+    subtopics: [
+      { id: 'overview', label: 'Overview' },
+      { id: 'juridico', label: 'Juridico' },
+      { id: 'tributario', label: 'Tributario' },
+      { id: 'contabilidade', label: 'Contabilidade' },
+      { id: 'rh', label: 'RH' },
+      { id: 'vendas', label: 'Vendas' },
+      { id: 'marketing', label: 'Marketing' },
+      { id: 'operacoes', label: 'Operacoes' },
+      { id: 'atendimento', label: 'Atendimento' },
+      { id: 'ti', label: 'TI' },
+      { id: 'compliance', label: 'Compliance' },
+      { id: 'tesouraria', label: 'Tesouraria' },
+      { id: 'planejamento', label: 'Planejamento' },
     ],
   },
 ];
@@ -1896,4 +1919,7 @@ export const topicContent: Record<string, React.ReactNode> = {
       </div>
     </section>
   ),
+
+  /* ---- Agents & Capabilities --------------------------------------- */
+  'agent-capabilities': agentCapabilitiesContent,
 };
