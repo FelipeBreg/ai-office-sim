@@ -7,6 +7,32 @@
 
 
 ================================================================================
+COMMIT #85 — Human Approval Indicators on All 76 Process Cards
+================================================================================
+DATE: 2026-03-02
+HASH: 8e06ca3
+
+SUMMARY:
+Added human approval indicators to every agent process card. Each card now
+shows either "HUMAN APPROVAL" (red) or "AUTO-EXECUTE" (green) with a specific
+reason explaining what requires sign-off or why it's safe to auto-execute.
+
+BREAKDOWN:
+- 39 processes require human approval (external-facing: sending messages,
+  payments, publishing, tax filings, contract signing, deploying)
+- 37 processes auto-execute (internal: analysis, monitoring, reporting,
+  alerting, documentation)
+
+FILES CHANGED:
+~ apps/web/.../docs/_lib/content/agent-capabilities.tsx
+  - Added ApprovalBadge component with required/auto variants
+  - Added approval + approvalNote props to AgentCard interface
+  - All 76 cards updated with appropriate approval status and reason
+
+TYPECHECK: web pass
+
+
+================================================================================
 COMMIT #84 — Split 9 Overloaded Agents into Multi-Agent Pipelines
 ================================================================================
 DATE: 2026-03-02
