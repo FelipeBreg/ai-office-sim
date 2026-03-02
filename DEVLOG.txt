@@ -7,6 +7,41 @@
 
 
 ================================================================================
+COMMIT #71 — Refactor: Unify Docs/Blueprint Shared Components
+================================================================================
+DATE: 2026-03-02
+HASH: 64c867c
+PHASE: Post-Phase 3 — Code Review Cleanup
+
+SUMMARY:
+  Code review identified ~320 lines of duplication between /docs and /blueprint.
+  Extracted shared ReferenceSidebar, ReferenceLayout, and ReferenceTopic types
+  into (public)/_components/. SimMapping now composes FeatureList internally.
+
+WHAT CHANGED:
+  - New: reference-sidebar.tsx — parameterized sidebar (basePath, defaultSlug, title)
+  - New: reference-layout.tsx — shared layout shell (headerIcon, headerTitle, CTA props)
+  - New: reference-types.ts — shared ReferenceTopic/ReferenceSubtopic interfaces
+  - Mod: docs-sidebar.tsx → 12-line wrapper around ReferenceSidebar
+  - Mod: blueprint-sidebar.tsx → 12-line wrapper around ReferenceSidebar
+  - Mod: docs/layout.tsx → 24-line wrapper around ReferenceLayout
+  - Mod: blueprint/layout.tsx → 24-line wrapper around ReferenceLayout
+  - Mod: docs-data.tsx → type aliases to shared types
+  - Mod: blueprint-topics.ts → type aliases to shared types
+  - Mod: sim-mapping.tsx → composes FeatureList instead of duplicating its markup
+
+FILES (10 changed, +280 -368 = net -88 lines):
+  New: (public)/_components/reference-layout.tsx
+  New: (public)/_components/reference-sidebar.tsx
+  New: (public)/_components/reference-types.ts
+  Mod: blueprint/_components/blueprint-sidebar.tsx, sim-mapping.tsx
+  Mod: blueprint/_lib/blueprint-topics.ts, blueprint/layout.tsx
+  Mod: docs/_components/docs-sidebar.tsx, docs/_lib/docs-data.tsx, docs/layout.tsx
+
+TYPECHECK: turbo typecheck --force → 13/13 tasks pass, 0 errors
+
+
+================================================================================
 COMMIT #70 — Blueprint Empresarial Public Reference Page
 ================================================================================
 DATE: 2026-03-02
