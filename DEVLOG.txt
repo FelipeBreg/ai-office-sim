@@ -7,6 +7,34 @@
 
 
 ================================================================================
+COMMIT #83 — Docs: Agents & Capabilities (76 Process-to-Agent Mappings)
+================================================================================
+DATE: 2026-03-02
+HASH: 3ff9fdf
+
+SUMMARY:
+New docs section "Agents & Capabilities" mapping all 76 business processes from
+the blueprint/cobertura page to detailed agent configurations. Each of the 12
+departments has its processes listed with: agent name, system prompt, tools from
+the 29-tool registry, and RAG knowledge base documents. Multi-agent workflow
+processes show a pipeline view with per-step configurations.
+
+FILES CHANGED:
++ apps/web/src/app/[locale]/(public)/docs/_lib/content/agent-capabilities.tsx (NEW — 1202 lines)
+  - Overview section with stats (43 agent roles, 29 tools, 12 departments)
+  - 12 department subsections with SectionHeading components
+  - 76 AgentCard components (single-agent and pipeline variants)
+  - Helper components: ToolBadge, RagBadge, PromptBlock, StatusBadgeInline, AgentCard
+~ apps/web/src/app/[locale]/(public)/docs/_lib/docs-data.tsx (+26 lines)
+  - Added Users icon import from lucide-react
+  - Imported agentCapabilitiesContent from new content file
+  - Added topic entry with 13 subtopics (overview + 12 departments)
+  - Registered in topicContent map
+
+TYPECHECK: 13/13 pass
+
+
+================================================================================
 COMMIT #82 — Phase 6 External Integrations + Wire Remaining Stubs
 ================================================================================
 DATE: 2026-03-02
