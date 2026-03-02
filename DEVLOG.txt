@@ -7,6 +7,48 @@
 
 
 ================================================================================
+COMMIT #69 — Fix Dashboard/Deals/Finance 500 Errors (Date Serialization Bug)
+================================================================================
+DATE: 2026-03-01
+HASH: 32d54c4
+PHASE: Post-Phase 3 — Bug Fix
+
+ROOT CAUSE:
+  The postgres driver (v3.4.8) cannot serialize JS Date objects passed
+  directly in drizzle's sql`` template literals. The pattern:
+    sql`${column.createdAt} < ${since}`
+  crashed with: "The 'string' argument must be of type string or Buffer.
+  Received an instance of Date"
+
+  Drizzle's built-in operators (gte, lt, etc.) handle Date serialization
+  correctly, but raw sql`` templates pass values straight to the driver.
+
+  This broke 3 endpoints on the Dashboard page:
+    - dashboard.general (General tab) — 500
+    - deals.kpis (Commercial tab KPIs) — 500
+    - financialRecords.summary (Finance tab) — 500
+
+FIX:
+  Replaced 5 instances of sql`${col} < ${since}` with lt(col, since):
+    - dashboard.ts: 3 instances (prevAiCost, prevDealKpis, prevFinSummary)
+    - deals.ts: 1 instance (previous period deal KPIs)
+    - financial-records.ts: 1 instance (previous period summary)
+
+FILES: 3 changed, +8 -7
+  - MODIFIED: packages/api/src/routers/dashboard.ts
+  - MODIFIED: packages/api/src/routers/deals.ts
+  - MODIFIED: packages/api/src/routers/financial-records.ts
+
+REVIEW: 0 issues in changed code. 2 LOW findings in packages/ai/ (safe
+  but inconsistent — use .toISOString() + ::timestamptz cast, not lt/gte).
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors
+  - All 9 dashboard.general queries tested OK against Neon
+
+================================================================================
+
+================================================================================
 COMMIT #68 — Workflow Engine Overhaul
 ================================================================================
 DATE: 2026-02-28
