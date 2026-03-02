@@ -78,6 +78,31 @@ export interface LearningNewEvent {
   insight: string;
 }
 
+// ── Conversation Events ──
+
+export interface ConversationNewMessageEvent {
+  conversationId: string;
+  messageId: string;
+  direction: 'inbound' | 'outbound' | 'internal_note';
+  senderType: 'agent' | 'user' | 'contact' | 'system';
+  content: string;
+  contentType: 'text' | 'html' | 'image' | 'file' | 'template';
+  timestamp: string;
+}
+
+export interface ConversationStatusChangedEvent {
+  conversationId: string;
+  status: 'open' | 'snoozed' | 'resolved' | 'closed';
+  timestamp: string;
+}
+
+export interface ConversationAssignedEvent {
+  conversationId: string;
+  assignedAgentId?: string;
+  assignedUserId?: string;
+  timestamp: string;
+}
+
 // ── Server → Client Event Map ──
 
 export interface ServerToClientEvents {
@@ -93,6 +118,9 @@ export interface ServerToClientEvents {
   'workflow:complete': (data: WorkflowCompleteEvent) => void;
   'kpi:updated': (data: KpiUpdatedEvent) => void;
   'learning:new': (data: LearningNewEvent) => void;
+  'conversation:new_message': (data: ConversationNewMessageEvent) => void;
+  'conversation:status_changed': (data: ConversationStatusChangedEvent) => void;
+  'conversation:assigned': (data: ConversationAssignedEvent) => void;
 }
 
 // ── Client → Server Events ──
@@ -117,6 +145,9 @@ export const SERVER_EVENTS = {
   WORKFLOW_COMPLETE: 'workflow:complete',
   KPI_UPDATED: 'kpi:updated',
   LEARNING_NEW: 'learning:new',
+  CONVERSATION_NEW_MESSAGE: 'conversation:new_message',
+  CONVERSATION_STATUS_CHANGED: 'conversation:status_changed',
+  CONVERSATION_ASSIGNED: 'conversation:assigned',
 } as const;
 
 export const CLIENT_EVENTS = {

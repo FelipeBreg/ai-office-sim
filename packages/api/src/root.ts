@@ -24,6 +24,7 @@ import { pipelineStagesRouter } from './routers/pipeline-stages.js';
 import { marketingCampaignsRouter } from './routers/marketing-campaigns.js';
 import { brandTouchpointsRouter } from './routers/brand-touchpoints.js';
 import { financialRecordsRouter } from './routers/financial-records.js';
+import { messagingRouter } from './routers/messaging.js';
 
 export const appRouter = createTRPCRouter({
   agents: agentsRouter,
@@ -51,6 +52,7 @@ export const appRouter = createTRPCRouter({
   marketingCampaigns: marketingCampaignsRouter,
   brandTouchpoints: brandTouchpointsRouter,
   financialRecords: financialRecordsRouter,
+  messaging: messagingRouter,
 });
 
 export type AppRouter = typeof appRouter;

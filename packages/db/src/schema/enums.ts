@@ -232,6 +232,43 @@ export const dealStageEnum = pgEnum('deal_stage', [
   'closed_lost',
 ]);
 
+// Conversations (Messaging Inbox)
+export const conversationChannelEnum = pgEnum('conversation_channel', [
+  'whatsapp',
+  'email',
+  'webchat',
+]);
+export const conversationStatusEnum = pgEnum('conversation_status', [
+  'open',
+  'snoozed',
+  'resolved',
+  'closed',
+]);
+export const conversationPriorityEnum = pgEnum('conversation_priority', [
+  'low',
+  'medium',
+  'high',
+  'urgent',
+]);
+export const conversationMessageDirectionEnum = pgEnum('conversation_message_direction', [
+  'inbound',
+  'outbound',
+  'internal_note',
+]);
+export const conversationSenderTypeEnum = pgEnum('conversation_sender_type', [
+  'agent',
+  'user',
+  'contact',
+  'system',
+]);
+export const conversationContentTypeEnum = pgEnum('conversation_content_type', [
+  'text',
+  'html',
+  'image',
+  'file',
+  'template',
+]);
+
 // Tool Credentials (OAuth2)
 export const toolTypeEnum = pgEnum('tool_type', [
   'google_gmail',

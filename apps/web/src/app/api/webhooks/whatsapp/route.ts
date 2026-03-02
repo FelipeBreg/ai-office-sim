@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'crypto';
-import { db, whatsappConnections, whatsappMessages, eq } from '@ai-office/db';
+import { db, whatsappConnections, whatsappMessages, conversations, conversationMessages, eq, and } from '@ai-office/db';
 import { getAgentExecutionQueue } from '@ai-office/queue';
 import { randomUUID } from 'crypto';
 
@@ -287,6 +287,75 @@ export async function POST(req: Request): Promise<Response> {
     console.error('[whatsapp-webhook] Failed to store inbound message:', err);
     // Return 200 even on DB failure to prevent infinite retries from provider
     return new Response('OK', { status: 200 });
+  }
+
+  // Find or create unified conversation
+  try {
+    const [existingConv] = await db
+      .select()
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.projectId, connection.projectId),
+          eq(conversations.channel, 'whatsapp'),
+          eq(conversations.contactIdentifier, parsed.contactPhone),
+        ),
+      )
+      .limit(1);
+
+    if (existingConv) {
+      // Update existing conversation
+      await db
+        .update(conversations)
+        .set({
+          lastMessageAt: new Date(),
+          lastMessagePreview: parsed.content.slice(0, 200),
+          unreadCount: existingConv.unreadCount + 1,
+          contactName: parsed.contactName ?? existingConv.contactName,
+          status: existingConv.status === 'resolved' ? 'open' : existingConv.status,
+        })
+        .where(eq(conversations.id, existingConv.id));
+
+      // Insert conversation message
+      await db.insert(conversationMessages).values({
+        conversationId: existingConv.id,
+        direction: 'inbound',
+        senderType: 'contact',
+        content: parsed.content,
+        contentType: 'text',
+        metadata: messageRecord ? { whatsappMessageId: messageRecord.id } : undefined,
+      });
+    } else {
+      // Create new conversation
+      const [newConv] = await db
+        .insert(conversations)
+        .values({
+          projectId: connection.projectId,
+          channel: 'whatsapp',
+          contactIdentifier: parsed.contactPhone,
+          contactName: parsed.contactName,
+          status: 'open',
+          priority: 'medium',
+          handlerAgentId: connection.handlerAgentId,
+          lastMessageAt: new Date(),
+          lastMessagePreview: parsed.content.slice(0, 200),
+          unreadCount: 1,
+        })
+        .returning();
+
+      if (newConv) {
+        await db.insert(conversationMessages).values({
+          conversationId: newConv.id,
+          direction: 'inbound',
+          senderType: 'contact',
+          content: parsed.content,
+          contentType: 'text',
+          metadata: messageRecord ? { whatsappMessageId: messageRecord.id } : undefined,
+        });
+      }
+    }
+  } catch (err) {
+    console.error('[whatsapp-webhook] Failed to upsert conversation:', err);
   }
 
   // Enqueue agent execution if a handler agent is configured

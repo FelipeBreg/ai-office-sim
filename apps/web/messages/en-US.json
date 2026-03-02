@@ -54,6 +54,9 @@
     "groupAiCapabilities": "AI Capabilities",
     "groupSectors": "Sectors",
     "groupMonitoring": "Monitoring",
+    "groupCommunication": "Communication",
+    "messaging": "Messaging",
+    "calendar": "Calendar",
     "finance": "Finance",
     "dashboard": "Dashboard"
   },

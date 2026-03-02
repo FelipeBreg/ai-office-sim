@@ -16,6 +16,8 @@ import {
   BookOpen,
   Settings,
   Wrench,
+  MessageSquare,
+  Calendar,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -58,6 +60,14 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/agents', labelKey: 'agents', icon: Users },
       { href: '/workflows', labelKey: 'workflows', icon: GitBranch },
       { href: '/tools', labelKey: 'tools', icon: Wrench },
+    ],
+  },
+  {
+    key: 'communication',
+    labelKey: 'groupCommunication',
+    items: [
+      { href: '/messaging', labelKey: 'messaging', icon: MessageSquare },
+      { href: '/calendar', labelKey: 'calendar', icon: Calendar },
     ],
   },
   {

@@ -25,3 +25,4 @@ export * from './pipeline-stages.js';
 export * from './marketing-campaigns.js';
 export * from './brand-touchpoints.js';
 export * from './financial-records.js';
+export * from './conversations.js';
