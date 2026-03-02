@@ -4204,6 +4204,24 @@ VERIFICATION:
 COMMIT #54 — Wire Agent Trigger to BullMQ Execution Queue
 ================================================================================
 DATE: 2026-03-02
+HASH: 871b9ea
+PHASE: Post-Phase 3 — Blueprint Coverage Matrix Detail Specs
+
+WHAT CHANGED:
+  - Added `detalhe` field to all 76 coverage matrix processes
+  - Each detail describes: APIs needed, platform differences, data flows,
+    edge cases, legal requirements, integration points, and benchmarks
+  - Detail cards rendered below each department table (cyan left-border style)
+  - File grew from ~400 to ~1100 lines of implementation-level specs
+
+FILES: 1 changed, +703 -80
+  - MODIFIED: apps/web/src/app/[locale]/(public)/blueprint/_lib/content/cobertura.tsx
+
+VERIFICATION:
+  - turbo typecheck --force: 0 errors
+
+================================================================================
+DATE: 2026-03-02
 HASH: 6b321c2
 PHASE: Post-Phase 3 — Blueprint Coverage Matrix Enhancement
 
