@@ -7,6 +7,44 @@
 
 
 ================================================================================
+COMMIT #79 — Seed 15 Agent Archetypes with Real System Prompts (Phase 5)
+================================================================================
+DATE: 2026-03-02
+HASH: c9d6a2e
+PHASE: Integration Roadmap — Phase 5 (Seed Missing Agent Archetypes)
+
+SUMMARY:
+  Added 15 new agent archetypes to the seed data, each with bilingual system
+  prompts (EN + PT-BR), default tools, trigger types, icons, and categories.
+  New archetypes: marketing, social_media, ad_analyst, project_manager, hr,
+  recruiter, legal_research, developer, research, email_campaign_manager,
+  account_manager, mercado_livre, inventory_monitor, deployment_monitor, custom.
+  Combined with the 5 existing archetypes (support, sales, content_writer,
+  finance, data_analyst), the seed now covers all 20 archetypes in the enum.
+
+MODIFIED FILES (1):
+  packages/db/src/seed/archetypes.ts — expanded from 5 to 20 archetypes
+
+ARCHETYPE BREAKDOWN:
+  Marketing (4):    marketing, social_media, ad_analyst, email_campaign_manager
+  Sales (3):        account_manager, mercado_livre (+ existing sales)
+  Operations (5):   project_manager, hr, recruiter, legal_research, inventory_monitor
+  Development (2):  developer, deployment_monitor
+  Research (1):     research
+  General (1):      custom (blank-slate, user-configurable)
+
+TRIGGER TYPES:
+  scheduled (daily):  social_media, ad_analyst, project_manager, account_manager,
+                      mercado_livre, inventory_monitor
+  scheduled (weekly): marketing, email_campaign_manager
+  event:              deployment_monitor
+  manual:             hr, recruiter, legal_research, developer, research, custom
+
+TYPECHECK: 13/13 passed
+
+────────────────────────────────────────────────────────────────────────────────
+
+================================================================================
 COMMIT #78 — Missing Tools + Output Node + Cleanup Worker (Phase 4)
 ================================================================================
 DATE: 2026-03-02
