@@ -7,6 +7,40 @@
 
 
 ================================================================================
+COMMIT #119 — Phase 8: Strategy UX (Roadmap v2)
+Date: 2026-03-03
+Hash: 9614304
+────────────────────────────────────────────────────────────────────────────────
+
+Epic 8.1 — Strategy Goal Timeline:
+  - New schema: strategy_goals (horizon, title, deadline, status) +
+    strategy_goal_kpis junction table
+  - New enums: goal_horizon (1_year, 6_month, 1_month),
+    goal_status (planned, in_progress, on_track, at_risk, completed)
+  - CRUD tRPC endpoints: listGoals, createGoal, updateGoal, deleteGoal,
+    linkGoalKpis, configureKpiTrigger
+  - GoalsSection wired to real data — 3-column layout by horizon,
+    quick-add form, deadline alerts (overdue/7-day warning), delete
+  - KPI trigger config section in strategy detail panel (edit mode)
+
+Epic 8.2.1 — Inbound Message Agent Trigger:
+  - email-inbound.worker.ts: after emitting conversation:new_message,
+    checks for handlerAgentId on conversation
+  - If assigned, enqueues agent via getAgentExecutionQueue() with
+    triggerType: 'agent_message' and full message payload
+
+Epic 8.2.2 — Cascade Trace UI:
+  - New cascades tRPC router: listRecent (aggregated), getCascadeTree
+  - CascadeTraceSection in operations-tab: paginated table with
+    cascadeId, status, event count, depth, cost, duration, trigger
+  - Expandable row → tree view using parentEventId hierarchy
+  - Agent names resolved, color-coded status, error indicators
+  - i18n keys added (en-US + pt-BR)
+
+Files: 12 changed, +880 -104
+Verification: turbo typecheck --force: 0 errors (15/15 tasks)
+
+================================================================================
 COMMIT #118 — Phase 7: Atlas & Intelligence (Roadmap v2)
 Date: 2026-03-03
 Hash: 4682c15
