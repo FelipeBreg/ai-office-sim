@@ -7,6 +7,58 @@
 
 
 ================================================================================
+COMMIT #101 — Orchestrator Engine (Phase 3.1)
+================================================================================
+Hash:     a26d47f
+Date:     2026-03-02
+Scope:    packages/db, packages/queue, packages/api, apps/worker
+
+WHAT CHANGED:
+  • DB SCHEMA: orchestrator_config table (per-project settings) with columns:
+    maxConcurrency, dailyTokenBudget, monthlyTokenBudget, dailySpendLimitUsd,
+    monthlySpendLimitUsd, priorityRules (JSONB array)
+  • SQL MIGRATION: 0004_add_orchestrator_config.sql
+  • QUEUE: orchestrator queue + OrchestratorJob schema (tick/check_budgets/check_stalled)
+  • WORKER: orchestrator.worker.ts — 1-minute repeatable tick that:
+    - Monitors running agents vs concurrency limits
+    - Enforces daily spend budgets (pauses idle agents when exceeded)
+    - Detects stalled agents (working > 15min, no activity) → resets to error
+    - Detects stalled workflow runs (running > 30min) → marks as failed
+  • tRPC ROUTER: orchestrator router with:
+    - getConfig: auto-creates default config on first access
+    - updateConfig: admin-only upsert of orchestrator settings
+    - getFleetStatus: live counts (agents by status, running workflows,
+      pending approvals, today/month cost + tokens)
+    - getCostReport: per-agent cost breakdown + daily totals for last N days
+    - pauseTeam / resumeTeam: batch agent status updates by team
+  • ATLAS TOOLS: 7 new tools for fleet management via ATLAS:
+    - get_fleet_status (auto): agent counts, workflows, approvals, cost
+    - get_cost_report (auto): per-agent cost breakdown
+    - get_orchestrator_config (auto): current limits and settings
+    - update_orchestrator_config (approval): change budget/concurrency
+    - pause_agents_by_team (approval): pause all agents on a team
+    - resume_agents_by_team (approval): resume offline agents on a team
+    - set_agent_priority (approval): set priority in agent config JSONB
+
+FILES:
+  + packages/db/src/schema/orchestrator-config.ts (NEW)
+  + packages/db/src/migrations/0004_add_orchestrator_config.sql (NEW)
+  + apps/worker/src/workers/orchestrator.worker.ts (NEW)
+  + packages/api/src/routers/orchestrator.ts (NEW)
+  ~ packages/db/src/schema/index.ts (export orchestrator-config)
+  ~ packages/queue/src/jobs.ts (OrchestratorJob schema)
+  ~ packages/queue/src/queues.ts (ORCHESTRATOR queue + getter)
+  ~ packages/queue/src/index.ts (export orchestrator queue/schema)
+  ~ packages/api/src/lib/atlas-tools.ts (+7 orchestrator tools)
+  ~ packages/api/src/root.ts (register orchestrator router)
+  ~ apps/worker/src/workers/index.ts (export orchestrator worker)
+  ~ apps/worker/src/index.ts (create worker + register 60s tick)
+
+TYPECHECK: 13/13 pass
+MIGRATION: Run 0004_add_orchestrator_config.sql against Neon
+
+
+================================================================================
 COMMIT #100 — Workflow Monitoring Dashboard (Phase 2.3)
 ================================================================================
 Hash:     1398722
