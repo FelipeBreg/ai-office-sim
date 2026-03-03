@@ -7,6 +7,61 @@
 
 
 ================================================================================
+COMMIT #90 — Agent Approval Pause/Resume (Phase 0.2 / New Roadmap v2)
+================================================================================
+Hash:     2515be3
+Date:     2026-03-02
+Scope:    packages/ai, packages/db, packages/api, packages/queue, apps/worker
+
+WHAT CHANGED:
+  • EXECUTOR (packages/ai/src/engine/executor.ts)
+    – On approval-required tool: serialize full session state (messages,
+      session counters, context, pending tool call, safety limits)
+    – Return status='paused_for_approval' with pausedState attached
+    – Previously: status='aborted' — session lost forever
+  • NEW: resumeAgent() (packages/ai/src/engine/resume.ts)
+    – Deserializes saved state, restores messages + session + context
+    – If approved: executes the pending tool call, feeds result to Claude
+    – If rejected: tells Claude the tool was denied, continues loop
+    – Same agentic loop as executeAgent() for subsequent tool calls
+  • TYPES (packages/ai/src/engine/types.ts)
+    – New SerializedSessionState interface
+    – AgentSession.status: added 'paused_for_approval'
+    – ExecutionResult.status: added 'paused_for_approval'
+    – ExecutionResult.pausedState?: SerializedSessionState
+  • APPROVALS SCHEMA (packages/db/src/schema/approvals.ts)
+    – Added sessionState (jsonb) column for pause/resume data
+    – Made actionLogId nullable (approval created before action log)
+  • APPROVALS ROUTER (packages/api/src/routers/approvals.ts)
+    – approve: if sessionState exists, re-enqueue agent with resumeApproved=true
+    – reject: re-enqueue with resumeApproved=false (or just set idle)
+  • AGENT EXECUTION JOB (apps/worker/src/jobs/agent-execution.ts)
+    – Handles resume: CAS allows awaiting_approval → working
+    – On paused_for_approval result: creates approval record, sets agent
+      status to awaiting_approval, emits Socket.IO events, enqueues notification
+  • JOB SCHEMA (packages/queue/src/jobs.ts)
+    – Added resumeState + resumeApproved optional fields
+  • MIGRATION: 0001_add_session_state_to_approvals.sql
+
+WHY:
+  Agents aborted when hitting approval-required tools, losing their entire
+  session state. Now they pause, serialize state to DB, wait for human
+  review, and resume from the exact tool call. This is the #1 blocker
+  for autonomous agents.
+
+FILES (9):
+  + packages/ai/src/engine/resume.ts
+  + packages/db/src/migrations/0001_add_session_state_to_approvals.sql
+  M packages/ai/src/engine/executor.ts
+  M packages/ai/src/engine/types.ts
+  M packages/ai/src/index.ts
+  M packages/db/src/schema/approvals.ts
+  M packages/api/src/routers/approvals.ts
+  M packages/queue/src/jobs.ts
+  M apps/worker/src/jobs/agent-execution.ts
+
+
+================================================================================
 COMMIT #89 — Wire Socket.IO to Frontend (Phase 0.1 / New Roadmap v2)
 ================================================================================
 Hash:     146c1ae
