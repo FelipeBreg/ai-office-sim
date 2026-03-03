@@ -7,6 +7,37 @@
 
 
 ================================================================================
+COMMIT #99 — Workflow Templates One-Click Deploy (Phase 2.2)
+================================================================================
+Hash:     99b21bb
+Date:     2026-03-02
+Scope:    packages/api, apps/web
+
+WHAT CHANGED:
+  • tRPC ROUTER: added deploy mutation — creates workflow + auto-creates agents
+    from archetype definitions for each agent node in the template. Reuses
+    existing agents when a matching archetype already exists in the project.
+    Returns { workflow, agentsCreated } count
+  • tRPC ROUTER: added previewDeploy query — shows agents to create vs reuse
+    before deploying, with tool counts and archetype metadata
+  • TEMPLATES PAGE: Deploy button on template cards (shown when agentCount > 0)
+    opens a preview dialog before deployment
+  • DEPLOY PREVIEW DIALOG: modal listing workflow name, agents to create (with
+    archetype badge + tool count), existing agents (green checkmarks), and
+    confirm/cancel buttons
+  • i18n: deploy, deploying, deployPreview, confirmDeploy, agentsToCreate,
+    existingAgentsUsed, noAgentsNeeded in en-US and pt-BR
+
+FILES:
+  mod: packages/api/src/routers/workflow-templates.ts (deploy, previewDeploy)
+  mod: apps/web/src/app/[locale]/(auth)/workflows/templates/page.tsx
+  mod: apps/web/messages/en-US.json
+  mod: apps/web/messages/pt-BR.json
+
+VERIFIED: typecheck 13/13 ✓
+
+
+================================================================================
 COMMIT #98 — Workflow Event Triggers (Phase 2.1)
 ================================================================================
 Hash:     9c72db0
