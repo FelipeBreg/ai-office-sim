@@ -12,3 +12,9 @@ export const serverTRPC = cache(async () => {
   const ctx = await createTRPCContext({ clerkUserId: userId, projectId });
   return appRouter.createCaller(ctx);
 });
+
+/** Public server-side caller — no auth required (for public community pages) */
+export const publicServerTRPC = cache(async () => {
+  const ctx = await createTRPCContext({ clerkUserId: null });
+  return appRouter.createCaller(ctx);
+});

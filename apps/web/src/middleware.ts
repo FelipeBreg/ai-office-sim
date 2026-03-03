@@ -15,6 +15,8 @@ const isPublicRoute = createRouteMatcher([
   '/:locale/docs(.*)',
   '/blueprint(.*)',
   '/:locale/blueprint(.*)',
+  '/community(.*)',
+  '/:locale/community(.*)',
   '/api/webhooks(.*)',
 ]);
 

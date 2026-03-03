@@ -23,6 +23,7 @@ import {
   FileText,
   Upload,
   Plus,
+  Store,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
@@ -1263,6 +1264,7 @@ export default function AgentDetailPage({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
 
   const agentQuery = trpc.agents.getById.useQuery({ id });
   const agent = agentQuery.data as Agent | undefined;
@@ -1277,6 +1279,11 @@ export default function AgentDetailPage({
   const deleteMutation = trpc.agents.delete.useMutation({
     onSuccess: () => {
       router.push('/agents');
+    },
+  });
+  const publishMutation = trpc.community.publishAgent.useMutation({
+    onSuccess: () => {
+      setShowPublishDialog(false);
     },
   });
 
@@ -1390,6 +1397,17 @@ export default function AgentDetailPage({
             {agent.isActive ? t('activeToggle') : t('inactiveToggle')}
           </button>
 
+          {/* Publish to Community */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowPublishDialog(true)}
+            disabled={publishMutation.isPending}
+          >
+            <Store size={10} strokeWidth={2} className="mr-1" />
+            {t('publishToCommunity')}
+          </Button>
+
           {/* Delete */}
           <Button
             variant="danger"
@@ -1402,6 +1420,47 @@ export default function AgentDetailPage({
           </Button>
         </div>
       </div>
+
+      {/* Publish confirmation dialog */}
+      {showPublishDialog && agent && (
+        <div className="border-b border-accent-cyan/20 bg-bg-raised px-4 py-3">
+          <div className="mb-2 text-xs font-bold text-text-primary">{t('publishDialogTitle')}</div>
+          <div className="mb-2 text-[10px] text-text-secondary">{t('publishDialogDesc')}</div>
+          <div className="mb-3 space-y-1 border border-border-default bg-bg-base p-2 text-[10px] text-text-secondary">
+            <div><span className="text-text-muted">{t('name')}:</span> {agent.name}</div>
+            <div><span className="text-text-muted">{t('archetype')}:</span> {agent.archetype}</div>
+            <div><span className="text-text-muted">{t('tools')}:</span> {agent.tools?.join(', ') || '—'}</div>
+            <div><span className="text-text-muted">{t('trigger')}:</span> {agent.triggerType}</div>
+          </div>
+          {publishMutation.isError && (
+            <div className="mb-2 text-[10px] text-status-error">
+              {publishMutation.error.message}
+            </div>
+          )}
+          {publishMutation.isSuccess && (
+            <div className="mb-2 text-[10px] text-status-success">
+              {t('publishSuccess')}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => publishMutation.mutate({ agentId: agent.id })}
+              disabled={publishMutation.isPending || publishMutation.isSuccess}
+            >
+              {publishMutation.isPending ? t('publishing') : t('confirmPublish')}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowPublishDialog(false)}
+            >
+              {t('cancelPublish')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Trigger feedback */}
       {testRunMutation.isSuccess && (

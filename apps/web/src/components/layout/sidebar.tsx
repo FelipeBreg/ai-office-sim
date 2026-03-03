@@ -22,6 +22,7 @@ import {
   ChevronRight,
   ChevronDown,
   Cpu,
+  Store,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/ui-store';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/agents', labelKey: 'agents', icon: Users },
       { href: '/workflows', labelKey: 'workflows', icon: GitBranch },
       { href: '/tools', labelKey: 'tools', icon: Wrench },
+      { href: '/community', labelKey: 'community', icon: Store },
     ],
   },
   {

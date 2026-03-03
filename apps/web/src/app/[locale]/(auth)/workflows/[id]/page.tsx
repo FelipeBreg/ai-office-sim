@@ -7,7 +7,7 @@ import { WorkflowEditor } from '@/components/workflows/WorkflowEditor';
 import { RunWorkflowDialog } from '@/components/workflows/RunWorkflowDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trash2, Play, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Trash2, Play, ChevronDown, ChevronRight, Store } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import type { Node, Edge } from '@xyflow/react';
 import type { WorkflowVariable, WorkflowDefinition } from '@ai-office/shared';
@@ -30,6 +30,7 @@ export default function WorkflowEditorPage({ params }: PageProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [showRunDialog, setShowRunDialog] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
@@ -43,6 +44,11 @@ export default function WorkflowEditorPage({ params }: PageProps) {
   const deleteMutation = trpc.workflows.delete.useMutation({
     onSuccess: () => {
       router.push('/workflows');
+    },
+  });
+  const publishMutation = trpc.community.publishWorkflow.useMutation({
+    onSuccess: () => {
+      setShowPublishDialog(false);
     },
   });
 
@@ -149,6 +155,15 @@ export default function WorkflowEditorPage({ params }: PageProps) {
             {t('runWorkflow')}
           </Button>
           <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowPublishDialog(true)}
+            disabled={publishMutation.isPending}
+          >
+            <Store size={10} strokeWidth={2} className="mr-1" />
+            {t('publishToCommunity')}
+          </Button>
+          <Button
             variant="danger"
             size="sm"
             onClick={handleDelete}
@@ -159,6 +174,45 @@ export default function WorkflowEditorPage({ params }: PageProps) {
           </Button>
         </div>
       </div>
+
+      {/* Publish confirmation dialog */}
+      {showPublishDialog && workflow && (
+        <div className="border-b border-accent-cyan/20 bg-bg-raised px-4 py-3">
+          <div className="mb-2 text-xs font-bold text-text-primary">{t('publishDialogTitle')}</div>
+          <div className="mb-2 text-[10px] text-text-secondary">{t('publishDialogDesc')}</div>
+          <div className="mb-3 space-y-1 border border-border-default bg-bg-base p-2 text-[10px] text-text-secondary">
+            <div><span className="text-text-muted">{t('workflowName')}:</span> {workflow.name}</div>
+            <div><span className="text-text-muted">{t('nodes')}:</span> {(workflow.definition as any)?.nodes?.length ?? 0}</div>
+          </div>
+          {publishMutation.isError && (
+            <div className="mb-2 text-[10px] text-status-error">
+              {publishMutation.error.message}
+            </div>
+          )}
+          {publishMutation.isSuccess && (
+            <div className="mb-2 text-[10px] text-status-success">
+              {t('publishSuccess')}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => publishMutation.mutate({ workflowId: workflow.id })}
+              disabled={publishMutation.isPending || publishMutation.isSuccess}
+            >
+              {publishMutation.isPending ? t('publishing') : t('confirmPublish')}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowPublishDialog(false)}
+            >
+              {t('cancelPublish')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1">
