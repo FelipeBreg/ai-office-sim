@@ -55,6 +55,12 @@ export const agents = pgTable(
     cooldownUntil: timestamp('cooldown_until', { withTimezone: true }),
     /** Auto-recovery: how many consecutive recovery attempts have been made */
     recoveryAttempts: integer('recovery_attempts').notNull().default(0),
+    /** Heartbeat: self-programmed instructions executed on each heartbeat (max 500 chars) */
+    heartbeatInstructions: text('heartbeat_instructions'),
+    /** Heartbeat: interval in minutes (null = disabled, min 5, max 1440) */
+    heartbeatIntervalMin: integer('heartbeat_interval_min'),
+    /** Heartbeat: last time this agent was woken by heartbeat */
+    lastHeartbeatAt: timestamp('last_heartbeat_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()

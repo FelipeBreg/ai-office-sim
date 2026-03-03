@@ -8,6 +8,7 @@ import {
   workflowRuns,
   orchestratorConfig,
   approvals,
+  strategyKpis,
   eq,
   and,
   or,
@@ -17,6 +18,7 @@ import {
   count,
   isNull,
 } from '@ai-office/db';
+import { checkKpiThreshold } from '@ai-office/ai';
 import { randomUUID } from 'crypto';
 import { emitToProject } from '../socket/server.js';
 
@@ -222,6 +224,78 @@ async function processOrchestratorTick() {
           cooldownUntil,
         })
         .where(eq(agents.id, agent.id));
+    }
+
+    // 7. KPI polling: check monitored KPIs for threshold crossings
+    const monitoredKpis = await db
+      .select({ id: strategyKpis.id })
+      .from(strategyKpis)
+      .where(
+        and(
+          eq(strategyKpis.projectId, projectId),
+          eq(strategyKpis.isMonitored, true),
+        ),
+      );
+
+    for (const kpi of monitoredKpis) {
+      await checkKpiThreshold(kpi.id);
+    }
+
+    // 8. Heartbeat: wake agents whose heartbeat interval has elapsed
+    const heartbeatAgents = await db
+      .select({
+        id: agents.id,
+        name: agents.name,
+        heartbeatInstructions: agents.heartbeatInstructions,
+        heartbeatIntervalMin: agents.heartbeatIntervalMin,
+      })
+      .from(agents)
+      .where(
+        and(
+          eq(agents.projectId, projectId),
+          eq(agents.isActive, true),
+          eq(agents.status, 'idle'),
+          sql`${agents.heartbeatIntervalMin} IS NOT NULL`,
+          or(
+            isNull(agents.lastHeartbeatAt),
+            sql`now() - ${agents.lastHeartbeatAt} >= ${agents.heartbeatIntervalMin} * interval '1 minute'`,
+          ),
+        ),
+      );
+
+    for (const hbAgent of heartbeatAgents) {
+      // Check concurrency before firing
+      if (running >= config.maxConcurrency) {
+        console.log(`[orchestrator] Skipping heartbeat for ${hbAgent.name} — at concurrency limit`);
+        break;
+      }
+
+      console.log(`[orchestrator] Heartbeat firing for agent ${hbAgent.name} (${hbAgent.id})`);
+
+      const queue = getAgentExecutionQueue();
+      const sessionId = randomUUID();
+      const instructions = hbAgent.heartbeatInstructions || '';
+      const payload = instructions
+        ? `Heartbeat check. Your instructions: ${instructions}`
+        : 'Heartbeat check. No instructions set. Review your current situation and decide if any action is needed.';
+
+      await queue.add(`heartbeat-${hbAgent.id}-${sessionId}`, {
+        agentId: hbAgent.id,
+        projectId,
+        sessionId,
+        triggerType: 'heartbeat' as const,
+        triggerPayload: { message: payload },
+      });
+
+      await db
+        .update(agents)
+        .set({ lastHeartbeatAt: new Date() })
+        .where(eq(agents.id, hbAgent.id));
+
+      emitToProject(projectId, 'agent:heartbeat_fired' as any, {
+        agentId: hbAgent.id,
+        agentName: hbAgent.name,
+      });
     }
   }
 

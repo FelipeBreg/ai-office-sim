@@ -8,10 +8,16 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { strategyTypeEnum, strategyStatusEnum, kpiDirectionEnum } from './enums.js';
+import {
+  strategyTypeEnum,
+  strategyStatusEnum,
+  kpiDirectionEnum,
+  kpiTriggerDirectionEnum,
+} from './enums.js';
 import { projects } from './projects.js';
 import { users } from './users.js';
 import { agents } from './agents.js';
+import { workflows } from './workflows.js';
 
 export const strategies = pgTable(
   'strategies',
@@ -52,6 +58,20 @@ export const strategyKpis = pgTable(
     targetValue: numeric('target_value', { precision: 12, scale: 2 }),
     unit: text('unit'),
     direction: kpiDirectionEnum('direction').notNull().default('higher_is_better'),
+    /** KPI trigger: agent to fire when threshold is crossed */
+    triggerAgentId: uuid('trigger_agent_id').references(() => agents.id, { onDelete: 'set null' }),
+    /** KPI trigger: workflow to fire when threshold is crossed */
+    triggerWorkflowId: uuid('trigger_workflow_id').references(() => workflows.id, { onDelete: 'set null' }),
+    /** KPI trigger: direction of threshold crossing */
+    triggerDirection: kpiTriggerDirectionEnum('trigger_direction'),
+    /** KPI trigger: threshold value */
+    triggerThreshold: numeric('trigger_threshold', { precision: 12, scale: 2 }),
+    /** KPI trigger: minimum minutes between fires (default 60, min 15) */
+    triggerCooldownMin: integer('trigger_cooldown_min').notNull().default(60),
+    /** KPI trigger: last time this KPI triggered an agent/workflow */
+    lastTriggeredAt: timestamp('last_triggered_at', { withTimezone: true }),
+    /** Whether this KPI is actively monitored for threshold triggers */
+    isMonitored: boolean('is_monitored').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()

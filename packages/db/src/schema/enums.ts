@@ -83,6 +83,13 @@ export const cascadeStatusEnum = pgEnum('cascade_status', [
   'failed',
 ]);
 
+// KPI Trigger
+export const kpiTriggerDirectionEnum = pgEnum('kpi_trigger_direction', [
+  'above',
+  'below',
+  'deviation',
+]);
+
 // Strategies
 export const strategyTypeEnum = pgEnum('strategy_type', [
   'growth',

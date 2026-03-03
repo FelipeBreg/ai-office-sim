@@ -104,6 +104,9 @@ export { triggerAgentTool } from './tools/agents/trigger-agent.js';
 // Context
 export { loadStrategyContext } from './context/strategy-loader.js';
 
+// Triggers
+export { checkKpiThreshold } from './triggers/kpi-monitor.js';
+
 // Memory
 export { loadMemory, saveMemory, searchMemory } from './memory/individual.js';
 export { ingestDocument, deleteDocument, splitIntoChunks, generateEmbeddings } from './memory/ingest.js';

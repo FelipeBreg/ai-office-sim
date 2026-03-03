@@ -397,6 +397,7 @@ interface AgentRow {
   systemPromptPtBr: string | null;
   config: unknown;
   tools: string[] | null;
+  heartbeatInstructions: string | null;
 }
 
 interface AgentConfig {
@@ -513,7 +514,23 @@ async function buildAgentContext(
 
   // 6. Build trigger payload text — budget: triggerPayload
   let triggerText = '';
-  if (triggerPayload && typeof triggerPayload === 'object' && (triggerPayload as Record<string, unknown>).type === 'agent_message') {
+  if (triggerType === 'heartbeat') {
+    // Heartbeat: inject self-programmed instructions
+    const hbInstructions = agent.heartbeatInstructions;
+    if (hbInstructions) {
+      triggerText = `\n\n[Heartbeat Check]\nYour self-programmed instructions:\n${hbInstructions}\n\nReview your instructions and take any actions needed. Update your instructions for the next heartbeat if appropriate.`;
+    } else {
+      triggerText = '\n\n[Heartbeat Check]\nNo instructions set. Review your current situation and decide if any action is needed.';
+    }
+    triggerText = truncateToTokenBudget(triggerText, budgets.triggerPayload);
+  } else if (triggerType === 'kpi') {
+    // KPI trigger: inject KPI data
+    const kpiData = triggerPayload as Record<string, unknown> | null;
+    if (kpiData) {
+      triggerText = `\n\n[KPI Alert]\nKPI "${kpiData.kpiName}" has crossed its threshold.\nCurrent value: ${kpiData.currentValue}${kpiData.unit ? ' ' + kpiData.unit : ''}\nThreshold: ${kpiData.threshold} (${kpiData.triggerDirection})\nTarget: ${kpiData.targetValue ?? 'N/A'}\n\nAnalyze this metric change and take appropriate action.`;
+      triggerText = truncateToTokenBudget(triggerText, budgets.triggerPayload);
+    }
+  } else if (triggerPayload && typeof triggerPayload === 'object' && (triggerPayload as Record<string, unknown>).type === 'agent_message') {
     const payload = triggerPayload as { fromAgentId: string; message: string; priority?: string };
     const [sourceAgent] = await db
       .select({ name: agents.name })
