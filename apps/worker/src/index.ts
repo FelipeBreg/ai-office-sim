@@ -13,7 +13,7 @@ import { registerAllScheduledWorkflows } from './scheduler/workflow-cron-schedul
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
-import { getAllQueues } from '@ai-office/queue';
+import { getAllQueues, getOrchestratorQueue } from '@ai-office/queue';
 import {
   createAgentExecutionWorker,
   createAgentScheduledWorker,
@@ -26,6 +26,7 @@ import {
   createCalendarReminderWorker,
   createCalendarRecurrenceWorker,
   createEmailInboundWorker,
+  createOrchestratorWorker,
 } from './workers/index.js';
 
 const PORT = Number(process.env.PORT ?? 4000);
@@ -57,6 +58,7 @@ const workers = [
   createCalendarReminderWorker(),
   createCalendarRecurrenceWorker(),
   createEmailInboundWorker(),
+  createOrchestratorWorker(),
 ];
 
 console.log(`[worker] Started ${workers.length} queue workers`);
@@ -175,6 +177,12 @@ registerAllScheduledAgents().catch((err) => {
 registerAllScheduledWorkflows().catch((err) => {
   console.error('[worker] Failed to register scheduled workflows:', err);
 });
+
+// ── Orchestrator: 1-minute tick ──
+getOrchestratorQueue()
+  .add('orchestrator-tick', { type: 'tick' }, { repeat: { every: 60_000 }, jobId: 'orchestrator-tick' })
+  .then(() => console.log('[worker] Orchestrator tick registered (every 60s)'))
+  .catch((err) => console.error('[worker] Failed to register orchestrator tick:', err));
 
 // ── Graceful shutdown with timeout ──
 let isShuttingDown = false;

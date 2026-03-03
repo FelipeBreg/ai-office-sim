@@ -13,6 +13,7 @@ import type {
   CalendarReminderJob,
   CalendarRecurrenceJob,
   EmailInboundJob,
+  OrchestratorJob,
 } from './jobs.js';
 
 // ── Queue names (single source of truth) ──
@@ -28,6 +29,7 @@ export const QUEUE_NAMES = {
   CALENDAR_REMINDER: 'calendar-reminder',
   CALENDAR_RECURRENCE: 'calendar-recurrence',
   EMAIL_INBOUND: 'email-inbound',
+  ORCHESTRATOR: 'orchestrator',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -100,6 +102,12 @@ const defaultJobOptions: Record<QueueName, DefaultJobOptions> = {
     removeOnComplete: { count: 100 },
     removeOnFail: false,
   },
+  [QUEUE_NAMES.ORCHESTRATOR]: {
+    attempts: 2,
+    backoff: { type: 'exponential', delay: 30_000 },
+    removeOnComplete: { count: 100 },
+    removeOnFail: false,
+  },
 };
 
 // ── Queue factory ──
@@ -123,6 +131,7 @@ let _workflowExecution: Queue<WorkflowExecutionJob> | null = null;
 let _calendarReminder: Queue<CalendarReminderJob> | null = null;
 let _calendarRecurrence: Queue<CalendarRecurrenceJob> | null = null;
 let _emailInbound: Queue<EmailInboundJob> | null = null;
+let _orchestrator: Queue<OrchestratorJob> | null = null;
 
 export function getAgentExecutionQueue() {
   _agentExecution ??= createQueue<AgentExecutionJob>(QUEUE_NAMES.AGENT_EXECUTION);
@@ -179,6 +188,11 @@ export function getEmailInboundQueue() {
   return _emailInbound;
 }
 
+export function getOrchestratorQueue() {
+  _orchestrator ??= createQueue<OrchestratorJob>(QUEUE_NAMES.ORCHESTRATOR);
+  return _orchestrator;
+}
+
 /** Get all queue instances (useful for bull-board) */
 export function getAllQueues() {
   return [
@@ -193,5 +207,6 @@ export function getAllQueues() {
     getCalendarReminderQueue(),
     getCalendarRecurrenceQueue(),
     getEmailInboundQueue(),
+    getOrchestratorQueue(),
   ];
 }

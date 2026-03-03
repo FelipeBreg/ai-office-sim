@@ -101,3 +101,9 @@ export const cleanupJobSchema = z.object({
   olderThanDays: z.number().int().positive().default(30),
 });
 export type CleanupJob = z.infer<typeof cleanupJobSchema>;
+
+// ── Orchestrator ──
+export const orchestratorJobSchema = z.object({
+  type: z.enum(['tick', 'check_budgets', 'check_stalled']),
+});
+export type OrchestratorJob = z.infer<typeof orchestratorJobSchema>;

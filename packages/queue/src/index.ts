@@ -14,6 +14,7 @@ export {
   getCalendarReminderQueue,
   getCalendarRecurrenceQueue,
   getEmailInboundQueue,
+  getOrchestratorQueue,
   getAllQueues,
 } from './queues.js';
 export {
@@ -27,6 +28,7 @@ export {
   calendarReminderJobSchema,
   calendarRecurrenceJobSchema,
   emailInboundJobSchema,
+  orchestratorJobSchema,
   type AgentExecutionJob,
   type AgentScheduledJob,
   type ToolExecutionJob,
@@ -37,6 +39,7 @@ export {
   type CalendarReminderJob,
   type CalendarRecurrenceJob,
   type EmailInboundJob,
+  type OrchestratorJob,
   workflowExecutionJobSchema,
   type WorkflowExecutionJob,
 } from './jobs.js';

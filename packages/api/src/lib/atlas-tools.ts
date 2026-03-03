@@ -8,6 +8,9 @@ import {
   strategyLearnings,
   humanTasks,
   actionLogs,
+  orchestratorConfig,
+  approvals,
+  workflowRuns,
   eq,
   and,
   desc,
@@ -630,6 +633,273 @@ registerTool({
   },
 });
 
+// ── Orchestrator Tools ──
+
+registerTool({
+  name: 'get_fleet_status',
+  description:
+    'Get the current fleet status: agent counts by status (idle/working/error/offline), running workflows, pending approvals, and cost summary for today and this month.',
+  inputSchema: z.object({}),
+  requiresApproval: false,
+  execute: async (_input, projectId) => {
+    // Agent counts by status
+    const agentCounts = await db
+      .select({ status: agents.status, count: count() })
+      .from(agents)
+      .where(and(eq(agents.projectId, projectId), eq(agents.isActive, true)))
+      .groupBy(agents.status);
+
+    const agentsByStatus: Record<string, number> = {};
+    for (const row of agentCounts) {
+      agentsByStatus[row.status] = Number(row.count);
+    }
+
+    const [runningWorkflows] = await db
+      .select({ count: count() })
+      .from(workflowRuns)
+      .where(and(eq(workflowRuns.projectId, projectId), eq(workflowRuns.status, 'running')));
+
+    const [pendingApprovalCount] = await db
+      .select({ count: count() })
+      .from(approvals)
+      .where(and(eq(approvals.projectId, projectId), eq(approvals.status, 'pending')));
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [todayCost] = await db
+      .select({
+        cost: sql<number>`coalesce(sum(${actionLogs.costUsd}::numeric), 0)`,
+        tokens: sql<number>`coalesce(sum(${actionLogs.tokensUsed}), 0)`,
+      })
+      .from(actionLogs)
+      .where(and(eq(actionLogs.projectId, projectId), gte(actionLogs.createdAt, today)));
+
+    return {
+      agents: {
+        idle: agentsByStatus['idle'] ?? 0,
+        working: agentsByStatus['working'] ?? 0,
+        awaiting_approval: agentsByStatus['awaiting_approval'] ?? 0,
+        error: agentsByStatus['error'] ?? 0,
+        offline: agentsByStatus['offline'] ?? 0,
+      },
+      workflowsRunning: Number(runningWorkflows?.count ?? 0),
+      pendingApprovals: Number(pendingApprovalCount?.count ?? 0),
+      todayCostUsd: Number(todayCost?.cost ?? 0),
+      todayTokens: Number(todayCost?.tokens ?? 0),
+    };
+  },
+});
+
+registerTool({
+  name: 'get_cost_report',
+  description:
+    'Get a cost breakdown by agent for the last N days, including total cost, tokens used, and action count per agent.',
+  inputSchema: z.object({
+    days: z.number().optional().describe('Number of days to look back (default: 7)'),
+  }),
+  requiresApproval: false,
+  execute: async (input, projectId) => {
+    const { days = 7 } = input as { days?: number };
+    const since = new Date(Date.now() - days * 86_400_000);
+
+    const perAgent = await db
+      .select({
+        agentId: actionLogs.agentId,
+        agentName: agents.name,
+        totalCost: sql<number>`coalesce(sum(${actionLogs.costUsd}::numeric), 0)`,
+        totalTokens: sql<number>`coalesce(sum(${actionLogs.tokensUsed}), 0)`,
+        actionCount: count(),
+      })
+      .from(actionLogs)
+      .innerJoin(agents, eq(actionLogs.agentId, agents.id))
+      .where(and(eq(actionLogs.projectId, projectId), gte(actionLogs.createdAt, since)))
+      .groupBy(actionLogs.agentId, agents.name)
+      .orderBy(sql`sum(${actionLogs.costUsd}::numeric) DESC NULLS LAST`);
+
+    const total = perAgent.reduce((sum, r) => sum + Number(r.totalCost), 0);
+
+    return {
+      days,
+      totalCostUsd: Math.round(total * 100) / 100,
+      perAgent: perAgent.map((r) => ({
+        agentId: r.agentId,
+        name: r.agentName,
+        costUsd: Number(r.totalCost),
+        tokens: Number(r.totalTokens),
+        actions: Number(r.actionCount),
+      })),
+    };
+  },
+});
+
+registerTool({
+  name: 'get_orchestrator_config',
+  description:
+    'Get the orchestrator configuration: max concurrency, budget limits, and priority rules.',
+  inputSchema: z.object({}),
+  requiresApproval: false,
+  execute: async (_input, projectId) => {
+    const [config] = await db
+      .select()
+      .from(orchestratorConfig)
+      .where(eq(orchestratorConfig.projectId, projectId))
+      .limit(1);
+
+    if (!config) {
+      return {
+        configured: false,
+        maxConcurrency: 5,
+        dailySpendLimitUsd: 0,
+        monthlySpendLimitUsd: 0,
+        priorityRules: [],
+      };
+    }
+
+    return {
+      configured: true,
+      maxConcurrency: config.maxConcurrency,
+      dailyTokenBudget: config.dailyTokenBudget,
+      monthlyTokenBudget: config.monthlyTokenBudget,
+      dailySpendLimitUsd: Number(config.dailySpendLimitUsd),
+      monthlySpendLimitUsd: Number(config.monthlySpendLimitUsd),
+      priorityRules: config.priorityRules ?? [],
+    };
+  },
+});
+
+registerTool({
+  name: 'update_orchestrator_config',
+  description:
+    'Update the orchestrator configuration: max concurrency, budget limits. Requires user approval.',
+  inputSchema: z.object({
+    maxConcurrency: z.number().optional().describe('Max agents running concurrently (1-50)'),
+    dailySpendLimitUsd: z.number().optional().describe('Daily USD spend limit (0 = unlimited)'),
+    monthlySpendLimitUsd: z.number().optional().describe('Monthly USD spend limit (0 = unlimited)'),
+  }),
+  requiresApproval: true,
+  execute: async (input, projectId) => {
+    const { maxConcurrency, dailySpendLimitUsd, monthlySpendLimitUsd } = input as {
+      maxConcurrency?: number;
+      dailySpendLimitUsd?: number;
+      monthlySpendLimitUsd?: number;
+    };
+
+    const payload: Record<string, unknown> = {};
+    if (maxConcurrency !== undefined) payload.maxConcurrency = maxConcurrency;
+    if (dailySpendLimitUsd !== undefined) payload.dailySpendLimitUsd = String(dailySpendLimitUsd);
+    if (monthlySpendLimitUsd !== undefined) payload.monthlySpendLimitUsd = String(monthlySpendLimitUsd);
+
+    if (Object.keys(payload).length === 0) {
+      return { error: 'No fields to update' };
+    }
+
+    // Upsert
+    const [existing] = await db
+      .select({ id: orchestratorConfig.id })
+      .from(orchestratorConfig)
+      .where(eq(orchestratorConfig.projectId, projectId))
+      .limit(1);
+
+    if (!existing) {
+      await db.insert(orchestratorConfig).values({ projectId, ...payload } as any);
+    } else {
+      await db.update(orchestratorConfig).set(payload as any).where(eq(orchestratorConfig.projectId, projectId));
+    }
+
+    return { updated: true, ...payload };
+  },
+});
+
+registerTool({
+  name: 'pause_agents_by_team',
+  description:
+    'Pause all active agents on a specific team by setting them to offline. Requires user approval.',
+  inputSchema: z.object({
+    team: z
+      .enum(['development', 'research', 'marketing', 'sales', 'support', 'finance', 'operations'])
+      .describe('Team to pause'),
+  }),
+  requiresApproval: true,
+  execute: async (input, projectId) => {
+    const { team } = input as { team: string };
+    const result = await db
+      .update(agents)
+      .set({ status: 'offline' })
+      .where(
+        and(
+          eq(agents.projectId, projectId),
+          eq(agents.team, team as any),
+          eq(agents.isActive, true),
+        ),
+      )
+      .returning({ id: agents.id, name: agents.name });
+
+    return { paused: result.length, agents: result };
+  },
+});
+
+registerTool({
+  name: 'resume_agents_by_team',
+  description:
+    'Resume all offline agents on a specific team by setting them back to idle. Requires user approval.',
+  inputSchema: z.object({
+    team: z
+      .enum(['development', 'research', 'marketing', 'sales', 'support', 'finance', 'operations'])
+      .describe('Team to resume'),
+  }),
+  requiresApproval: true,
+  execute: async (input, projectId) => {
+    const { team } = input as { team: string };
+    const result = await db
+      .update(agents)
+      .set({ status: 'idle' })
+      .where(
+        and(
+          eq(agents.projectId, projectId),
+          eq(agents.team, team as any),
+          eq(agents.status, 'offline'),
+          eq(agents.isActive, true),
+        ),
+      )
+      .returning({ id: agents.id, name: agents.name });
+
+    return { resumed: result.length, agents: result };
+  },
+});
+
+registerTool({
+  name: 'set_agent_priority',
+  description:
+    'Set an agent\'s execution priority. Higher priority agents are scheduled first by the orchestrator. Requires user approval.',
+  inputSchema: z.object({
+    agentId: z.string().describe('UUID of the agent'),
+    priority: z.enum(['critical', 'high', 'normal', 'low']).describe('New priority level'),
+  }),
+  requiresApproval: true,
+  execute: async (input, projectId) => {
+    const { agentId, priority } = input as { agentId: string; priority: string };
+
+    // Store priority in agent config JSONB
+    const [agent] = await db
+      .select({ id: agents.id, name: agents.name, config: agents.config })
+      .from(agents)
+      .where(and(eq(agents.id, agentId), eq(agents.projectId, projectId)))
+      .limit(1);
+
+    if (!agent) return { error: 'Agent not found' };
+
+    const currentConfig = (agent.config ?? { model: 'claude-sonnet-4-5-20250514', temperature: 0.7, maxTokens: 4096, budget: 10 }) as Record<string, unknown>;
+    const updatedConfig = { ...currentConfig, priority };
+
+    await db
+      .update(agents)
+      .set({ config: updatedConfig as any })
+      .where(eq(agents.id, agentId));
+
+    return { updated: true, agentName: agent.name, priority };
+  },
+});
+
 // ── Exports ──
 
 export const ATLAS_AUTO_EXECUTE_TOOLS = new Set([
@@ -643,6 +913,9 @@ export const ATLAS_AUTO_EXECUTE_TOOLS = new Set([
   'list_pending_approvals',
   'list_human_tasks',
   'search_memory',
+  'get_fleet_status',
+  'get_cost_report',
+  'get_orchestrator_config',
 ]);
 
 export const ATLAS_APPROVAL_TOOLS = new Set([
@@ -652,6 +925,10 @@ export const ATLAS_APPROVAL_TOOLS = new Set([
   'create_workflow',
   'update_strategy',
   'create_human_task',
+  'update_orchestrator_config',
+  'pause_agents_by_team',
+  'resume_agents_by_team',
+  'set_agent_priority',
 ]);
 
 export function getAtlasToolByName(name: string): AtlasToolDefinition | undefined {

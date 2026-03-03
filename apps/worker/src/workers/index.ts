@@ -10,3 +10,4 @@ export { createWorkflowExecutionWorker } from './workflow-execution.worker.js';
 export { createCalendarReminderWorker } from './calendar-reminder.worker.js';
 export { createCalendarRecurrenceWorker } from './calendar-recurrence.worker.js';
 export { createEmailInboundWorker } from './email-inbound.worker.js';
+export { createOrchestratorWorker } from './orchestrator.worker.js';
