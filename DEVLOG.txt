@@ -7,6 +7,30 @@
 
 
 ================================================================================
+COMMIT #117 — Phase 6: Platform Hardening (Roadmap v2)
+Date: 2026-03-03
+Hash: a4d0437
+────────────────────────────────────────────────────────────────────────────────
+
+Epic 6.1 — Horizontal Worker Scaling:
+  • Redis SET NX EX leader election for orchestrator tick
+  • Only leader runs tick, replicas skip (supports 2+ worker instances)
+  • Enhanced /health: workerId, isLeader, uptime
+
+Epic 6.2 — Webhook Authentication:
+  • webhookSecret field on workflows table
+  • HMAC-SHA256 signature verification via X-Signature-256 header
+  • Replay protection: X-Timestamp reject > 5 min old
+  • Timing-safe comparison (crypto.timingSafeEqual)
+
+Epic 6.3 — Offline Notification Queue:
+  • emitToProject checks Socket.IO room for connected clients
+  • If offline: pushes events to Redis list (7-day TTL)
+  • On subscribe:project: drains queued events in order
+
+Files changed: 4 (139 insertions, 6 deletions)
+
+================================================================================
 COMMIT #116 — Phase 5: The CEO Agent (Roadmap v2)
 Date: 2026-03-03
 Hash: b625d12
