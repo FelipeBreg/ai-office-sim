@@ -7,6 +7,36 @@
 
 
 ================================================================================
+COMMIT #116 — Phase 5: The CEO Agent (Roadmap v2)
+Date: 2026-03-03
+Hash: b625d12
+────────────────────────────────────────────────────────────────────────────────
+
+Epic 5.1 — CEO Agent Archetype:
+  • ceo_strategist archetype added to enum
+  • isSystemAgent boolean on agents table — prevents user deletion
+  • Auto-created on project init: Opus model, 2h heartbeat, 30 max actions
+  • Bilingual prompts (EN/PT-BR) with full strategic executive instructions
+
+Epic 5.2 — Fleet Orchestration Tools:
+  • 9 new tools: update_agent_schedule, update_agent_heartbeat, get_kpi_trends,
+    get_fleet_status, get_cost_report, search_action_logs,
+    pause_agents_by_team, resume_agents_by_team
+  • CEO can inspect fleet, check costs, pause/resume teams, adjust schedules
+
+Epic 5.3 — Two-Pass Triage & Daily Briefing:
+  • CEO heartbeat uses Haiku pre-check (~$0.001) before full Opus session
+  • ALL_CLEAR skips full session, NEEDS_ACTION proceeds
+  • ceoBriefingCron on orchestrator_config (default: '0 8 * * *')
+  • registerCeoBriefings() in cron scheduler for daily CEO briefing
+
+P0 COMPLETE — The autonomous loop now works:
+  User sets strategy → CEO monitors KPIs → orchestrates fleet → agents run →
+  agents update KPIs → CEO reacts → agents adapt
+
+Files changed: 15 (606 insertions, 8 deletions)
+
+================================================================================
 COMMIT #115 — Phase 4: Visibility (Roadmap v2)
 Date: 2026-03-03
 Hash: f14a379
