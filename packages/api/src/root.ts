@@ -28,6 +28,7 @@ import { messagingRouter } from './routers/messaging.js';
 import { calendarRouter } from './routers/calendar.js';
 import { orchestratorRouter } from './routers/orchestrator.js';
 import { membersRouter } from './routers/members.js';
+import { auditLogsRouter } from './routers/audit-logs.js';
 
 export const appRouter = createTRPCRouter({
   agents: agentsRouter,
@@ -59,6 +60,7 @@ export const appRouter = createTRPCRouter({
   calendar: calendarRouter,
   orchestrator: orchestratorRouter,
   members: membersRouter,
+  auditLogs: auditLogsRouter,
 });
 
 export type AppRouter = typeof appRouter;

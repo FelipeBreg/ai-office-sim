@@ -28,3 +28,4 @@ export * from './financial-records.js';
 export * from './conversations.js';
 export * from './calendar.js';
 export * from './orchestrator-config.js';
+export * from './audit-logs.js';

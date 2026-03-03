@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import {
   Building2, Users, CreditCard, Bell, Key, Cpu, PanelLeft, Trash2, Plus, Send, Check,
   ExternalLink, Download, FileText, Radio, ShieldCheck, LayoutDashboard, Target, BookOpen,
-  GitBranch, Wrench, GitMerge, Settings as SettingsIcon,
+  GitBranch, Wrench, GitMerge, Settings as SettingsIcon, ScrollText, ChevronDown,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
@@ -40,6 +40,7 @@ const tabs = [
   { id: 'navigation', labelKey: 'navigation', icon: PanelLeft },
   { id: 'apikeys', labelKey: 'apiKeys', icon: Key },
   { id: 'models', labelKey: 'models', icon: Cpu },
+  { id: 'auditlog', labelKey: 'auditLog', icon: ScrollText },
 ] as const;
 
 type Tab = (typeof tabs)[number]['id'];
@@ -1258,6 +1259,198 @@ function ModelsTab() {
 }
 
 // ===========================================================================
+// Tab: Audit Log
+// ===========================================================================
+
+const ACTION_COLORS: Record<string, string> = {
+  create: 'text-status-success',
+  update: 'text-accent-cyan',
+  delete: 'text-status-error',
+  approve: 'text-status-success',
+  reject: 'text-status-error',
+  trigger: 'text-amber-400',
+};
+
+function AuditLogTab() {
+  const t = useTranslations('settings');
+  const { data: currentUser } = trpc.users.getCurrent.useQuery();
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'owner';
+  const isOwner = currentUser?.role === 'owner';
+
+  const [days, setDays] = useState(30);
+  const [resourceFilter, setResourceFilter] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const logsQuery = trpc.auditLogs.list.useQuery(
+    { days, resource: resourceFilter || undefined, limit: 100 },
+    { enabled: isAdmin },
+  );
+
+  const exportQuery = trpc.auditLogs.export.useQuery(
+    { days },
+    { enabled: false },
+  );
+
+  const handleExport = async (format: 'json' | 'csv') => {
+    const { data } = await exportQuery.refetch();
+    if (!data) return;
+
+    let content: string;
+    let mimeType: string;
+    let ext: string;
+
+    if (format === 'json') {
+      content = JSON.stringify(data, null, 2);
+      mimeType = 'application/json';
+      ext = 'json';
+    } else {
+      const headers = ['Date', 'User', 'Email', 'Resource', 'Action', 'Path', 'Resource ID'];
+      const csvRows = [
+        headers.join(','),
+        ...data.map((row) =>
+          [
+            new Date(row.createdAt).toISOString(),
+            `"${row.userName ?? ''}"`,
+            `"${row.userEmail ?? ''}"`,
+            row.resource,
+            row.action,
+            row.path,
+            row.resourceId ?? '',
+          ].join(','),
+        ),
+      ];
+      content = csvRows.join('\n');
+      mimeType = 'text/csv';
+      ext = 'csv';
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-log-${days}d.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (!isAdmin) {
+    return (
+      <div className="py-6 text-center text-[10px] text-text-muted">
+        {t('auditLogAdminOnly')}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Header + controls */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-[11px] font-semibold text-text-primary">{t('auditLog')}</h2>
+        <div className="flex items-center gap-2">
+          <select
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+            className="border border-border-default bg-bg-base px-2 py-1 text-[9px] text-text-primary focus:border-accent-cyan focus:outline-none [&>option]:bg-bg-base"
+          >
+            <option value={7}>7 {t('auditDays')}</option>
+            <option value={30}>30 {t('auditDays')}</option>
+            <option value={90}>90 {t('auditDays')}</option>
+          </select>
+          <select
+            value={resourceFilter}
+            onChange={(e) => setResourceFilter(e.target.value)}
+            className="border border-border-default bg-bg-base px-2 py-1 text-[9px] text-text-primary focus:border-accent-cyan focus:outline-none [&>option]:bg-bg-base"
+          >
+            <option value="">{t('auditAllResources')}</option>
+            <option value="agent">Agents</option>
+            <option value="workflow">Workflows</option>
+            <option value="deal">Deals</option>
+            <option value="member">Members</option>
+            <option value="approval">Approvals</option>
+          </select>
+          {isOwner && (
+            <div className="flex gap-1">
+              <Button size="sm" variant="secondary" onClick={() => handleExport('csv')}>
+                <Download size={10} strokeWidth={1.5} className="mr-1" />
+                CSV
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => handleExport('json')}>
+                <Download size={10} strokeWidth={1.5} className="mr-1" />
+                JSON
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Log entries */}
+      {logsQuery.isLoading && (
+        <div className="py-6 text-center text-[10px] text-text-muted">{t('loading')}</div>
+      )}
+
+      {logsQuery.data && logsQuery.data.length === 0 && (
+        <div className="py-6 text-center text-[10px] text-text-muted">{t('auditNoEntries')}</div>
+      )}
+
+      <div className="flex flex-col gap-0">
+        {logsQuery.data?.map((entry) => {
+          const isExpanded = expandedId === entry.id;
+          return (
+            <button
+              key={entry.id}
+              type="button"
+              onClick={() => setExpandedId(isExpanded ? null : entry.id)}
+              className="flex flex-col border border-border-default p-2.5 text-left transition-colors hover:bg-bg-overlay"
+            >
+              <div className="flex items-center gap-2">
+                {/* Time */}
+                <span className="w-28 shrink-0 text-[9px] text-text-muted">
+                  {new Date(entry.createdAt).toLocaleString()}
+                </span>
+                {/* User */}
+                <span className="w-24 shrink-0 truncate text-[9px] text-text-secondary">
+                  {entry.userName || entry.userEmail}
+                </span>
+                {/* Action */}
+                <span
+                  className={`w-16 shrink-0 text-[9px] font-medium uppercase ${
+                    ACTION_COLORS[entry.action] ?? 'text-text-muted'
+                  }`}
+                >
+                  {entry.action}
+                </span>
+                {/* Resource */}
+                <span className="flex-1 truncate text-[9px] text-text-primary">
+                  {entry.resource}
+                  {entry.resourceId && (
+                    <span className="ml-1 text-text-muted">#{entry.resourceId.slice(0, 8)}</span>
+                  )}
+                </span>
+                {/* Path */}
+                <span className="shrink-0 text-[8px] text-text-muted">{entry.path}</span>
+                <ChevronDown
+                  size={10}
+                  strokeWidth={1.5}
+                  className={`shrink-0 text-text-muted transition-transform ${
+                    isExpanded ? 'rotate-180' : ''
+                  }`}
+                />
+              </div>
+              {/* Expanded detail */}
+              {isExpanded && entry.input != null && (
+                <pre className="mt-2 max-h-32 overflow-auto border-t border-border-default pt-2 text-[8px] text-text-muted">
+                  {String(JSON.stringify(entry.input, null, 2))}
+                </pre>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ===========================================================================
 // Main Page
 // ===========================================================================
 export default function SettingsPage() {
@@ -1314,6 +1507,7 @@ export default function SettingsPage() {
             {activeTab === 'navigation' && <NavigationTab />}
             {activeTab === 'apikeys' && <ApiKeysTab />}
             {activeTab === 'models' && <ModelsTab />}
+            {activeTab === 'auditlog' && <AuditLogTab />}
           </div>
         </div>
       </div>

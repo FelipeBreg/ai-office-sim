@@ -1,7 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import { db } from '@ai-office/db';
-import { users, projects, organizations, agents, workflows } from '@ai-office/db';
+import { users, projects, organizations, agents, workflows, auditLogs } from '@ai-office/db';
 import { eq, and, sql, count, inArray } from '@ai-office/db';
 import { PLAN_LIMITS, type PlanTier, type ResourceType } from '@ai-office/shared';
 
@@ -103,6 +103,91 @@ export const middleware = t.middleware;
 // Public procedure — no auth required
 export const publicProcedure = t.procedure;
 
+// ---------------------------------------------------------------------------
+// Audit log middleware — fire-and-forget insert into audit_logs
+// ---------------------------------------------------------------------------
+
+/** Paths to skip auditing (read-only or high-frequency) */
+const AUDIT_SKIP_PATHS = new Set([
+  'atlas.chat',
+  'atlas.resolveToolCalls',
+  'users.updateLocale',
+  'users.updateTimezone',
+]);
+
+function parseAuditMeta(path: string, rawInput: unknown) {
+  const parts = path.split('.');
+  const action = parts[parts.length - 1] ?? path;
+  const resourceRaw = parts[0] ?? path;
+  const resource = resourceRaw.endsWith('s') ? resourceRaw.slice(0, -1) : resourceRaw;
+  let resourceId: string | undefined;
+  if (rawInput && typeof rawInput === 'object') {
+    const inp = rawInput as Record<string, unknown>;
+    resourceId = (inp.id ?? inp.userId ?? inp.agentId ?? inp.workflowId) as string | undefined;
+  }
+  return { resource, action, resourceId };
+}
+
+export function logAudit(opts: {
+  orgId: string;
+  projectId?: string;
+  userId: string;
+  path: string;
+  input: unknown;
+  result?: unknown;
+}) {
+  const { resource, action, resourceId } = parseAuditMeta(opts.path, opts.input);
+  const sanitize = (val: unknown) => {
+    try {
+      const str = JSON.stringify(val);
+      if (str && str.length > 4000) return null;
+      return val;
+    } catch {
+      return null;
+    }
+  };
+
+  db.insert(auditLogs)
+    .values({
+      orgId: opts.orgId,
+      projectId: opts.projectId ?? null,
+      userId: opts.userId,
+      resource,
+      action,
+      resourceId: resourceId ?? null,
+      path: opts.path,
+      input: sanitize(opts.input) as any,
+      result: sanitize(opts.result) as any,
+    })
+    .catch(() => {
+      // Swallow — audit logging must never break the app
+    });
+}
+
+const auditMiddleware = t.middleware(async ({ ctx, path, type, getRawInput, next }) => {
+  const result = await next();
+  if (type !== 'mutation') return result;
+  if (AUDIT_SKIP_PATHS.has(path)) return result;
+  if (!ctx.user) return result;
+
+  // getRawInput() returns a promise — resolve it in the background
+  getRawInput()
+    .then((rawInput) => {
+      logAudit({
+        orgId: ctx.org?.id ?? ctx.user!.orgId,
+        projectId: ctx.project?.id,
+        userId: ctx.user!.id,
+        path,
+        input: rawInput,
+      });
+    })
+    .catch(() => {
+      // Swallow
+    });
+
+  return result;
+});
+
 // Protected procedure — requires authenticated user + org
 const enforceAuth = t.middleware(async ({ ctx, next }) => {
   if (!ctx.user) {
@@ -123,7 +208,7 @@ const enforceAuth = t.middleware(async ({ ctx, next }) => {
   return next({ ctx: { user, org } });
 });
 
-export const protectedProcedure = t.procedure.use(enforceAuth);
+export const protectedProcedure = t.procedure.use(enforceAuth).use(auditMiddleware);
 
 // Project procedure — requires auth + valid project context
 const enforceProject = t.middleware(async ({ ctx, next }) => {
@@ -157,7 +242,7 @@ const enforceProject = t.middleware(async ({ ctx, next }) => {
   return next({ ctx: { user, org, project } });
 });
 
-export const projectProcedure = t.procedure.use(enforceProject);
+export const projectProcedure = t.procedure.use(enforceProject).use(auditMiddleware);
 
 // Role-based access middleware factory
 const ROLE_HIERARCHY: Record<string, number> = {
