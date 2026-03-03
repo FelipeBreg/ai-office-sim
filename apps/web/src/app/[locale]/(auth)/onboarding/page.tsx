@@ -541,6 +541,13 @@ function StepFirstAgent({
 /* -------------------------------------------------------------------------- */
 
 function StepDone({ t }: { t: (key: string) => string }) {
+  // Mark first-run complete so Atlas can show greeting
+  useEffect(() => {
+    try {
+      localStorage.setItem('ai-office-first-run', 'true');
+    } catch {}
+  }, []);
+
   return (
     <div className="relative flex flex-col items-center justify-center gap-6 py-12 text-center">
       {/* CSS-only confetti particles */}
@@ -582,6 +589,19 @@ function StepDone({ t }: { t: (key: string) => string }) {
       <p className="max-w-md text-xs leading-relaxed text-text-secondary">
         {t('doneDescription')}
       </p>
+
+      {/* Atlas first-run prompt */}
+      <div className="mx-auto mt-4 max-w-md border border-accent-cyan/30 bg-accent-cyan/5 p-4">
+        <div className="flex items-center gap-2">
+          <Terminal size={14} strokeWidth={1.5} className="text-accent-cyan" />
+          <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-accent-cyan">
+            ATLAS
+          </span>
+        </div>
+        <p className="mt-2 text-[11px] leading-relaxed text-text-secondary">
+          {t('atlasFirstRun')}
+        </p>
+      </div>
 
       <div className="mt-2 flex items-center gap-2 text-[9px] text-accent-cyan">
         <span className="inline-block h-1.5 w-1.5 animate-pulse bg-accent-cyan" />
@@ -651,7 +671,7 @@ export default function OnboardingPage() {
   }, [step]);
 
   const goToOffice = useCallback(() => {
-    router.push('/office');
+    router.push('/atlas');
   }, [router]);
 
   /* ---- Step validation ---- */

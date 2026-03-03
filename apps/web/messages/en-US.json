@@ -1160,7 +1160,8 @@
 
     "doneHeading": "You're All Set!",
     "doneDescription": "Your AI Office workspace is ready to go. Head to the office to see your agents in action, configure workflows, and start automating.",
-    "doneHint": "System online"
+    "doneHint": "System online",
+    "atlasFirstRun": "Welcome! I'm ATLAS, your AI command center. I'll help you set up your first autonomous workflow. Click below to meet me and I'll guide you through everything."
   },
   "help": {
     "title": "Alpha Playbook",
@@ -1709,5 +1710,29 @@
     "unpublish": "Unpublish",
     "unpublishConfirm": "Are you sure you want to unpublish this listing?",
     "unpublished": "Unpublished successfully."
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated",
+    "section1Title": "1. Data Collection",
+    "section1Body": "We collect information you provide when creating an account, configuring projects, and interacting with AI agents. This includes company name, email, project configurations, agent conversations, and workflow data.",
+    "section2Title": "2. Use of Data",
+    "section2Body": "Your data is used to provide the AI Office Sim service, including agent execution, workflow automation, and analytics. We use Anthropic Claude for AI processing. Your data may be sent to Claude for processing but is not used for model training.",
+    "section3Title": "3. Data Storage & Security",
+    "section3Body": "Data is stored in PostgreSQL databases hosted on Neon (EU/US regions). All data is encrypted at rest and in transit. API keys and credentials are encrypted using AES-256 before storage.",
+    "section4Title": "4. Your Rights (LGPD Art. 18)",
+    "section4Body": "Under the Brazilian General Data Protection Law (LGPD), you have the right to: access your data, correct inaccurate data, request deletion of your data, request data portability (export), revoke consent, and request information about data sharing with third parties.",
+    "section5Title": "5. Data Export & Deletion",
+    "section5Body": "You can export all your project data as JSON from Settings > Compliance. You can request complete deletion of all project data, which cascades to all associated agents, workflows, conversations, and action logs.",
+    "section6Title": "6. PII Masking",
+    "section6Body": "We offer optional PII (Personally Identifiable Information) masking that automatically redacts CPF, CNPJ, phone numbers, email addresses, and credit card numbers before sending data to AI models for processing.",
+    "section7Title": "7. Contact",
+    "section7Body": "For privacy-related inquiries, data requests, or to exercise your LGPD rights, contact our Data Protection Officer at privacy@aiofficesim.com."
+  },
+  "cookieConsent": {
+    "message": "We use cookies and local storage to improve your experience. By continuing, you agree to our",
+    "privacyLink": "Privacy Policy",
+    "accept": "Accept",
+    "decline": "Decline"
   }
 }

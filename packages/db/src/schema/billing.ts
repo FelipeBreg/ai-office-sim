@@ -4,11 +4,15 @@ import {
   text,
   integer,
   boolean,
+  numeric,
   timestamp,
+  date,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { subscriptionStatusEnum, paymentMethodTypeEnum, invoiceStatusEnum } from './enums.js';
 import { organizations } from './organizations.js';
+import { projects } from './projects.js';
 
 export const subscriptions = pgTable(
   'subscriptions',
@@ -60,4 +64,49 @@ export const invoices = pgTable(
     index('invoice_org_id_idx').on(table.orgId),
     index('invoice_stripe_id_idx').on(table.stripeInvoiceId),
   ],
+);
+
+/** Daily aggregated token usage per project — populated by billing worker */
+export const usageRecords = pgTable(
+  'usage_records',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    periodDate: date('period_date').notNull(),
+    totalTokens: integer('total_tokens').notNull().default(0),
+    totalCostUsd: numeric('total_cost_usd', { precision: 12, scale: 6 }).notNull().default('0'),
+    actionCount: integer('action_count').notNull().default(0),
+    stripeUsageRecordId: text('stripe_usage_record_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('usage_record_project_date_idx').on(table.projectId, table.periodDate),
+    index('usage_record_org_id_idx').on(table.orgId),
+  ],
+);
+
+/** Organization token balance — for pay-as-you-go billing */
+export const tokenBalances = pgTable(
+  'token_balances',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' })
+      .unique(),
+    balanceCents: integer('balance_cents').notNull().default(0),
+    autoRechargeEnabled: boolean('auto_recharge_enabled').notNull().default(false),
+    autoRechargeThresholdCents: integer('auto_recharge_threshold_cents').notNull().default(500),
+    autoRechargeAmountCents: integer('auto_recharge_amount_cents').notNull().default(5000),
+    isPaused: boolean('is_paused').notNull().default(false),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
 );

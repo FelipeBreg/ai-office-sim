@@ -408,6 +408,85 @@ const DEPT_PLANEJAMENTO = buildDeptTemplate({
 /*  Exports                                                                   */
 /* -------------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- */
+/*  Data Sync Templates (Phase 9.4)                                           */
+/* -------------------------------------------------------------------------- */
+
+const DATA_SYNC_RDSTATION: CompanyTemplateDefinition = {
+  slug: 'data-sync-rdstation',
+  nameEn: 'RD Station Sync',
+  namePtBr: 'Sync RD Station',
+  descriptionEn: 'Automated data sync from RD Station CRM into your deals table. Hourly polling for new leads, deals, and contact updates.',
+  descriptionPtBr: 'Sincronização automática do RD Station CRM para sua tabela de deals. Consulta horária de novos leads, deals e atualizações de contatos.',
+  sector: 'sales',
+  marketFocus: 'br',
+  icon: 'layout',
+  sortOrder: 50,
+  defaultAgents: [
+    {
+      archetype: 'data_analyst',
+      nameEn: 'RD Station Sync Agent',
+      namePtBr: 'Agente Sync RD Station',
+      tools: ['rdstation_list_deals', 'rdstation_list_contacts', 'upsert_deal', 'search_company_memory'],
+      systemPromptEn: 'You are a data synchronization agent. Every hour, pull new/updated deals and contacts from RD Station CRM and upsert them into the local deals table. Report any sync errors.',
+      systemPromptPtBr: 'Você é um agente de sincronização de dados. A cada hora, busque deals e contatos novos/atualizados do RD Station CRM e insira-os na tabela local de deals. Reporte quaisquer erros de sincronização.',
+    },
+  ],
+  defaultWorkflows: [
+    { nameEn: 'Hourly RD Station Sync', namePtBr: 'Sync Horária RD Station', triggerType: 'scheduled', steps: ['fetch_rdstation_data', 'upsert_deals', 'log_results'] },
+  ],
+};
+
+const DATA_SYNC_META_ADS: CompanyTemplateDefinition = {
+  slug: 'data-sync-meta-ads',
+  nameEn: 'Meta Ads Sync',
+  namePtBr: 'Sync Meta Ads',
+  descriptionEn: 'Daily sync of Meta (Facebook/Instagram) Ads campaign performance into your marketing campaigns table.',
+  descriptionPtBr: 'Sincronização diária do desempenho de campanhas Meta (Facebook/Instagram) Ads para sua tabela de campanhas de marketing.',
+  sector: 'marketing',
+  marketFocus: 'both',
+  icon: 'megaphone',
+  sortOrder: 51,
+  defaultAgents: [
+    {
+      archetype: 'ad_analyst',
+      nameEn: 'Meta Ads Sync Agent',
+      namePtBr: 'Agente Sync Meta Ads',
+      tools: ['meta_ads_list_campaigns', 'meta_ads_get_insights', 'upsert_marketing_campaign', 'generate_report'],
+      systemPromptEn: 'You are a Meta Ads data sync agent. Daily, pull campaign performance data (spend, impressions, clicks, conversions) from Meta Marketing API and update the local marketing_campaigns table. Flag any campaigns with anomalous performance.',
+      systemPromptPtBr: 'Você é um agente de sincronização de dados Meta Ads. Diariamente, busque dados de desempenho de campanhas (gasto, impressões, cliques, conversões) da API Meta Marketing e atualize a tabela local de marketing_campaigns. Sinalize campanhas com desempenho anômalo.',
+    },
+  ],
+  defaultWorkflows: [
+    { nameEn: 'Daily Meta Ads Sync', namePtBr: 'Sync Diária Meta Ads', triggerType: 'scheduled', steps: ['fetch_meta_campaigns', 'update_campaigns', 'generate_performance_report'] },
+  ],
+};
+
+const DATA_SYNC_GOOGLE_ADS: CompanyTemplateDefinition = {
+  slug: 'data-sync-google-ads',
+  nameEn: 'Google Ads Sync',
+  namePtBr: 'Sync Google Ads',
+  descriptionEn: 'Daily sync of Google Ads campaign performance data. Track spend, conversions, CPC, and ROAS automatically.',
+  descriptionPtBr: 'Sincronização diária do desempenho de campanhas Google Ads. Acompanhe gasto, conversões, CPC e ROAS automaticamente.',
+  sector: 'marketing',
+  marketFocus: 'both',
+  icon: 'megaphone',
+  sortOrder: 52,
+  defaultAgents: [
+    {
+      archetype: 'ad_analyst',
+      nameEn: 'Google Ads Sync Agent',
+      namePtBr: 'Agente Sync Google Ads',
+      tools: ['google_ads_list_campaigns', 'google_ads_get_performance', 'upsert_marketing_campaign', 'generate_report'],
+      systemPromptEn: 'You are a Google Ads data sync agent. Daily, pull campaign performance data (cost, clicks, impressions, conversions, CPC, ROAS) from Google Ads API and update the local marketing_campaigns table. Generate alerts for budget overruns or performance drops.',
+      systemPromptPtBr: 'Você é um agente de sincronização de dados Google Ads. Diariamente, busque dados de desempenho de campanhas (custo, cliques, impressões, conversões, CPC, ROAS) da API Google Ads e atualize a tabela local de marketing_campaigns. Gere alertas para estouros de orçamento ou quedas de desempenho.',
+    },
+  ],
+  defaultWorkflows: [
+    { nameEn: 'Daily Google Ads Sync', namePtBr: 'Sync Diária Google Ads', triggerType: 'scheduled', steps: ['fetch_google_campaigns', 'update_campaigns', 'check_budget_alerts'] },
+  ],
+};
+
 export const COMPANY_TEMPLATES: CompanyTemplateDefinition[] = [
   // BR — industry
   AGENCIA_MARKETING_BR,
@@ -431,6 +510,10 @@ export const COMPANY_TEMPLATES: CompanyTemplateDefinition[] = [
   DEPT_COMPLIANCE,
   DEPT_TESOURARIA,
   DEPT_PLANEJAMENTO,
+  // Data Sync
+  DATA_SYNC_RDSTATION,
+  DATA_SYNC_META_ADS,
+  DATA_SYNC_GOOGLE_ADS,
   // Universal
   BLANK_CANVAS,
 ];

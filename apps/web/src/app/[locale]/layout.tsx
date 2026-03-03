@@ -6,6 +6,7 @@ import { getMessages } from 'next-intl/server';
 import { ClerkProvider } from '@clerk/nextjs';
 import { routing } from '@/i18n/routing';
 import { TRPCProvider } from '@/lib/trpc/provider';
+import { CookieConsent } from '@/components/cookie-consent';
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ['latin'],
@@ -55,7 +56,10 @@ export default async function LocaleLayout({
           afterSignOutUrl={`/${locale}`}
         >
           <NextIntlClientProvider locale={locale} messages={messages}>
-            <TRPCProvider>{children}</TRPCProvider>
+            <TRPCProvider>
+              {children}
+              <CookieConsent />
+            </TRPCProvider>
           </NextIntlClientProvider>
         </ClerkProvider>
       </body>

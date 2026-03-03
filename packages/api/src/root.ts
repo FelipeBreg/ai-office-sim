@@ -31,6 +31,7 @@ import { membersRouter } from './routers/members.js';
 import { auditLogsRouter } from './routers/audit-logs.js';
 import { communityRouter } from './routers/community.js';
 import { cascadesRouter } from './routers/cascades.js';
+import { complianceRouter } from './routers/compliance.js';
 
 export const appRouter = createTRPCRouter({
   agents: agentsRouter,
@@ -65,6 +66,7 @@ export const appRouter = createTRPCRouter({
   auditLogs: auditLogsRouter,
   community: communityRouter,
   cascades: cascadesRouter,
+  compliance: complianceRouter,
 });
 
 export type AppRouter = typeof appRouter;

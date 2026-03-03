@@ -1160,7 +1160,8 @@
 
     "doneHeading": "Tudo Pronto!",
     "doneDescription": "Seu espaço de trabalho AI Office está pronto. Vá para o escritório para ver seus agentes em ação, configure workflows e comece a automatizar.",
-    "doneHint": "Sistema online"
+    "doneHint": "Sistema online",
+    "atlasFirstRun": "Bem-vindo! Sou o ATLAS, seu centro de comando de IA. Vou ajudar a configurar seu primeiro workflow autonomo. Clique abaixo para me conhecer e eu guio voce por tudo."
   },
   "help": {
     "title": "Playbook Alpha",
@@ -1709,5 +1710,29 @@
     "unpublish": "Despublicar",
     "unpublishConfirm": "Tem certeza que deseja despublicar esta listagem?",
     "unpublished": "Despublicado com sucesso."
+  },
+  "privacy": {
+    "title": "Politica de Privacidade",
+    "lastUpdated": "Atualizado em",
+    "section1Title": "1. Coleta de Dados",
+    "section1Body": "Coletamos informacoes fornecidas ao criar uma conta, configurar projetos e interagir com agentes de IA. Isso inclui nome da empresa, email, configuracoes de projeto, conversas com agentes e dados de workflows.",
+    "section2Title": "2. Uso dos Dados",
+    "section2Body": "Seus dados sao usados para fornecer o servico AI Office Sim, incluindo execucao de agentes, automacao de workflows e analytics. Usamos o Claude da Anthropic para processamento de IA. Seus dados podem ser enviados ao Claude para processamento, mas nao sao usados para treinamento de modelos.",
+    "section3Title": "3. Armazenamento e Seguranca",
+    "section3Body": "Os dados sao armazenados em bancos de dados PostgreSQL hospedados na Neon (regioes EU/US). Todos os dados sao criptografados em repouso e em transito. Chaves de API e credenciais sao criptografadas usando AES-256 antes do armazenamento.",
+    "section4Title": "4. Seus Direitos (LGPD Art. 18)",
+    "section4Body": "Sob a Lei Geral de Protecao de Dados (LGPD), voce tem direito a: acessar seus dados, corrigir dados imprecisos, solicitar exclusao dos seus dados, solicitar portabilidade de dados (exportacao), revogar consentimento e solicitar informacoes sobre compartilhamento de dados com terceiros.",
+    "section5Title": "5. Exportacao e Exclusao de Dados",
+    "section5Body": "Voce pode exportar todos os dados do seu projeto como JSON em Configuracoes > Conformidade. Voce pode solicitar a exclusao completa de todos os dados do projeto, que se propaga para todos os agentes, workflows, conversas e logs de acoes associados.",
+    "section6Title": "6. Mascaramento de PII",
+    "section6Body": "Oferecemos mascaramento opcional de PII (Informacoes Pessoais Identificaveis) que automaticamente redige CPF, CNPJ, numeros de telefone, enderecos de email e numeros de cartao de credito antes de enviar dados aos modelos de IA para processamento.",
+    "section7Title": "7. Contato",
+    "section7Body": "Para consultas relacionadas a privacidade, solicitacoes de dados ou para exercer seus direitos sob a LGPD, entre em contato com nosso Encarregado de Protecao de Dados em privacy@aiofficesim.com."
+  },
+  "cookieConsent": {
+    "message": "Usamos cookies e armazenamento local para melhorar sua experiencia. Ao continuar, voce concorda com nossa",
+    "privacyLink": "Politica de Privacidade",
+    "accept": "Aceitar",
+    "decline": "Recusar"
   }
 }
