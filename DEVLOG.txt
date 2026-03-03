@@ -7,6 +7,38 @@
 
 
 ================================================================================
+COMMIT #113 — Phase 2: Safety Infrastructure (Roadmap v2)
+Date: 2026-03-03
+Hash: 40ac688
+────────────────────────────────────────────────────────────────────────────────
+
+Epic 2.1 — Cascade Depth Tracking:
+  • CascadeContext type (shared/types) with cascadeId, depth, path, status
+  • cascadeContextSchema in queue jobs — propagated through agent execution pipeline
+  • Pre-flight cascade checks: depth limit (default 5), loop detection
+  • trigger_agent tool: increments depth, appends agentId to path, starts new cascade if none
+  • cascade_events DB table + cascadeStatusEnum
+  • Socket.IO events: cascade:started, cascade:branch_failed, cascade:depth_exceeded, cascade:completed
+
+Epic 2.2 — Approval Timeout:
+  • Added expiresAt/expiredAt fields to approvals schema
+  • Added approvalTimeoutHours (default 48) + maxCascadeDepth (default 5) to orchestrator_config
+  • Orchestrator tick auto-expires pending approvals past expiresAt
+  • Expired approvals: mark rejected → resume agent with resumeApproved=false → emit event
+
+Epic 2.3 — Agent Auto-Recovery:
+  • Added cooldownUntil + recoveryAttempts fields to agents table
+  • Orchestrator tick queries errored agents with expired cooldown
+  • Exponential backoff: 1h → 4h → 24h (3 attempts max)
+  • After 3 failures: agent isActive set to false (disabled)
+
+Fixes:
+  • Added triggerType to all queue.add() call sites across api, worker, and web packages
+  • Fixed brace scoping in orchestrator recovery code
+
+Files changed: 18 (292 insertions, 2 deletions)
+
+================================================================================
 COMMIT #112 — Phase 1: Foundation Layer (Roadmap v2)
 ================================================================================
 Date:     2026-03-03
