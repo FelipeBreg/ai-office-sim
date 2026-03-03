@@ -7,6 +7,53 @@
 
 
 ================================================================================
+COMMIT #98 — Workflow Event Triggers (Phase 2.1)
+================================================================================
+Hash:     9c72db0
+Date:     2026-03-02
+Scope:    packages/db, packages/queue, packages/api, packages/ai, apps/worker, apps/web
+
+WHAT CHANGED:
+  • DB SCHEMA: added webhookToken column to workflows table + unique index
+  • WEBHOOK TRIGGERS: Express POST /webhooks/workflow/:token route in worker
+    accepts JSON body, maps keys to workflow variables, creates run + enqueues
+  • SCHEDULED TRIGGERS: new workflow-cron-scheduler.ts — on startup scans all
+    active workflows for scheduled trigger type, registers BullMQ repeatables
+    with cron patterns; syncWorkflowSchedule() for create/update/delete sync
+  • EVENT TRIGGERS: new workflow-event-triggers.ts — fireEventTriggers() scans
+    project workflows for event trigger type matching event name, creates run
+    + enqueues execution. Fired from agent-execution.ts (agent.completed/failed)
+    and workflow-execution.ts (workflow.completed/failed)
+  • WORKFLOW EXECUTION: handles _scheduledTrigger flag by creating run on-the-fly
+    before execution starts; fires event triggers after completion/failure
+  • tRPC: regenerateWebhookToken mutation; create/update auto-generate webhook
+    token when trigger node is webhook type
+  • CONFIG PANEL UI: webhook section shows URL with copy button + regenerate;
+    scheduled section has cron presets (every hour, daily 9am, weekdays, monday);
+    event section has event name suggestions (agent.completed, workflow.completed)
+  • WORKER STARTUP: registerAllScheduledWorkflows() called alongside agent cron
+
+MIGRATION REQUIRED:
+  packages/db/src/migrations/0003_add_webhook_token_to_workflows.sql
+
+FILES:
+  new: apps/worker/src/scheduler/workflow-cron-scheduler.ts
+  new: apps/worker/src/scheduler/workflow-event-triggers.ts
+  new: packages/db/src/migrations/0003_add_webhook_token_to_workflows.sql
+  mod: packages/db/src/schema/workflows.ts (webhookToken column + index)
+  mod: packages/queue/src/jobs.ts (_scheduledTrigger flag, relaxed workflowRunId)
+  mod: packages/api/src/routers/workflows.ts (auto-token, regenerateWebhookToken)
+  mod: apps/worker/src/index.ts (express.json, webhook route, workflow cron)
+  mod: apps/worker/src/jobs/workflow-execution.ts (scheduled run creation, events)
+  mod: apps/worker/src/jobs/agent-execution.ts (fire event triggers on completion)
+  mod: apps/web/src/components/workflows/ConfigPanel.tsx (webhook URL, presets)
+  mod: apps/web/src/components/workflows/WorkflowEditor.tsx (pass workflowId/token)
+  mod: apps/web/src/app/[locale]/(auth)/workflows/[id]/page.tsx (pass webhook token)
+
+VERIFIED: typecheck 13/13 ✓
+
+
+================================================================================
 COMMIT #97 — Agent Testing Sandbox (Phase 1.5)
 ================================================================================
 Hash:     0964d37
