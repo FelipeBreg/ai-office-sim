@@ -7,6 +7,40 @@
 
 
 ================================================================================
+COMMIT #104 — Cost Controls & Budget Guardrails (Phase 3.4)
+================================================================================
+Hash:     4f5f6f5
+Date:     2026-03-03
+Scope:    apps/worker, packages/api, apps/web
+
+WHAT CHANGED:
+  • AGENT EXECUTION: added pre-execution budget checks:
+    - Per-agent daily budget: reads config.budget, sums today's cost from
+      action_logs, skips + notifies if exceeded
+    - Per-project daily limit: reads orchestrator_config.dailySpendLimitUsd,
+      skips if project over limit
+    - 80% alert: sends notification when project spend hits 80% of daily limit
+  • ORCHESTRATOR ROUTER: getCostForecast query:
+    - Calculates last 7-day total cost + daily average
+    - Projects 30-day spend from daily average
+    - Compares projections against configured monthly/daily limits
+    - Returns projectedOverMonthlyLimit / projectedOverDailyLimit booleans
+  • DASHBOARD: cost tab updated with forecast cards:
+    - Last 7 Days total, Daily Average, Projected 30 Days
+    - Budget Status indicator (Over Budget / Within Budget / No Limit)
+  • i18n: 7 new keys in en-US and pt-BR
+
+FILES:
+  ~ apps/worker/src/jobs/agent-execution.ts (budget checks before execution)
+  ~ packages/api/src/routers/orchestrator.ts (+getCostForecast query)
+  ~ apps/web/src/app/[locale]/(auth)/orchestrator/page.tsx (forecast cards)
+  ~ apps/web/messages/en-US.json (+7 forecast keys)
+  ~ apps/web/messages/pt-BR.json (+7 forecast keys)
+
+TYPECHECK: 13/13 pass
+
+
+================================================================================
 COMMIT #103 — Priority-Aware Agent Scheduling (Phase 3.3)
 ================================================================================
 Hash:     df55ab8
