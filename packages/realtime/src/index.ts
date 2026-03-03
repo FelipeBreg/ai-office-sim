@@ -13,6 +13,9 @@ export type {
   WorkflowCompleteEvent,
   KpiUpdatedEvent,
   LearningNewEvent,
+  ConversationNewMessageEvent,
+  ConversationStatusChangedEvent,
+  ConversationAssignedEvent,
 } from './events.js';
 
 export { SERVER_EVENTS, CLIENT_EVENTS } from './events.js';

@@ -7,8 +7,16 @@ import { Search, Bell, ChevronDown, Sun, Moon } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 import { useProjectStore, useActiveProject, useProjects } from '@/stores/project-store';
 import { useUIStore } from '@/stores/ui-store';
+import { useConnectionStatus, usePendingApprovalCount } from '@/stores/realtime-store';
 import { LocaleSwitcher } from '@/components/locale-switcher/locale-switcher';
 import { safeColor } from '@/lib/safe-color';
+
+const CONNECTION_INDICATOR: Record<string, { color: string; label: string }> = {
+  connected: { color: 'bg-[#2EA043]', label: 'Connected' },
+  connecting: { color: 'bg-[#D29922]', label: 'Connecting...' },
+  reconnecting: { color: 'bg-[#D29922]', label: 'Reconnecting...' },
+  disconnected: { color: 'bg-[#484F58]', label: 'Offline' },
+};
 
 const routeToNavKey: Record<string, string> = {
   '/office': 'office',
@@ -24,11 +32,7 @@ const routeToNavKey: Record<string, string> = {
   '/settings': 'settings',
 };
 
-interface HeaderProps {
-  pendingApprovalCount?: number;
-}
-
-export function Header({ pendingApprovalCount = 0 }: HeaderProps) {
+export function Header() {
   const t = useTranslations('nav');
   const pathname = usePathname();
   const activeProject = useActiveProject();
@@ -39,6 +43,9 @@ export function Header({ pendingApprovalCount = 0 }: HeaderProps) {
   const [isMac, setIsMac] = useState(false);
   const theme = useUIStore((s) => s.theme);
   const toggleTheme = useUIStore((s) => s.toggleTheme);
+  const connectionStatus = useConnectionStatus();
+  const pendingApprovalCount = usePendingApprovalCount();
+  const connIndicator = CONNECTION_INDICATOR[connectionStatus] ?? CONNECTION_INDICATOR.disconnected;
 
   // Detect platform for keyboard shortcut display
   useEffect(() => {
@@ -114,6 +121,12 @@ export function Header({ pendingApprovalCount = 0 }: HeaderProps) {
 
       {/* Right: controls */}
       <div className="flex items-center gap-3">
+        {/* Connection status indicator */}
+        <div className="flex items-center gap-1.5" title={connIndicator!.label}>
+          <span className={`inline-block h-1.5 w-1.5 ${connIndicator!.color} ${connectionStatus === 'connecting' || connectionStatus === 'reconnecting' ? 'animate-pulse' : ''}`} />
+          <span className="text-[9px] text-text-muted">{connIndicator!.label}</span>
+        </div>
+
         {/* Notification bell */}
         <button
           className="relative text-text-muted transition-colors hover:text-text-primary"
@@ -121,7 +134,9 @@ export function Header({ pendingApprovalCount = 0 }: HeaderProps) {
         >
           <Bell size={14} strokeWidth={1.5} />
           {pendingApprovalCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 animate-pulse bg-accent-cyan" />
+            <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3 items-center justify-center bg-accent-cyan text-[7px] font-bold text-bg-deepest">
+              {pendingApprovalCount > 9 ? '9+' : pendingApprovalCount}
+            </span>
           )}
         </button>
 

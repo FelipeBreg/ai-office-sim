@@ -22,6 +22,7 @@ import type { AgentStatus } from './AgentAvatar';
 import type { AgentData } from './AgentLayer';
 import type { AgentStatusMap } from './AgentLayer';
 import { trpc } from '@/lib/trpc/client';
+import { useLiveAgentStatuses } from '@/stores/realtime-store';
 
 // ── Team → room mapping ──────────────────────────────────────────────
 const TEAM_ROOM_MAP: Record<string, string> = {
@@ -155,6 +156,9 @@ export function OfficeCanvas() {
   // Fetch real agents from DB
   const { data: rawAgents } = trpc.agents.list.useQuery();
 
+  // Live statuses from Socket.IO events (overrides DB values)
+  const liveStatuses = useLiveAgentStatuses();
+
   // Map agents to 3D scene data with team-based room assignments
   const { agents, rosterAgents, statusMap } = useMemo(() => {
     if (!rawAgents || rawAgents.length === 0) {
@@ -189,11 +193,13 @@ export function OfficeCanvas() {
         archetype: ARCHETYPE_LABELS[agent.archetype] ?? agent.archetype,
       });
 
-      sMap.set(agent.id, (agent.status as AgentStatus) ?? 'idle');
+      // Live Socket.IO status takes priority over DB status
+      const liveStatus = liveStatuses.get(agent.id);
+      sMap.set(agent.id, liveStatus ?? (agent.status as AgentStatus) ?? 'idle');
     }
 
     return { agents: agentDataList, rosterAgents: rosterList, statusMap: sMap };
-  }, [rawAgents]);
+  }, [rawAgents, liveStatuses]);
 
   const roomLabels = useMemo<Record<string, string>>(() => ({
     openWorkspace: t('openWorkspace'),
