@@ -7,6 +7,60 @@
 
 
 ================================================================================
+COMMIT #118 — Phase 7: Atlas & Intelligence (Roadmap v2)
+Date: 2026-03-03
+Hash: 4682c15
+────────────────────────────────────────────────────────────────────────────────
+
+Epic 7.1 — Atlas Voice Interface:
+  - Wired useSpeechRecognition (STT) + useSpeechSynthesis (TTS) into Atlas page
+  - Mic toggle starts/stops STT; onResult updates input, onEnd auto-sends
+  - TTS reads back complete responses (if not muted & browser supports it)
+  - Reset handler cancels TTS and stops STT
+
+Epic 7.2.1 — Missing Atlas Tools:
+  - Added 7 new tools to atlas-tools.ts:
+    search_action_logs (read-only), trigger_workflow (mutation),
+    update_wiki_article (mutation), manage_calendar (mutation),
+    create_strategy_kpi (mutation), update_strategy_kpi (mutation),
+    get_kpi_trends (read-only)
+  - Updated ATLAS_AUTO_EXECUTE_TOOLS and ATLAS_APPROVAL_TOOLS sets
+  - Updated system prompt with full tool listing
+
+Epic 7.2.2 — Atlas Proactive Briefing:
+  - latestBriefing tRPC query — fetches CEO agent session summary (<24h old)
+  - Dismissible cyan briefing banner on Atlas page
+
+Epic 7.3.1 — Static Knowledge Schema:
+  - Added isStatic (boolean, default false) + archetypeSlug (text, nullable)
+    to documents table
+  - New composite index: document_static_archetype_idx
+
+Epic 7.3.2 — Curated Knowledge Base:
+  - 5 archetype knowledge files (legal_research, finance, sales, marketing,
+    ceo_strategist) with domain-specific curated content
+  - Central registry: getArchetypeKnowledge() / getKnowledgeArchetypes()
+
+Epic 7.3.3 — Combined RAG Search:
+  - Modified rag-search.ts to combine static + dynamic + project-wide docs
+  - STATIC_DOC_BOOST (0.05) with re-ranking for curated content priority
+  - archetypeSlug propagated: ToolExecutionContext → executor → tool → RAG
+
+Epic 7.4.1 — Cost Projection Engine:
+  - generateCostForecast() — 7-day trailing avg, monthly projection,
+    per-agent breakdown, budget warning at 80%
+  - costForecast tRPC endpoint on dashboard router
+
+Epic 7.4.2 — Cost Forecasting UI + Budget Alerts:
+  - Forecast section in finance-tab: daily avg, projected monthly, budget %
+  - Per-agent cost projection table (top 10)
+  - BudgetProjectionWarningEvent via Socket.IO from orchestrator worker
+  - i18n keys added (en-US + pt-BR)
+
+Files: 23 changed, +1364 -29
+Verification: turbo typecheck --force: 0 errors (15/15 tasks)
+
+================================================================================
 COMMIT #117 — Phase 6: Platform Hardening (Roadmap v2)
 Date: 2026-03-03
 Hash: a4d0437
