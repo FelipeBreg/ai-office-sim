@@ -23,6 +23,7 @@ export const createDeployRequestTool: ToolDefinition = {
     environment: z.string().optional().describe('Target environment (e.g. staging, production)'),
   }),
   requiresApproval: true,
+  isMutation: true,
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const {
       title,

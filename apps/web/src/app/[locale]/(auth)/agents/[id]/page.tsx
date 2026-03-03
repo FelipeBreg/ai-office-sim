@@ -1268,6 +1268,7 @@ export default function AgentDetailPage({
   const agent = agentQuery.data as Agent | undefined;
 
   const triggerMutation = trpc.agents.trigger.useMutation();
+  const testRunMutation = trpc.agents.testRun.useMutation();
   const updateMutation = trpc.agents.update.useMutation({
     onSuccess: () => {
       agentQuery.refetch();
@@ -1289,8 +1290,8 @@ export default function AgentDetailPage({
 
   const handleTestRun = useCallback(() => {
     if (!agent) return;
-    triggerMutation.mutate({ id: agent.id });
-  }, [agent, triggerMutation]);
+    testRunMutation.mutate({ id: agent.id });
+  }, [agent, testRunMutation]);
 
   const handleDelete = useCallback(() => {
     if (!agent) return;
@@ -1365,10 +1366,10 @@ export default function AgentDetailPage({
             variant="secondary"
             size="sm"
             onClick={handleTestRun}
-            disabled={triggerMutation.isPending || !agent.isActive}
+            disabled={testRunMutation.isPending || !agent.isActive}
           >
             <Play size={10} strokeWidth={2} className="mr-1" />
-            {t('testRun')}
+            {testRunMutation.isPending ? t('testRunning') : t('testRun')}
           </Button>
 
           {/* Active/Inactive toggle */}
@@ -1403,12 +1404,12 @@ export default function AgentDetailPage({
       </div>
 
       {/* Trigger feedback */}
-      {triggerMutation.isSuccess && (
-        <div className="border-b border-status-success/20 bg-status-success/5 px-4 py-1.5 text-[10px] text-status-success">
-          {t('testRunTriggered')}
+      {testRunMutation.isSuccess && (
+        <div className="border-b border-accent-cyan/20 bg-accent-cyan/5 px-4 py-1.5 text-[10px] text-accent-cyan">
+          {t('testRunSandbox')}
         </div>
       )}
-      {triggerMutation.isError && (
+      {testRunMutation.isError && (
         <div className="border-b border-status-error/20 bg-status-error/5 px-4 py-1.5 text-[10px] text-status-error">
           {t('testRunFailed')}
         </div>

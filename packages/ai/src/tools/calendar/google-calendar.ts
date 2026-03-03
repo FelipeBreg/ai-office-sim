@@ -76,6 +76,7 @@ export const syncGoogleCalendarTool: ToolDefinition = {
     eventId: z.string().optional().describe('Event ID (for delete action)'),
   }),
   requiresApproval: false,
+  isMutation: true,
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const {
       action,

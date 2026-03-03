@@ -17,6 +17,7 @@ export const createContactTool: ToolDefinition = {
     tags: z.array(z.string()).optional().describe('Tags to assign to the contact'),
   }),
   requiresApproval: true,
+  isMutation: true,
 
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const data = input as {

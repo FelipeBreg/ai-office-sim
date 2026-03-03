@@ -89,6 +89,7 @@ export const googleAdsTool: ToolDefinition = {
       .describe('New campaign status (for update_campaign_status)'),
   }),
   requiresApproval: false,
+  isMutation: true,
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const {
       action,

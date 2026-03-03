@@ -21,6 +21,8 @@ interface AgentExecutionJobData {
   /** When resuming from an approved/rejected approval (serialized as Record) */
   resumeState?: Record<string, unknown>;
   resumeApproved?: boolean;
+  /** When true, mutation tools are intercepted and return mock results */
+  sandboxMode?: boolean;
 }
 
 /**
@@ -183,6 +185,7 @@ export async function processAgentExecution(
         totalTokens: 0,
         totalCostUsd: 0,
         status: 'running',
+        sandboxMode: data.sandboxMode,
       };
 
       emitToProject(projectId, 'agent:session_started', {

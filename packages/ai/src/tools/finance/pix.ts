@@ -26,6 +26,7 @@ export const monitorPixTransactionsTool: ToolDefinition = {
     status: z.enum(['all', 'completed', 'pending', 'refunded']).optional().describe('Filter by status (default: all)'),
   }),
   requiresApproval: false,
+  isMutation: true,
 
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const { startDate, endDate, status = 'all' } = input as {

@@ -21,6 +21,7 @@ export const sendConversationMessageTool: ToolDefinition = {
       .describe('If true, message is an internal note not visible to the contact (default: false)'),
   }),
   requiresApproval: false,
+  isMutation: true,
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const {
       conversationId,

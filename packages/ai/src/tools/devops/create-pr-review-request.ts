@@ -19,6 +19,7 @@ export const createPrReviewRequestTool: ToolDefinition = {
       .describe('Priority level (default: medium)'),
   }),
   requiresApproval: false,
+  isMutation: true,
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const {
       title,

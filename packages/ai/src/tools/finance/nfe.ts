@@ -33,6 +33,7 @@ export const checkNfeStatusTool: ToolDefinition = {
       .describe('SEFAZ environment (default: production)'),
   }),
   requiresApproval: false,
+  isMutation: true,
 
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const { accessKey, environment = 'production' } = input as {

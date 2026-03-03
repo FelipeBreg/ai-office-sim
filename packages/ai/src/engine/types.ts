@@ -12,6 +12,8 @@ export interface AgentSession {
   totalCostUsd: number;
   status: 'running' | 'completed' | 'error' | 'aborted' | 'paused_for_approval';
   abortReason?: string;
+  /** When true, mutation tools return mock results instead of executing */
+  sandboxMode?: boolean;
 }
 
 /** Full context assembled before calling Claude */
@@ -37,6 +39,8 @@ export interface ToolDefinition {
   description: string;
   inputSchema: z.ZodType;
   requiresApproval: boolean;
+  /** When true, tool is intercepted in sandbox mode and returns mock output */
+  isMutation?: boolean;
   execute: (input: unknown, context: ToolExecutionContext) => Promise<unknown>;
 }
 

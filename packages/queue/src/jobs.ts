@@ -10,6 +10,8 @@ export const agentExecutionJobSchema = z.object({
   resumeState: z.record(z.unknown()).optional(),
   /** Whether the pending tool call was approved (true) or rejected (false) */
   resumeApproved: z.boolean().optional(),
+  /** When true, mutation tools are intercepted and return mock results */
+  sandboxMode: z.boolean().optional(),
 });
 export type AgentExecutionJob = z.infer<typeof agentExecutionJobSchema>;
 

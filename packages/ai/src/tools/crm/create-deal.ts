@@ -14,6 +14,7 @@ export const createDealTool: ToolDefinition = {
     contactId: z.string().optional().describe('Associated contact ID'),
   }),
   requiresApproval: true,
+  isMutation: true,
 
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const data = input as { name: string; amount?: number; contactId?: string };

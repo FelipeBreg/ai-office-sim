@@ -29,6 +29,7 @@ export const triggerAgentTool: ToolDefinition = {
       .describe('Priority level for the triggered execution (default: normal)'),
   }),
   requiresApproval: false,
+  isMutation: true,
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const { agentSlug, message, priority = 'normal' } = input as {
       agentSlug: string;

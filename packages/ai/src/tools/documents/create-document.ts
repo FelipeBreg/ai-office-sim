@@ -18,6 +18,7 @@ export const createDocumentTool: ToolDefinition = {
     metadata: z.record(z.unknown()).optional().describe('Optional metadata key-value pairs'),
   }),
   requiresApproval: false,
+  isMutation: true,
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const {
       title,

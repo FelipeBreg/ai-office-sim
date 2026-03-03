@@ -124,7 +124,9 @@
   "agentDetail": {
     "backToAgents": "Voltar para Agentes",
     "testRun": "Executar Teste",
+    "testRunning": "Testando...",
     "testRunTriggered": "Execução de teste disparada com sucesso.",
+    "testRunSandbox": "Teste sandbox iniciado. Ferramentas de mutação serão interceptadas — verifique a aba Sessões para resultados.",
     "testRunFailed": "Falha ao disparar execução de teste.",
     "activeToggle": "Ativo",
     "inactiveToggle": "Inativo",

@@ -86,6 +86,7 @@ export const sendEmailTool: ToolDefinition = {
       .describe('Optional file attachments'),
   }),
   requiresApproval: true,
+  isMutation: true,
 
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const {

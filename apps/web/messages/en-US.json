@@ -124,7 +124,9 @@
   "agentDetail": {
     "backToAgents": "Back to Agents",
     "testRun": "Test Run",
+    "testRunning": "Testing...",
     "testRunTriggered": "Test run triggered successfully.",
+    "testRunSandbox": "Sandbox test run started. Mutation tools will be intercepted — check the Sessions tab for results.",
     "testRunFailed": "Failed to trigger test run.",
     "activeToggle": "Active",
     "inactiveToggle": "Inactive",

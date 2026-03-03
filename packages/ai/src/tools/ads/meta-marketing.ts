@@ -91,6 +91,7 @@ export const metaMarketingTool: ToolDefinition = {
     limit: z.number().optional().describe('Max results to return (default: 25)'),
   }),
   requiresApproval: false,
+  isMutation: true,
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const {
       action,

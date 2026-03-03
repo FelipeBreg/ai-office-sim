@@ -18,6 +18,7 @@ export const sendWhatsAppMessageTool: ToolDefinition = {
     mediaUrl: z.string().url().optional().describe('Optional URL of media to attach'),
   }),
   requiresApproval: true,
+  isMutation: true,
 
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const { to, message, mediaUrl } = input as {

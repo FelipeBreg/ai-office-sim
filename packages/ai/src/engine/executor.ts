@@ -266,6 +266,32 @@ export async function executeAgent(
         continue;
       }
 
+      // ── Sandbox mode: intercept mutation tools ──
+      if (session.sandboxMode && toolDef.isMutation) {
+        const sandboxResult = {
+          _sandbox: true,
+          tool: toolBlock.name,
+          message: `[SANDBOX] Tool "${toolBlock.name}" was intercepted. In production, this would execute with the provided input.`,
+          input: parseResult.data,
+        };
+
+        session.actionCount++;
+        actions.push({
+          type: 'tool_call',
+          toolName: toolBlock.name,
+          input: parseResult.data,
+          output: sandboxResult,
+          durationMs: 0,
+        });
+
+        toolResults.push({
+          type: 'tool_result',
+          tool_use_id: toolBlock.id,
+          content: safeStringify(sandboxResult),
+        });
+        continue;
+      }
+
       // Rate limiting: enforce minimum interval between tool calls
       const now = performance.now();
       const timeSinceLastCall = now - lastToolCallTime;

@@ -35,6 +35,7 @@ export const scheduleEventTool: ToolDefinition = {
       .describe('Minutes before the event to send a reminder (e.g., 30 for 30 minutes)'),
   }),
   requiresApproval: false,
+  isMutation: true,
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const {
       title,

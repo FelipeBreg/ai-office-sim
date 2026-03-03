@@ -18,6 +18,7 @@ export const updateContactTool: ToolDefinition = {
     tags: z.array(z.string()).optional().describe('Updated tags'),
   }),
   requiresApproval: true,
+  isMutation: true,
 
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const { id, ...data } = input as {

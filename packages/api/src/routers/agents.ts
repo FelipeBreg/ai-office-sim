@@ -189,6 +189,40 @@ export const agentsRouter = createTRPCRouter({
       return { triggered: true, agentId: agent.id, sessionId };
     }),
 
+  /** Run agent in sandbox mode: mutation tools are intercepted */
+  testRun: adminProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        payload: z.unknown().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [agent] = await db
+        .select()
+        .from(agents)
+        .where(and(eq(agents.id, input.id), eq(agents.projectId, ctx.project!.id)))
+        .limit(1);
+
+      if (!agent) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Agent not found' });
+      }
+
+      const sessionId = randomUUID();
+      await getAgentExecutionQueue().add(
+        `sandbox-${agent.id}-${sessionId}`,
+        {
+          agentId: agent.id,
+          projectId: ctx.project!.id,
+          sessionId,
+          sandboxMode: true,
+          ...(input.payload ? { triggerPayload: input.payload as Record<string, unknown> } : {}),
+        },
+      );
+
+      return { triggered: true, agentId: agent.id, sessionId, sandboxMode: true };
+    }),
+
   /** Per-agent health metrics (last N days) */
   getMetrics: projectProcedure
     .input(z.object({

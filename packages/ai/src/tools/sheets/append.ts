@@ -14,6 +14,7 @@ export const appendToSpreadsheetTool: ToolDefinition = {
     values: z.array(z.array(z.string())).min(1).describe('Rows to append (2D array)'),
   }),
   requiresApproval: true,
+  isMutation: true,
 
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const { spreadsheetId, range, values } = input as {

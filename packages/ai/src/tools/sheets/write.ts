@@ -14,6 +14,7 @@ export const writeSpreadsheetTool: ToolDefinition = {
     values: z.array(z.array(z.string())).min(1).describe('2D array of cell values (rows × columns)'),
   }),
   requiresApproval: true,
+  isMutation: true,
 
   execute: async (input: unknown, context: ToolExecutionContext) => {
     const { spreadsheetId, range, values } = input as {
