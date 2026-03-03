@@ -17,6 +17,7 @@
     "@ai-office/queue": "workspace:*",
     "@ai-office/realtime": "workspace:*",
     "@ai-office/shared": "workspace:*",
+    "@ai-office/tokenizer": "workspace:*",
     "@bull-board/api": "^6.0.0",
     "@bull-board/express": "^6.0.0",
     "@clerk/backend": "^2.32.1",

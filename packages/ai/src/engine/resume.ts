@@ -60,6 +60,7 @@ export async function resumeAgent(
     tools: agentTools,
     memory: savedState.context.memory,
     conversationHistory: [],
+    triggerType: 'manual',
   };
 
   const limits = savedState.limits;

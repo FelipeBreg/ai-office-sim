@@ -73,6 +73,7 @@ export const triggerAgentTool: ToolDefinition = {
           agentId: targetAgent.id,
           projectId: context.projectId,
           sessionId,
+          triggerType: 'agent_message' as const,
           triggerPayload: {
             type: 'agent_message',
             fromAgentId: context.agentId,

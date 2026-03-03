@@ -1,0 +1,2211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Office Sim — Software Specification v4</title>
+  <style>
+    :root {
+      --bg: #0A0E14;
+      --surface: #0F1419;
+      --border: #1A2030;
+      --cyan: #00C8E0;
+      --cyan-dim: #00C8E033;
+      --green: #00E070;
+      --green-dim: #00E07033;
+      --yellow: #FFD000;
+      --yellow-dim: #FFD00033;
+      --red: #FF4060;
+      --red-dim: #FF406033;
+      --orange: #FF8C00;
+      --orange-dim: #FF8C0033;
+      --purple: #B080FF;
+      --purple-dim: #B080FF33;
+      --text: #C5D0DC;
+      --text-dim: #6B7D8D;
+      --text-bright: #E8EDF2;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'IBM Plex Mono', 'Cascadia Code', 'Fira Code', monospace;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 0;
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 24px 16px;
+      z-index: 100;
+    }
+
+    nav h2 {
+      color: var(--cyan);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav .nav-group { margin-bottom: 20px; }
+
+    nav .nav-group-title {
+      color: var(--text-dim);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 6px;
+    }
+
+    nav a {
+      display: block;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-left: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    nav a:hover {
+      color: var(--cyan);
+      border-left-color: var(--cyan);
+      background: var(--cyan-dim);
+    }
+
+    main {
+      margin-left: 280px;
+      padding: 48px 64px;
+      max-width: 1100px;
+    }
+
+    h1 { color: var(--cyan); font-size: 28px; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px; }
+    .subtitle { color: var(--text-dim); font-size: 14px; margin-bottom: 48px; }
+    h2 { color: var(--cyan); font-size: 20px; font-weight: 600; margin-top: 56px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    h3 { color: var(--text-bright); font-size: 16px; font-weight: 600; margin-top: 32px; margin-bottom: 12px; }
+    h4 { color: var(--text); font-size: 14px; font-weight: 600; margin-top: 20px; margin-bottom: 8px; }
+    p, li { font-size: 13px; margin-bottom: 8px; }
+    ul, ol { padding-left: 24px; margin-bottom: 16px; }
+    li { margin-bottom: 4px; }
+    strong { color: var(--text-bright); }
+
+    .badge { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 2px 8px; border: 1px solid; margin-left: 8px; vertical-align: middle; }
+    .badge-done { color: var(--green); border-color: var(--green); background: var(--green-dim); }
+    .badge-partial { color: var(--yellow); border-color: var(--yellow); background: var(--yellow-dim); }
+    .badge-missing { color: var(--red); border-color: var(--red); background: var(--red-dim); }
+    .badge-stub { color: var(--orange); border-color: var(--orange); background: var(--orange-dim); }
+    .badge-risk { color: var(--red); border-color: var(--red); background: var(--red-dim); font-size: 9px; }
+    .badge-new { color: var(--purple); border-color: var(--purple); background: var(--purple-dim); font-size: 9px; }
+
+    .spec-block { background: var(--surface); border: 1px solid var(--border); padding: 20px 24px; margin: 16px 0; }
+    .spec-block h4 { margin-top: 0; }
+    .gap-block { border-left: 3px solid var(--yellow); background: var(--surface); padding: 16px 20px; margin: 12px 0; }
+    .risk-block { border-left: 3px solid var(--red); background: var(--surface); padding: 16px 20px; margin: 12px 0; }
+    .ok-block { border-left: 3px solid var(--green); background: var(--surface); padding: 16px 20px; margin: 12px 0; }
+    .insight-block { border-left: 3px solid var(--purple); background: var(--surface); padding: 16px 20px; margin: 12px 0; }
+    .gap-block .label, .risk-block .label, .ok-block .label, .insight-block .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+    .gap-block .label { color: var(--yellow); }
+    .risk-block .label { color: var(--red); }
+    .ok-block .label { color: var(--green); }
+    .insight-block .label { color: var(--purple); }
+
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12px; }
+    th { text-align: left; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); color: var(--cyan); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+    td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: top; }
+    code { background: var(--surface); border: 1px solid var(--border); padding: 1px 6px; font-size: 12px; color: var(--cyan); }
+    pre { background: var(--surface); border: 1px solid var(--border); padding: 16px; overflow-x: auto; font-size: 12px; margin: 12px 0; color: var(--text); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+    .arch-diagram { background: var(--surface); border: 1px solid var(--border); padding: 24px; margin: 16px 0; font-size: 11px; line-height: 1.4; white-space: pre; overflow-x: auto; color: var(--text-dim); }
+    .arch-diagram .highlight { color: var(--cyan); }
+    .arch-diagram .accent { color: var(--purple); }
+    .arch-diagram .warn { color: var(--yellow); }
+    .arch-diagram .ok { color: var(--green); }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+    .summary-card { background: var(--surface); border: 1px solid var(--border); padding: 16px; text-align: center; }
+    .summary-card .number { font-size: 28px; font-weight: 700; color: var(--cyan); }
+    .summary-card .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+    @media (max-width: 900px) { nav { display: none; } main { margin-left: 0; padding: 24px; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <h2>Software Spec v4</h2>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Overview</div>
+    <a href="#executive-summary">Executive Summary</a>
+    <a href="#vision">Product Vision</a>
+    <a href="#status-snapshot">Status Snapshot</a>
+    <a href="#architecture-overview">Architecture Overview</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Agent Harness (NEW)</div>
+    <a href="#harness">The Agent Harness</a>
+    <a href="#harness-4-zones">4 Zones of Agent Behavior</a>
+    <a href="#agentic-loop">The Agentic Loop</a>
+    <a href="#context-hygiene">Context Hygiene</a>
+    <a href="#session-persistence">Session Persistence</a>
+    <a href="#self-programming">Self-Programming Agents</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Autonomy Engine (NEW)</div>
+    <a href="#heartbeat">The Heartbeat System</a>
+    <a href="#trigger-model">Trigger Model</a>
+    <a href="#trigger-cascade">Cascade Execution</a>
+    <a href="#trigger-kpi">KPI-Driven Triggers</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Core Systems</div>
+    <a href="#pillar-agents">Pillar 1: Agent System</a>
+    <a href="#pillar-workflows">Pillar 2: Workflow Engine</a>
+    <a href="#pillar-memory">Pillar 3: Memory & Wiki</a>
+    <a href="#pillar-atlas">Pillar 4: Atlas</a>
+    <a href="#pillar-orchestrator">Pillar 5: Orchestrator</a>
+    <a href="#ceo-agent">Pillar 6: CEO Agent (NEW)</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Feature Screens</div>
+    <a href="#screen-office">Office (3D)</a>
+    <a href="#screen-dashboard">Dashboards</a>
+    <a href="#screen-strategy">Strategy</a>
+    <a href="#screen-approvals">Approvals</a>
+    <a href="#screen-messaging">Communication</a>
+    <a href="#screen-calendar">Calendar</a>
+    <a href="#screen-devops">DevOps</a>
+    <a href="#screen-tools">Tools</a>
+    <a href="#screen-community">Community</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Platform</div>
+    <a href="#settings">Settings</a>
+    <a href="#billing">Billing & Monetization</a>
+    <a href="#security">Security & Compliance</a>
+    <a href="#realtime">Real-Time Layer</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Analysis</div>
+    <a href="#sniper-vs-generalist">Sniper vs Generalist</a>
+    <a href="#execution-risks">Execution Risks</a>
+    <a href="#design-flaws">Design Flaws & Fixes</a>
+    <a href="#build-order">P0 Build Order</a>
+    <a href="#gap-summary">Gap Summary Matrix</a>
+    <a href="#attribution">Attribution</a>
+  </div>
+</nav>
+
+<main>
+
+<h1>AI OFFICE SIM — SOFTWARE SPECIFICATION v4</h1>
+<p class="subtitle">
+  Complete system specification with autonomous agent harness architecture.<br>
+  Incorporates OpenClaw-inspired patterns adapted for multi-agent business operations.<br>
+  v4: All architectural flaws resolved. P0 build order defined. CEO Agent triage. Cascade recovery. Approval timeouts.<br>
+  Generated: 2026-03-03 &nbsp;|&nbsp; Repo: github.com/FelipeBreg/ai-office-sim &nbsp;|&nbsp; Live: aiofficesimweb.vercel.app
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="executive-summary">1. EXECUTIVE SUMMARY</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<p>
+  AI Office Sim is a platform for creating and operating companies using AI agent teams. The paradigm is
+  <strong>"AI Human-Assisted"</strong> — AI does the work, humans provide oversight and handle what AI cannot.
+</p>
+
+<p>After 110 commits, the <strong>infrastructure is ~85% built</strong> but the <strong>autonomous execution loop — the core value proposition — is not yet functional.</strong> The system has all the screens, schemas, tools, and workers defined, but the critical path that makes agents actually run autonomously (the heartbeat, scheduled triggers, KPI monitoring, cascade execution) has stubs where it needs live code.</p>
+
+<div class="summary-grid">
+  <div class="summary-card"><div class="number">42</div><div class="label">DB Tables</div></div>
+  <div class="summary-card"><div class="number">34</div><div class="label">tRPC Routers</div></div>
+  <div class="summary-card"><div class="number">30+</div><div class="label">Agent Tools</div></div>
+  <div class="summary-card"><div class="number">24</div><div class="label">Auth Pages</div></div>
+  <div class="summary-card"><div class="number">12</div><div class="label">BullMQ Workers</div></div>
+  <div class="summary-card"><div class="number">55</div><div class="label">Agent Templates</div></div>
+  <div class="summary-card"><div class="number">88</div><div class="label">Workflow Templates</div></div>
+  <div class="summary-card"><div class="number">110</div><div class="label">Commits</div></div>
+</div>
+
+<h3>The Critical Gap</h3>
+<p>
+  The software has the <em>body</em> (UI, schemas, routers) but needs the <em>heartbeat</em> — the autonomous loop
+  that makes agents wake up, check KPIs, trigger workflows, cascade to other agents, and keep the company running
+  without human intervention. This specification defines exactly how that heartbeat works, drawing from proven
+  patterns in autonomous agent architectures.
+</p>
+
+<div class="insight-block">
+  <div class="label">Key Architectural Insight</div>
+  <p>Autonomous agents are comprised of exactly <strong>four categories</strong>: (1) What <em>triggers</em> the agent, (2) What is <em>injected</em> on every turn, (3) What <em>tools</em> it can call, and (4) What it <em>outputs</em>. The agent runs in a loop — LLM calls a tool, gets feedback, decides next step — until the task is done. This is the <strong>harness</strong>. Learning to build the right harness for each agent type is what separates a demo from a production system.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="vision">2. PRODUCT VISION</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<h3>2.1 Core Thesis</h3>
+<p>
+  A platform where users configure teams of AI agents to operate their companies. The AI runs the company.
+  Humans supervise, approve critical actions, and handle edge cases the AI flags.
+</p>
+
+<h3>2.2 Six Pillars</h3>
+<table>
+  <tr><th>#</th><th>Pillar</th><th>Purpose</th></tr>
+  <tr><td>1</td><td><strong>Agent System</strong></td><td>Create, configure, and run AI agents with specialized roles, tools, memory, and autonomy.</td></tr>
+  <tr><td>2</td><td><strong>Workflow Engine</strong></td><td>Chain agents into repeatable multi-step processes to reduce error margins on routine operations.</td></tr>
+  <tr><td>3</td><td><strong>Memory & Wiki</strong></td><td>Centralized company knowledge base. Agents read from it, write to it, and use it for RAG retrieval.</td></tr>
+  <tr><td>4</td><td><strong>Atlas</strong></td><td>User-facing super-intelligence. Full platform control via voice. Access to ALL company data and ALL agent logs.</td></tr>
+  <tr><td>5</td><td><strong>Orchestrator</strong></td><td>System brain that manages concurrency, budgets, priority, health monitoring, and the autonomous heartbeat.</td></tr>
+  <tr><td>6</td><td><strong>CEO Agent</strong></td><td>Autonomous strategic brain. Reads user strategy, monitors KPIs, orchestrates the agent fleet to reach company goals. Generates daily briefings. The feature that makes the system truly autonomous.</td></tr>
+</table>
+
+<h3>2.3 Operating Model — "AI Human-Assisted"</h3>
+<div class="spec-block">
+  <p><strong>What AI does:</strong> Executes all operational tasks — research, content creation, CRM management, financial monitoring, email/WhatsApp communication, document generation, strategy execution, inter-agent coordination.</p>
+  <p><strong>What humans do:</strong> Set company strategy and goals, approve high-risk actions (sending external communications, financial transactions, publishing content), configure agent teams, monitor dashboards, intervene when AI flags uncertainty.</p>
+  <p><strong>The boundary:</strong> Defined by the <code>approvalRules</code> system. Each tool and action type has a risk level. Low-risk actions auto-execute. Medium/high/critical risk actions pause and wait for human approval.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="status-snapshot">3. STATUS SNAPSHOT</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<table>
+  <tr><th>Area</th><th>Status</th><th>Notes</th></tr>
+  <tr><td>Agent CRUD & Config</td><td><span class="badge badge-done">DONE</span></td><td>Create, edit, delete, 20 archetypes, 55 templates, teams, tools assignment</td></tr>
+  <tr><td>Agent Execution Loop</td><td><span class="badge badge-done">DONE</span></td><td>Agentic loop, tool execution, safety limits, budget controls, auto-memory extraction</td></tr>
+  <tr><td>Agent Approval Pause/Resume</td><td><span class="badge badge-done">DONE</span></td><td>Session serialization, approval queue, resume on approve/reject</td></tr>
+  <tr><td>Agent Scheduled Triggers</td><td><span class="badge badge-partial">PARTIAL</span></td><td>Cron scheduler registers jobs, but <strong>worker is a stub</strong></td></tr>
+  <tr><td>Agent-to-Agent Communication</td><td><span class="badge badge-done">DONE</span></td><td><code>trigger_agent</code> tool with priority and message context</td></tr>
+  <tr><td>Agent Static RAG</td><td><span class="badge badge-missing">MISSING</span></td><td>No immutable per-archetype knowledge base</td></tr>
+  <tr><td>Agent Heartbeat System</td><td><span class="badge badge-missing">MISSING</span></td><td>No periodic agent self-check mechanism</td></tr>
+  <tr><td>Agent Self-Programming</td><td><span class="badge badge-missing">MISSING</span></td><td>Agents can't modify their own triggers or schedule</td></tr>
+  <tr><td>Context Hygiene / Compaction</td><td><span class="badge badge-partial">PARTIAL</span></td><td>Last 5 summaries loaded, but no token budget or compaction</td></tr>
+  <tr><td>Agent Health Monitoring</td><td><span class="badge badge-done">DONE</span></td><td>Success rate, auto-disable after 3 failures, fleet health scores</td></tr>
+  <tr><td>Workflow Editor (React Flow)</td><td><span class="badge badge-done">DONE</span></td><td>6 node types, variable system, config panels</td></tr>
+  <tr><td>Workflow DAG Executor</td><td><span class="badge badge-done">DONE</span></td><td>Topological sort, pause/resume, retry, event/webhook/cron triggers</td></tr>
+  <tr><td>Memory / Wiki</td><td><span class="badge badge-done">DONE</span></td><td>Categories, articles, document storage, RAG search, auto-ingest, templates</td></tr>
+  <tr><td>Atlas Chat (LLM)</td><td><span class="badge badge-done">DONE</span></td><td>22 tools, agentic loop, approval flow for mutations</td></tr>
+  <tr><td>Atlas Voice</td><td><span class="badge badge-stub">STUB</span></td><td>Hooks exist but NOT wired to the chat pipeline</td></tr>
+  <tr><td>Atlas Proactive / Heartbeat</td><td><span class="badge badge-missing">MISSING</span></td><td>Atlas only responds. No briefings or anomaly detection</td></tr>
+  <tr><td>Orchestrator Engine</td><td><span class="badge badge-done">DONE</span></td><td>60s tick, concurrency, spend budgets, stall detection</td></tr>
+  <tr><td>KPI-Driven Trigger System</td><td><span class="badge badge-missing">MISSING</span></td><td>The "heartbeat" for KPI monitoring → trigger cascade</td></tr>
+  <tr><td>Strategy Injection into Agents</td><td><span class="badge badge-missing">MISSING</span></td><td>Agents don't receive active strategy in context</td></tr>
+  <tr><td>Cascade Depth Tracking</td><td><span class="badge badge-missing">MISSING</span></td><td>No protection against infinite trigger loops</td></tr>
+  <tr><td>3D Office</td><td><span class="badge badge-done">DONE</span></td><td>Isometric Three.js, live status, click-to-inspect</td></tr>
+  <tr><td>Dashboards (6 tabs)</td><td><span class="badge badge-done">DONE</span></td><td>General, Commercial, Finance, Operations, Marketing, Branding</td></tr>
+  <tr><td>Approvals</td><td><span class="badge badge-done">DONE</span></td><td>Queue + approve/reject + Atlas popup integration</td></tr>
+  <tr><td>Messaging (CRM)</td><td><span class="badge badge-done">DONE</span></td><td>WhatsApp + Email + Webchat unified inbox</td></tr>
+  <tr><td>Calendar</td><td><span class="badge badge-done">DONE</span></td><td>Month/agenda, recurrence, reminders, 2 workers</td></tr>
+  <tr><td>DevOps Board</td><td><span class="badge badge-done">DONE</span></td><td>Kanban + human tasks</td></tr>
+  <tr><td>Community Marketplace</td><td><span class="badge badge-done">DONE</span></td><td>Publish, browse, install, review agents and workflows</td></tr>
+  <tr><td>Billing / Stripe</td><td><span class="badge badge-stub">STUB</span></td><td>Schema + stubs. Stripe not integrated.</td></tr>
+  <tr><td>Session Logs → Wiki</td><td><span class="badge badge-missing">MISSING</span></td><td>Action logs not in wiki, Atlas can't RAG-search them</td></tr>
+  <tr><td>CEO Agent</td><td><span class="badge badge-missing">MISSING</span></td><td>Strategic autonomy layer. Auto-orchestrates fleet based on user goals. Generates daily briefings.</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="architecture-overview">4. ARCHITECTURE OVERVIEW</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<h3>4.1 System Architecture</h3>
+<pre class="arch-diagram">
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          <span class="highlight">FRONTEND (Vercel)</span>                             │
+│  Next.js 15 + Tailwind v4 + Zustand + Framer Motion + Three.js        │
+│  Clerk Auth │ next-intl (pt-BR/en-US) │ React Flow                    │
+│  ┌─────────┬──────────┬─────────┬──────────┬──────────┬────────────┐  │
+│  │ Office  │Dashboard │ Agents  │Workflows │  Atlas   │ Settings   │  │
+│  │ (3D)    │(6 tabs)  │ (CRUD)  │ (Editor) │ (Voice)  │ (8 tabs)   │  │
+│  └────┬────┴────┬─────┴────┬────┴────┬─────┴────┬─────┴────┬───────┘  │
+│       └─────────┴──────────┴────┬────┴──────────┴──────────┘          │
+│                                 │ tRPC + Socket.IO                    │
+└─────────────────────────────────┼─────────────────────────────────────┘
+                                  │
+┌─────────────────────────────────┼─────────────────────────────────────┐
+│                          <span class="highlight">BACKEND (Render)</span>                              │
+│  Express + BullMQ Workers + Socket.IO Server                          │
+│                                                                       │
+│  ┌──────────────────────────────────────────────────────────────────┐ │
+│  │                    <span class="accent">ORCHESTRATOR + HEARTBEAT</span>                    │ │
+│  │  <span class="ok">60s tick</span> │ Concurrency │ Budget │ Stall detection            │ │
+│  │  <span class="warn">KPI Monitor (MISSING)</span> │ <span class="warn">Agent Heartbeat (MISSING)</span>          │ │
+│  └──────────────────────────────────────────────────────────────────┘ │
+│                                                                       │
+│  ┌────────────────┐  ┌────────────────┐  ┌──────────────────────┐    │
+│  │ <span class="highlight">Agent Harness</span>   │  │ <span class="highlight">Workflow</span>        │  │ Support Workers      │    │
+│  │ Execution Loop │  │ DAG Executor   │  │ - embedding          │    │
+│  │ Context Build  │  │ Event Triggers │  │ - notification       │    │
+│  │ Tool Registry  │  │ Cron Triggers  │  │ - calendar (x2)      │    │
+│  │ Memory Mgmt    │  │ Webhook Trig.  │  │ - email-inbound      │    │
+│  │ Compaction     │  │               │  │ - analytics          │    │
+│  │ Post-Exec      │  │               │  │ - cleanup            │    │
+│  └───────┬────────┘  └───────┬────────┘  └──────────────────────┘    │
+│          │                   │                                        │
+│  ┌───────┴───────────────────┴────────────────────────────────────┐   │
+│  │                    <span class="highlight">AI ENGINE</span>                                  │   │
+│  │  Anthropic Claude │ Tool Registry (30+) │ Safety Limits        │   │
+│  │  RAG Search (pgvector) │ Memory Auto-Extract │ Budget Controls │   │
+│  │  <span class="accent">Context Builder │ Compaction Engine │ Session Serializer</span>    │   │
+│  └────────────────────────────────────────────────────────────────┘   │
+│                                                                       │
+└───────────────────────────────────┬───────────────────────────────────┘
+                                    │
+┌───────────────────────────────────┼───────────────────────────────────┐
+│                          <span class="highlight">DATA LAYER</span>                                  │
+│  ┌─────────────────┐  ┌──────────────────┐  ┌─────────────────────┐  │
+│  │ Neon PostgreSQL  │  │ Upstash Redis    │  │ Clerk Auth          │  │
+│  │ 42 tables        │  │ BullMQ queues    │  │ Users + Orgs        │  │
+│  │ pgvector (RAG)   │  │ Rate limit cache │  │ JWT verification    │  │
+│  │ Drizzle ORM      │  │ Session cache    │  │ Webhooks            │  │
+│  └─────────────────┘  └──────────────────┘  └─────────────────────┘  │
+└───────────────────────────────────────────────────────────────────────┘
+</pre>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- THE AGENT HARNESS — NEW MAJOR SECTION -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="harness">5. THE AGENT HARNESS</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<p>
+  The harness is the exoskeleton built around the LLM that gives it the capacity to perform complex tasks
+  autonomously. Every agent in our system runs inside a harness. The harness handles four things:
+  what wakes the agent up, what it knows when it wakes up, what it can do, and what it leaves behind.
+</p>
+
+<div class="insight-block">
+  <div class="label">Why this matters</div>
+  <p>A generalist agent (like OpenClaw) packs everything into one harness: browser control, terminal access, memory files, cron jobs, skills, plugins. After a month of use, it accumulates 45K+ tokens of context overhead <strong>before the user even sends a message</strong>, causing 40-90% performance degradation from context rot.</p>
+  <p>Our system uses <strong>sniper agents</strong> — each agent has a focused harness with only the context it needs. An SDR agent gets CRM tools and sales knowledge. A legal agent gets law references and document tools. This keeps context tight (~1-3K tokens of overhead) and performance high.</p>
+</div>
+
+<h3 id="harness-4-zones">5.1 The Four Zones of Agent Behavior</h3>
+
+<pre class="arch-diagram">
+  ┌──────────────────────────────────────────────────────────────────┐
+  │                    <span class="highlight">THE AGENT HARNESS</span>                            │
+  │                                                                  │
+  │  <span class="accent">ZONE 1: TRIGGERS</span>             <span class="accent">ZONE 2: CONTEXT INJECTION</span>        │
+  │  What wakes the agent up?    What does it know on each turn?    │
+  │  ┌────────────────────┐      ┌────────────────────────────┐     │
+  │  │ • Cron schedule     │      │ • System prompt (soul)      │     │
+  │  │ • KPI threshold     │      │ • Static RAG (domain)       │     │
+  │  │ • Event fired       │      │ • Dynamic memory (k/v)      │     │
+  │  │ • Agent message     │      │ • Session summaries (last N)│     │
+  │  │ • Webhook           │      │ • Strategy context (goals)  │     │
+  │  │ • Manual            │      │ • Tool schemas              │     │
+  │  │ • Heartbeat         │      │ • Trigger payload           │     │
+  │  └────────────────────┘      └────────────────────────────┘     │
+  │                                                                  │
+  │  <span class="accent">ZONE 3: TOOLS</span>                <span class="accent">ZONE 4: OUTPUTS</span>                  │
+  │  What can it do?             What does it produce?              │
+  │  ┌────────────────────┐      ┌────────────────────────────┐     │
+  │  │ • WhatsApp/Email    │      │ • Tool results → feedback   │     │
+  │  │ • CRM (RD Station)  │      │ • Documents → Wiki          │     │
+  │  │ • Google Sheets     │      │ • KPI updates → triggers    │     │
+  │  │ • RAG search        │      │ • Events → cascade          │     │
+  │  │ • Create/edit docs  │      │ • Agent messages → cascade  │     │
+  │  │ • Trigger agents    │      │ • Session log → memory      │     │
+  │  │ • Update KPIs       │      │ • Approval requests → queue │     │
+  │  │ • Schedule events   │      │ • Self-schedule updates     │     │
+  │  │ • Update own sched. │      │ • Socket.IO events → UI     │     │
+  │  └────────────────────┘      └────────────────────────────┘     │
+  │                                                                  │
+  │             ┌──────────────────────────────┐                    │
+  │             │     <span class="highlight">THE AGENTIC LOOP</span>          │                    │
+  │             │                              │                    │
+  │             │  LLM → Tool Call → Result    │                    │
+  │             │    ↑                    │    │                    │
+  │             │    └────────────────────┘    │                    │
+  │             │  (repeat until done or limit)│                    │
+  │             └──────────────────────────────┘                    │
+  └──────────────────────────────────────────────────────────────────┘
+</pre>
+
+<h3>5.2 Zone 1 — Triggers (What Wakes the Agent Up)</h3>
+<div class="spec-block">
+  <table>
+    <tr><th>Trigger</th><th>Mechanism</th><th>Status</th></tr>
+    <tr>
+      <td><strong>Cron Schedule</strong></td>
+      <td>BullMQ repeatable job fires at configured cron pattern. The scheduled worker picks it up, builds context, and runs the agentic loop.</td>
+      <td><span class="badge badge-partial">PARTIAL</span> — scheduler exists, worker is stub</td>
+    </tr>
+    <tr>
+      <td><strong>KPI Threshold</strong></td>
+      <td>Orchestrator's 60s tick checks monitored KPIs. When <code>current</code> crosses <code>threshold</code> in the configured direction and cooldown has elapsed, enqueue the linked agent.</td>
+      <td><span class="badge badge-missing">MISSING</span></td>
+    </tr>
+    <tr>
+      <td><strong>Event</strong></td>
+      <td><code>fireEventTriggers()</code> scans for workflows/agents matching a named event (e.g., <code>agent.completed</code>, <code>deal.closed</code>).</td>
+      <td><span class="badge badge-done">DONE</span></td>
+    </tr>
+    <tr>
+      <td><strong>Agent Message</strong></td>
+      <td>Another agent calls <code>trigger_agent</code> tool, passing a message + priority. Target agent receives the message as trigger context.</td>
+      <td><span class="badge badge-done">DONE</span></td>
+    </tr>
+    <tr>
+      <td><strong>Webhook</strong></td>
+      <td>External HTTP POST to <code>/webhooks/agent/:token</code> with JSON payload. Agent wakes with webhook data as context.</td>
+      <td><span class="badge badge-partial">PARTIAL</span> — exists for workflows, not individual agents</td>
+    </tr>
+    <tr>
+      <td><strong>Manual</strong></td>
+      <td>User clicks "Run" in UI or asks Atlas to trigger.</td>
+      <td><span class="badge badge-done">DONE</span></td>
+    </tr>
+    <tr>
+      <td><strong>Heartbeat</strong></td>
+      <td>Periodic timer (configurable, e.g., every 30 min) fires a "heartbeat" prompt. The agent checks its <code>heartbeat_instructions</code> field and follows them. The agent itself can modify these instructions — self-programming its future behavior.</td>
+      <td><span class="badge badge-missing">MISSING</span></td>
+    </tr>
+    <tr>
+      <td><strong>Inbound Message</strong></td>
+      <td>New message arrives in messaging inbox for a conversation assigned to this agent. Agent wakes to handle the conversation.</td>
+      <td><span class="badge badge-partial">PARTIAL</span> — assignment exists, auto-trigger doesn't</td>
+    </tr>
+  </table>
+</div>
+
+<h3>5.3 Zone 2 — Context Injection (What the Agent Knows)</h3>
+<div class="spec-block">
+  <p>On every agent execution, the harness builds a context window. The order and token budget of each layer matters critically for performance. Here is the injection stack, ordered by priority:</p>
+
+  <table>
+    <tr><th>#</th><th>Layer</th><th>Token Budget</th><th>Content</th><th>Status</th></tr>
+    <tr>
+      <td>1</td>
+      <td><strong>System Prompt (Soul)</strong></td>
+      <td>~500-800</td>
+      <td>The agent's identity, role, personality, rules. Bilingual. Like OpenClaw's <code>soul.md</code>.</td>
+      <td><span class="badge badge-done">DONE</span></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>Strategy Context</strong></td>
+      <td>~200-400</td>
+      <td>Active company strategies + current KPI values. Injected so the agent makes strategy-aware decisions. Compact format: <code>"Goal: X | KPI: Y at Z% of target"</code></td>
+      <td><span class="badge badge-missing">MISSING</span></td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>Heartbeat Instructions</strong></td>
+      <td>~100-300</td>
+      <td>Agent's self-written instructions for what to do on this heartbeat tick. Similar to OpenClaw's <code>heartbeat.md</code> — the agent can rewrite this to program its own future behavior.</td>
+      <td><span class="badge badge-missing">MISSING</span></td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>Dynamic Memory</strong></td>
+      <td>~300-600</td>
+      <td>Key-value pairs auto-extracted from previous sessions. Operational short-term memory. Like OpenClaw's <code>memory.md</code>.</td>
+      <td><span class="badge badge-done">DONE</span></td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>Session History</strong></td>
+      <td>~500-1000</td>
+      <td>Compressed summaries of last N sessions. NOT raw conversation — summarized to key decisions, outcomes, and learnings.</td>
+      <td><span class="badge badge-partial">PARTIAL</span> — loads last 5 summaries, no token cap</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><strong>Tool Schemas</strong></td>
+      <td>~400-800</td>
+      <td>JSON schemas for only the tools this agent has access to. NOT all 30+ tools — just the 3-8 tools assigned to this agent.</td>
+      <td><span class="badge badge-done">DONE</span></td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><strong>Trigger Payload</strong></td>
+      <td>Variable</td>
+      <td>Context from whatever triggered the agent: cron schedule info, KPI threshold data, agent message, webhook payload, user prompt.</td>
+      <td><span class="badge badge-done">DONE</span></td>
+    </tr>
+  </table>
+
+  <h4>Target: ~2,000-4,000 tokens of fixed overhead per agent</h4>
+  <p>This is 10-20x leaner than a generalist agent's 45K+ tokens. The key: each agent only gets what it needs. A legal agent doesn't get marketing tool schemas. A sales agent doesn't get devops context.</p>
+</div>
+
+<div class="risk-block">
+  <div class="label">CRITICAL — Context Rot Prevention</div>
+  <p>If context injection is not token-budgeted, agents will gradually accumulate more memory, more session history, and more tool schemas until performance degrades. Every injection layer MUST have a hard token cap. When a layer exceeds its budget, it must be <strong>compacted</strong> (summarized into fewer tokens) or <strong>truncated</strong> (oldest entries dropped).</p>
+</div>
+
+<h3>5.4 Zone 3 — Tools (What the Agent Can Do)</h3>
+<div class="spec-block">
+  <p>Each agent gets a <strong>curated subset</strong> of tools from the registry. The agent config specifies which tools are available. The harness only sends schemas for those tools to the LLM.</p>
+
+  <h4>Tool Categories:</h4>
+  <table>
+    <tr><th>Category</th><th>Tools</th><th>Approval</th></tr>
+    <tr><td>Communication</td><td>send_whatsapp, send_email, send_conversation_message</td><td>Required</td></tr>
+    <tr><td>CRM</td><td>search_contacts, create_contact, update_contact, list_deals, create_deal</td><td>Mutations require approval</td></tr>
+    <tr><td>Spreadsheets</td><td>read_spreadsheet, write_spreadsheet, append_to_spreadsheet</td><td>Writes require approval</td></tr>
+    <tr><td>Memory</td><td>search_company_memory (RAG)</td><td>Auto-execute</td></tr>
+    <tr><td>Documents</td><td>create_document, generate_document, <strong>update_document</strong>, <strong>update_wiki_article</strong></td><td>Create/update require approval</td></tr>
+    <tr><td>Finance</td><td>monitor_pix, check_nfe</td><td>Auto-execute (read-only)</td></tr>
+    <tr><td>DevOps</td><td>create_deploy_request, create_human_task</td><td>Required</td></tr>
+    <tr><td>Calendar</td><td>schedule_event, sync_google_calendar</td><td>Auto-execute</td></tr>
+    <tr><td>Ads</td><td>meta_marketing, google_ads</td><td>Auto-execute (read-only)</td></tr>
+    <tr><td>Web</td><td>search_web</td><td>Auto-execute</td></tr>
+    <tr><td>Agent Comms</td><td>trigger_agent</td><td>Auto-execute</td></tr>
+    <tr><td><strong>KPI (NEW)</strong></td><td><strong>update_strategy_kpi</strong></td><td>Auto-execute</td></tr>
+    <tr><td><strong>Self-Config (NEW)</strong></td><td><strong>update_my_schedule, update_my_heartbeat</strong></td><td>Auto-execute</td></tr>
+    <tr><td>Utility</td><td>get_current_time, log_message</td><td>Auto-execute</td></tr>
+  </table>
+
+  <p><strong>New tools needed (marked in bold):</strong> <code>update_document</code>, <code>update_wiki_article</code>, <code>update_strategy_kpi</code>, <code>update_my_schedule</code>, <code>update_my_heartbeat</code>.</p>
+</div>
+
+<h3>5.5 Zone 4 — Outputs (What the Agent Produces)</h3>
+<div class="spec-block">
+  <p>Every agent execution produces side effects. These side effects are what make the system autonomous — they feed back into the trigger system and cascade to other agents.</p>
+
+  <table>
+    <tr><th>Output</th><th>Where It Goes</th><th>What It Triggers</th></tr>
+    <tr><td>Tool results</td><td>Fed back to LLM in agentic loop</td><td>Next tool call or completion</td></tr>
+    <tr><td>Documents created</td><td>Wiki + document_chunks (embedded)</td><td>Available to all agents via RAG</td></tr>
+    <tr><td>KPI updates</td><td>strategy_kpis table</td><td><strong>KPI monitor checks threshold → may trigger cascade</strong></td></tr>
+    <tr><td>Events fired</td><td><code>fireEventTriggers()</code></td><td>Matching event-triggered workflows/agents</td></tr>
+    <tr><td>Agent messages</td><td><code>trigger_agent</code> enqueues target</td><td>Target agent wakes with message context</td></tr>
+    <tr><td>Session log</td><td>action_logs + <strong>wiki summary document</strong></td><td>Available to Atlas and other agents via RAG</td></tr>
+    <tr><td>Memory updates</td><td>agent_memory table (auto-extracted)</td><td>Available to this agent on next execution</td></tr>
+    <tr><td>Heartbeat updates</td><td>Agent's heartbeat_instructions field</td><td>Agent's own future behavior changes</td></tr>
+    <tr><td>Schedule updates</td><td>Agent's triggerConfig + BullMQ repeatable</td><td>Agent's own execution frequency changes</td></tr>
+    <tr><td>Approval requests</td><td>approvals table</td><td>Human notified, cascade branch paused</td></tr>
+    <tr><td>Socket.IO events</td><td>Frontend stores (Zustand)</td><td>UI updates in real-time</td></tr>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="agentic-loop">6. THE AGENTIC LOOP</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<p>The core execution pattern. The LLM calls tools, gets results, and decides what to do next. This continues until the agent decides it's done or hits a safety limit.</p>
+
+<pre class="arch-diagram">
+  <span class="highlight">THE AGENTIC LOOP — DETAILED EXECUTION FLOW</span>
+
+  Trigger Received
+       │
+       ▼
+  ┌──────────────────────────────────────────────────────────────┐
+  │ <span class="highlight">PHASE 1: CONTEXT BUILD</span>                                       │
+  │                                                              │
+  │  1. Load agent config (model, temp, tools, safety limits)    │
+  │  2. Load system prompt (bilingual, archetype-specific)       │
+  │  3. Load strategy context (goals + KPI values)          <span class="warn">NEW</span>  │
+  │  4. Load heartbeat instructions (if heartbeat trigger)  <span class="warn">NEW</span>  │
+  │  5. Load dynamic memory (key-value pairs, capped)            │
+  │  6. Load session history (last N summaries, capped)          │
+  │  7. Resolve trigger payload into user message                │
+  │  8. Check token budget — COMPACT if over limit          <span class="warn">NEW</span>  │
+  │  9. Pre-flight checks:                                       │
+  │     • Daily budget remaining? (per-agent + project)          │
+  │     • Agent health OK? (not auto-disabled)                   │
+  │     • Cascade depth within limit?                       <span class="warn">NEW</span>  │
+  │     • Concurrency slot available? (orchestrator)             │
+  │                                                              │
+  └──────────────────┬───────────────────────────────────────────┘
+                     │ All checks pass
+                     ▼
+  ┌──────────────────────────────────────────────────────────────┐
+  │ <span class="highlight">PHASE 2: AGENTIC LOOP</span> (max iterations configurable)           │
+  │                                                              │
+  │  ┌──────────────────────────────────────────────────────┐   │
+  │  │  Call LLM (Claude) with messages array + tool schemas│   │
+  │  └────────────────────┬─────────────────────────────────┘   │
+  │                       │                                      │
+  │                       ▼                                      │
+  │              Response has tool_use blocks?                   │
+  │              │                        │                      │
+  │         NO (text only)          YES (tool calls)             │
+  │              │                        │                      │
+  │              ▼                        ▼                      │
+  │         <span class="ok">COMPLETE</span>              For each tool call:             │
+  │         (go to Phase 3)        │                             │
+  │                                ├─→ Requires approval?       │
+  │                                │    │ YES → <span class="warn">PAUSE</span>            │
+  │                                │    │  Serialize full state: │
+  │                                │    │  - messages array      │
+  │                                │    │  - loop counter        │
+  │                                │    │  - safety counters     │
+  │                                │    │  - pending tool calls  │
+  │                                │    │  Store in approvals    │
+  │                                │    │  table as JSONB        │
+  │                                │    └─→ EXIT (await human)   │
+  │                                │                             │
+  │                                ├─→ Validate inputs (Zod)    │
+  │                                ├─→ Execute with timeout (60s)│
+  │                                │    + retry (2x, exp backoff)│
+  │                                ├─→ Log to action_logs       │
+  │                                ├─→ Track tokens + cost      │
+  │                                └─→ Feed result back to LLM  │
+  │                                     │                        │
+  │                                     └─→ <span class="highlight">LOOP BACK</span> ──────────┘
+  │                                                              │
+  │  <span class="warn">SAFETY LIMITS (any hit → force complete):</span>                  │
+  │  • maxActionsPerSession (default 20)                         │
+  │  • maxTokensPerSession (default 100K)                        │
+  │  • maxDurationMs (default 5 min)                             │
+  │  • maxConsecutiveErrors (default 3)                          │
+  │  • dailyBudgetUsd (per agent, checked before each tool call) │
+  │  • cascadeDepth (default 5, prevents infinite loops)    <span class="warn">NEW</span>  │
+  │                                                              │
+  └──────────────────┬───────────────────────────────────────────┘
+                     │
+                     ▼
+  ┌──────────────────────────────────────────────────────────────┐
+  │ <span class="highlight">PHASE 3: POST-EXECUTION</span>                                      │
+  │                                                              │
+  │  1. Auto-extract memories (Claude Haiku analyzes transcript,  │
+  │     extracts key-value pairs → agent_memory table)           │
+  │  2. Log all actions to action_logs table                     │
+  │  3. <span class="warn">Generate session summary → wiki document</span>           <span class="warn">NEW</span>  │
+  │     (markdown: what agent did, decisions, outcomes)           │
+  │     Chunk + embed for RAG searchability                      │
+  │  4. Fire completion event:                                   │
+  │     • agent.completed or agent.failed                        │
+  │     • <code>fireEventTriggers()</code> scans for matching listeners   │
+  │  5. Emit Socket.IO: agent:session_complete                    │
+  │  7. Update agent status: working → idle                      │
+  │  8. <span class="warn">Process heartbeat output if agent modified it</span>      <span class="warn">NEW</span>  │
+  │  9. <span class="warn">Process schedule change if agent modified it</span>       <span class="warn">NEW</span>  │
+  │ 10. <span class="warn">If in cascade and failed: emit cascade:branch_failed,</span>     │
+  │     <span class="warn">log to cascade_events, retry per agent retry policy</span> <span class="warn">NEW</span>  │
+  │     <span class="warn">(0-3 retries, exponential backoff). On exhaust:</span>            │
+  │     <span class="warn">mark branch partial_failure, continue other branches.</span>      │
+  │                                                              │
+  └──────────────────────────────────────────────────────────────┘
+</pre>
+
+<h3>6.1 Approval Pause & Resume</h3>
+<div class="spec-block">
+  <p>When an agent hits a tool that requires approval:</p>
+  <ol>
+    <li><strong>Serialize:</strong> The entire session state is captured as JSON — messages array, loop counter, safety counters, pending tool call arguments, cascade metadata.</li>
+    <li><strong>Store:</strong> Saved in the <code>approvals</code> table's <code>sessionState</code> JSONB column.</li>
+    <li><strong>Notify:</strong> Socket.IO event <code>approval:requested</code> → UI badge count updates → Atlas gets popup if user is chatting.</li>
+    <li><strong>Wait:</strong> Agent status set to <code>awaiting_approval</code>. The cascade branch is paused.</li>
+    <li><strong>Resume (Approve):</strong> Worker deserializes state, executes the approved tool, feeds result back to LLM, continues the agentic loop from where it left off.</li>
+    <li><strong>Resume (Reject):</strong> Worker deserializes state, injects a "tool was rejected by human" message, lets the LLM decide how to proceed (may try alternative approach or complete gracefully).</li>
+  </ol>
+  <p><strong>Status:</strong> <span class="badge badge-done">DONE</span> — This is fully implemented.</p>
+</div>
+
+<h3>6.2 Approval Timeout & Expiry <span class="badge badge-new">NEW</span></h3>
+<div class="spec-block">
+  <p>Approvals cannot wait forever. An agent stuck in <code>awaiting_approval</code> blocks its cascade branch and wastes a concurrency slot.</p>
+  <ul>
+    <li><strong>Default expiry:</strong> 48 hours (configurable per project: 1h-168h)</li>
+    <li><strong>On expiry:</strong> Worker deserializes state, injects "Approval request expired after {hours}h — no human response. Proceed with an alternative approach or complete gracefully." Agent continues the agentic loop.</li>
+    <li><strong>Countdown in UI:</strong> Approval cards show time remaining. Turns yellow at 25% remaining, red at 10%.</li>
+    <li><strong>Notification escalation:</strong> At 50% expiry time, send reminder notification. At 90%, send urgent notification.</li>
+    <li><strong>Event:</strong> Emit <code>approval:expired</code> with approval ID and agent context.</li>
+    <li><strong>Orchestrator check:</strong> The 60s tick scans for expired approvals and processes them.</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="context-hygiene">7. CONTEXT HYGIENE & COMPACTION</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">Lesson from OpenClaw — Context Rot Kills Performance</div>
+  <p>After a month of daily use, OpenClaw's fixed overhead grows from 7K to 45K+ tokens. Research shows this causes <strong>40-90% performance degradation</strong>. The LLM literally gets worse at its job because it has too much to process. Every additional token in the context window slightly degrades attention to the tokens that matter.</p>
+</div>
+
+<h3>7.1 Token Budget System <span class="badge badge-new">NEW</span></h3>
+<div class="spec-block">
+  <p>Every context injection layer has a hard token budget. The harness enforces these limits <strong>before</strong> sending to the LLM.</p>
+
+  <table>
+    <tr><th>Layer</th><th>Max Tokens</th><th>When Over Budget</th></tr>
+    <tr>
+      <td>System Prompt</td>
+      <td>800</td>
+      <td>Never changes — fixed per archetype. Ensure prompts stay within budget at creation time.</td>
+    </tr>
+    <tr>
+      <td>Strategy Context</td>
+      <td>400</td>
+      <td>Truncate to top 3 strategies by priority. Only active strategies.</td>
+    </tr>
+    <tr>
+      <td>Heartbeat Instructions</td>
+      <td>300</td>
+      <td>Hard truncate. Agent must be concise when writing heartbeat instructions.</td>
+    </tr>
+    <tr>
+      <td>Dynamic Memory</td>
+      <td>600</td>
+      <td>Keep most recent N key-value pairs. Drop oldest entries.</td>
+    </tr>
+    <tr>
+      <td>Session History</td>
+      <td>1000</td>
+      <td><strong>Compaction:</strong> If last 5 summaries exceed budget, re-summarize into fewer, more compressed summaries.</td>
+    </tr>
+    <tr>
+      <td>Tool Schemas</td>
+      <td>800</td>
+      <td>Only include tools assigned to this specific agent (3-8 tools, not all 30+).</td>
+    </tr>
+    <tr>
+      <td>Trigger Payload</td>
+      <td>500</td>
+      <td>Truncate large payloads. Summarize if needed.</td>
+    </tr>
+    <tr>
+      <td><strong>Total Fixed Overhead</strong></td>
+      <td><strong>~4,400 max</strong></td>
+      <td>This leaves 95K+ tokens for the actual agentic loop on a 100K context model.</td>
+    </tr>
+  </table>
+
+  <h4>Token Counting Implementation <span class="badge badge-new">NEW</span></h4>
+  <p>Token budgets require actual token counting. The harness uses a two-tier approach:</p>
+  <ol>
+    <li><strong>Fast estimate:</strong> <code>Math.ceil(text.length / 4)</code> — used for quick checks during context assembly. Accurate within ~10%.</li>
+    <li><strong>Exact count:</strong> Anthropic's <code>count_tokens</code> API endpoint — called once before the final LLM call to validate the assembled context is within budget.</li>
+  </ol>
+  <p>Add a shared utility package: <code>@ai-office/tokenizer</code> exporting <code>estimateTokens(text)</code> and <code>countTokensExact(messages)</code>. The exact count uses Anthropic's API (no third-party tokenizer dependency).</p>
+</div>
+
+<h3>7.2 Compaction Engine <span class="badge badge-new">NEW</span></h3>
+<div class="spec-block">
+  <p>Inspired by OpenClaw's compaction system. When context grows too large during a session, the harness compacts it.</p>
+
+  <h4>In-Session Compaction:</h4>
+  <ol>
+    <li>After each tool call, count total tokens in the messages array.</li>
+    <li>If approaching 80% of the model's context window:</li>
+    <li>Take the oldest N messages (keeping system prompt + last 3 exchanges).</li>
+    <li>Summarize them via a fast model (Claude Haiku): "Summary of actions so far: [compact summary]"</li>
+    <li>Replace the N messages with one summary message.</li>
+    <li>Continue the agentic loop with the compacted context.</li>
+  </ol>
+
+  <h4>Cross-Session Compaction (Session History):</h4>
+  <ol>
+    <li>Each completed session produces a summary (50-200 tokens).</li>
+    <li>Load the last 5 summaries into next session's context.</li>
+    <li>If 5 summaries exceed 1000 tokens, merge the oldest 3 into one super-summary.</li>
+    <li>Result: always have recent detail + compressed older context.</li>
+  </ol>
+
+  <h4>Memory Compaction (Key-Value Pairs):</h4>
+  <ol>
+    <li>Auto-extraction adds ~5-10 new key-value pairs per session.</li>
+    <li>After 50+ pairs, run a merge: combine related pairs, drop stale entries.</li>
+    <li>Cap at 30 most-relevant pairs per agent (rank by recency + access frequency).</li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="session-persistence">8. SESSION PERSISTENCE</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<h3>8.1 How Sessions Are Stored</h3>
+<div class="spec-block">
+  <p>Every agent execution is a session. Sessions must be persisted for:</p>
+  <ul>
+    <li><strong>Pause/Resume:</strong> Approval system needs to serialize and later restore the full session state.</li>
+    <li><strong>Memory Extraction:</strong> Post-session, Claude Haiku analyzes the transcript to extract key learnings.</li>
+    <li><strong>Session Summaries:</strong> Compressed summaries are injected into future sessions as historical context.</li>
+    <li><strong>Wiki Logs:</strong> Human-readable session summaries stored as wiki documents for Atlas and user visibility.</li>
+    <li><strong>Debugging:</strong> Full session transcripts available in the agent detail UI for troubleshooting.</li>
+  </ul>
+
+  <h4>Storage Strategy (Updated v4):</h4>
+  <table>
+    <tr><th>Data</th><th>Where</th><th>Retention</th></tr>
+    <tr><td>Full session transcript (messages array)</td><td>Redis (TTL 24h, hot cache) <strong>+ <code>session_transcripts</code> table (PostgreSQL)</strong></td><td>Redis: 24h fast access. PostgreSQL: permanent archive. Cleanup worker syncs before TTL expires.</td></tr>
+    <tr><td>Session summary (50-200 tokens)</td><td><strong><code>agent_session_summaries</code> table</strong> (dedicated — NOT in agent_memory)</td><td>Last 10 summaries per agent, oldest 7 auto-compacted into super-summary</td></tr>
+    <tr><td>Wiki session log (human-readable markdown)</td><td><code>documents</code> table + <code>document_chunks</code> (embedded)</td><td>Permanent — part of company knowledge</td></tr>
+    <tr><td>Extracted memories (key-value)</td><td><code>agent_memory</code> table (operational knowledge only)</td><td>Permanent until compacted/merged. Max 50 pairs.</td></tr>
+    <tr><td>Serialized pause state</td><td><code>approvals.sessionState</code> JSONB</td><td>Until resolved (approved/rejected/expired)</td></tr>
+  </table>
+
+  <div class="risk-block">
+    <div class="label">v4 FIX — Session Summaries Separated from Agent Memory</div>
+    <p>Previously, session summaries were stored in <code>agent_memory</code> alongside operational knowledge. A busy agent could fill its entire memory with summaries, leaving no room for actual learnings. Now separated: <code>agent_session_summaries</code> table for history, <code>agent_memory</code> for operational k/v pairs only.</p>
+  </div>
+
+  <div class="risk-block">
+    <div class="label">v4 FIX — No More Redis-Only Data Loss</div>
+    <p>Previously, full transcripts lived only in Redis with 24h TTL. Any outage in the summary pipeline meant permanent data loss. Now: write-through to both Redis (fast reads) and PostgreSQL (<code>session_transcripts</code> table, permanent). Redis is a cache, PostgreSQL is the source of truth.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="self-programming">9. SELF-PROGRAMMING AGENTS</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">The Most Powerful OpenClaw Pattern</div>
+  <p>OpenClaw's heartbeat fires every 30 minutes and tells the agent to check <code>heartbeat.md</code>. The key insight: <strong>the agent itself can write to heartbeat.md</strong>. So it effectively programs its own future behavior. An agent that finishes a research task can write "Tomorrow, check if the report was reviewed and follow up" — and its future self will see that instruction and act on it.</p>
+</div>
+
+<h3>9.1 How Self-Programming Works in AI Office Sim <span class="badge badge-new">NEW</span></h3>
+<div class="spec-block">
+  <h4>Heartbeat Instructions Field</h4>
+  <p>Add to the <code>agents</code> table:</p>
+  <pre>
+heartbeatInstructions    text      (nullable, max 500 chars)
+heartbeatIntervalMin     integer   (default 30, min 5, max 1440)
+lastHeartbeatAt          timestamp (nullable)</pre>
+
+  <h4>Heartbeat Execution Flow:</h4>
+  <ol>
+    <li>Orchestrator tick (every 60s) checks all agents where <code>heartbeatIntervalMin</code> is set and <code>isActive = true</code>.</li>
+    <li>For each agent where <code>now - lastHeartbeatAt >= heartbeatIntervalMin</code>:</li>
+    <li>Enqueue an agent execution with trigger type <code>heartbeat</code>.</li>
+    <li>The trigger payload includes: <code>"Heartbeat check. Your instructions: {heartbeatInstructions}"</code></li>
+    <li>The agent runs its normal agentic loop. During execution, it can call:</li>
+    <li><code>update_my_heartbeat</code> — rewrites its own <code>heartbeatInstructions</code> for the next tick.</li>
+    <li><code>update_my_schedule</code> — changes its own <code>heartbeatIntervalMin</code> or cron schedule.</li>
+  </ol>
+
+  <h4>Self-Programming Tools:</h4>
+  <table>
+    <tr><th>Tool</th><th>Input</th><th>What It Does</th></tr>
+    <tr>
+      <td><code>update_my_heartbeat</code></td>
+      <td><code>{ instructions: string }</code></td>
+      <td>Rewrites this agent's <code>heartbeatInstructions</code>. The agent programs what its future self should do on the next heartbeat.</td>
+    </tr>
+    <tr>
+      <td><code>update_my_schedule</code></td>
+      <td><code>{ intervalMin?: number, cron?: string, disable?: boolean }</code></td>
+      <td>Changes the agent's heartbeat interval, cron schedule, or disables scheduled execution entirely. Calls <code>syncAgentSchedule()</code> to update BullMQ repeatable.</td>
+    </tr>
+  </table>
+
+  <h4>Example — Self-Programming Content Agent:</h4>
+  <pre>
+Session 1 (Monday 9am, triggered by schedule):
+  Agent: "I need to research trending topics. Let me search the web."
+  → Calls search_web("trending AI topics this week")
+  → Calls create_document("Weekly Topic Research - March 3")
+  → Calls update_my_heartbeat("Check if the content team has reviewed
+     my research document. If not reviewed after 24h, send a reminder
+     to the content workflow. If reviewed, start drafting content for
+     the top 3 topics.")
+  → Calls update_my_schedule({ intervalMin: 60 })  // Check every hour
+
+Session 2 (Monday 10am, triggered by heartbeat):
+  Agent reads heartbeat: "Check if content team reviewed..."
+  → Calls search_company_memory("Weekly Topic Research March 3 review")
+  → Not reviewed yet, only 1 hour passed. Still within 24h.
+  → Calls update_my_heartbeat("Same instructions. 23 hours remaining.")
+
+Session 3 (Tuesday 10am, triggered by heartbeat):
+  Agent reads heartbeat: "Same instructions. Check review..."
+  → Calls search_company_memory("Weekly Topic Research March 3 review")
+  → Still not reviewed. 24h elapsed.
+  → Calls trigger_agent("content-workflow-trigger", "Research document
+     not reviewed after 24h. Please review: [doc link]")
+  → Calls update_my_heartbeat("Content reminder sent. Next task:
+     start drafting content for top 3 topics from my research.")
+  → Calls update_my_schedule({ intervalMin: 30 })  // More active now</pre>
+</div>
+
+<h3>9.2 Safety Guardrails for Self-Programming</h3>
+<div class="spec-block">
+  <ul>
+    <li><strong>Minimum interval:</strong> <code>heartbeatIntervalMin</code> cannot go below 5 minutes. Prevents runaway agents.</li>
+    <li><strong>Instructions cap:</strong> <code>heartbeatInstructions</code> capped at 500 characters. Forces concise future-programming.</li>
+    <li><strong>Budget still applies:</strong> Every heartbeat execution counts against the agent's daily budget. An agent that sets a 5-minute heartbeat will burn through budget fast — this is self-regulating.</li>
+    <li><strong>Admin override:</strong> Users can always manually override heartbeat instructions and schedule from the agent config UI.</li>
+    <li><strong>Heartbeat audit:</strong> Every heartbeat instruction change is logged to <code>action_logs</code> with <code>actionType: 'self_program'</code>.</li>
+    <li><strong>Version history:</strong> Every instruction change is stored in <code>agent_heartbeat_history</code> table (id, agentId, instructions, previousInstructions, changedAt, changedBySessionId). Cap at last 20 entries per agent. UI shows diff between versions. Manual rollback button restores any previous version.</li>
+    <li><strong>Rate limit:</strong> An agent can modify its own heartbeat instructions max 3 times per session. Prevents instruction thrashing.</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="heartbeat">10. THE HEARTBEAT SYSTEM</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<p>
+  The heartbeat is what makes the entire system autonomous. Without it, agents only run when humans click "Run" or when a cron fires. With it, agents are alive — they check on things, follow up, and adapt.
+</p>
+
+<h3>10.1 Multi-Agent Heartbeat Architecture <span class="badge badge-new">NEW</span></h3>
+<pre class="arch-diagram">
+  <span class="highlight">THE HEARTBEAT — WHAT MAKES THE COMPANY "ALIVE"</span>
+
+  ┌──────────────────────────────────────────────────────────────────┐
+  │                   <span class="highlight">ORCHESTRATOR TICK (every 60s)</span>                  │
+  │                                                                  │
+  │  On each tick, the orchestrator performs these checks:           │
+  │                                                                  │
+  │  <span class="accent">1. HEARTBEAT CHECK</span>                                             │
+  │     For each agent where heartbeatIntervalMin is set:           │
+  │     - Has enough time elapsed since lastHeartbeatAt?            │
+  │     - Is agent currently idle (not already working)?            │
+  │     - Is budget remaining for today?                            │
+  │     - Is concurrency slot available?                            │
+  │     IF ALL YES → Enqueue heartbeat execution                    │
+  │                                                                  │
+  │  <span class="accent">2. SCHEDULED TRIGGER CHECK</span>                                     │
+  │     BullMQ repeatables handle this automatically.               │
+  │     But orchestrator validates: is agent still active?          │
+  │     Is budget OK? Is health OK (not auto-disabled)?             │
+  │                                                                  │
+  │  <span class="accent">3. KPI MONITOR CHECK</span>                                            │
+  │     For each KPI where isMonitored = true:                      │
+  │     - Has current crossed triggerThreshold?                     │
+  │     - Has cooldown elapsed since lastTriggeredAt?               │
+  │     IF YES → Enqueue linked agent/workflow with KPI context     │
+  │                                                                  │
+  │  <span class="accent">4. ENFORCEMENT (existing)</span>                                       │
+  │     - Concurrency: pause queued jobs if at max                  │
+  │     - Budget: halt all if daily/monthly limit reached           │
+  │     - Stall detection: agents >15min, workflows >30min          │
+  │     - Health: auto-disable agents with 3+ consecutive failures  │
+  │                                                                  │
+  │  <span class="accent">5. ATLAS PROACTIVE CHECK</span>                                        │
+  │     - Any anomalies detected? (failures, budget spikes, etc.)   │
+  │     - Is it time for daily briefing?                            │
+  │     IF YES → Generate Atlas alert, store for next user visit    │
+  │                                                                  │
+  └──────────────────────────────────────────────────────────────────┘
+</pre>
+
+<h3>10.2 Heartbeat vs Schedule vs KPI — When to Use Each</h3>
+<table>
+  <tr><th>Trigger Type</th><th>Best For</th><th>Example</th></tr>
+  <tr>
+    <td><strong>Heartbeat</strong></td>
+    <td>Agents that need to <em>check on things</em> and adapt. Self-programming future behavior. Follow-ups. Monitoring.</td>
+    <td>Customer success agent checks for unresponded tickets every 30 min. If nothing, does nothing. If found, handles it and writes "check if customer responded" for next heartbeat.</td>
+  </tr>
+  <tr>
+    <td><strong>Cron Schedule</strong></td>
+    <td>Fixed recurring tasks that always run the same way. Data sync. Report generation.</td>
+    <td>RD Station sync agent runs hourly to pull new deals into the deals table. Always the same task, no adaptation needed.</td>
+  </tr>
+  <tr>
+    <td><strong>KPI Threshold</strong></td>
+    <td>Reactive triggers when business metrics cross thresholds. Strategy-driven.</td>
+    <td>When "monthly_churn_rate" exceeds 5%, trigger the retention workflow. Only fires when the problem exists.</td>
+  </tr>
+  <tr>
+    <td><strong>"Always-On" (Heartbeat + Events)</strong></td>
+    <td>Agents that must be responsive to external events AND do periodic checks.</td>
+    <td>Customer support agent: heartbeat every 15 min to check inbox + event trigger on <code>conversation:new_message</code>.</td>
+  </tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="trigger-model">11. AUTONOMOUS TRIGGER MODEL</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<h3 id="trigger-cascade">11.1 The Cascade Pattern</h3>
+<div class="spec-block">
+  <h4>How autonomous operation works:</h4>
+  <ol>
+    <li><strong>Entry point:</strong> A cron schedule fires, a heartbeat ticks, or a KPI threshold is crossed.</li>
+    <li><strong>First execution:</strong> The triggered agent runs its agentic loop. It performs tasks using tools.</li>
+    <li><strong>Side effects:</strong> The execution produces outputs — documents created, KPIs updated, events fired, agents messaged.</li>
+    <li><strong>Cascade:</strong> Those outputs trigger more agents/workflows:
+      <ul>
+        <li>A KPI update crosses another threshold → another agent/workflow triggers</li>
+        <li>A fired event matches a workflow's event trigger → that workflow runs</li>
+        <li>An agent uses <code>trigger_agent</code> → target agent wakes</li>
+        <li>A heartbeat agent writes new instructions → its future self acts differently</li>
+      </ul>
+    </li>
+    <li><strong>Equilibrium:</strong> The cascade continues until no thresholds are crossed, no events need handling, and all heartbeat agents have checked in.</li>
+    <li><strong>Human checkpoints:</strong> At any point, an approval-required action pauses that cascade branch.</li>
+  </ol>
+</div>
+
+<h3>11.2 Cascade Safety <span class="badge badge-new">NEW</span></h3>
+<div class="spec-block">
+  <h4>Cascade Depth Tracking:</h4>
+  <p>Every agent execution and workflow run carries cascade metadata:</p>
+  <pre>
+interface CascadeContext {
+  cascadeId: string;      // UUID of the original trigger event
+  cascadeDepth: number;   // How many levels deep we are (starts at 0)
+  cascadeRootType: string; // 'schedule' | 'kpi' | 'heartbeat' | 'manual' | 'webhook'
+  cascadeRootAgentId?: string;  // The agent that started the cascade
+  cascadePath: string[];  // Array of agent/workflow IDs in the chain
+}</pre>
+
+  <h4>Safety Rules:</h4>
+  <ul>
+    <li><strong>Max cascade depth:</strong> Configurable in orchestrator config (default: 5). When a trigger would create depth > max, it's rejected and logged.</li>
+    <li><strong>Loop detection:</strong> If <code>cascadePath</code> contains the same agent/workflow ID twice, it's a loop. Reject and alert.</li>
+    <li><strong>KPI cooldown:</strong> After a KPI triggers an action, that KPI cannot trigger again for <code>triggerCooldownMin</code> minutes (minimum 15).</li>
+    <li><strong>Agent cooldown:</strong> An agent cannot be triggered more than N times per hour (configurable, default: 12). Prevents rapid-fire heartbeat abuse.</li>
+    <li><strong>Budget circuit breaker:</strong> If total cascade cost exceeds a configurable threshold, halt the entire cascade and alert the user.</li>
+    <li><strong>Rate limit on trigger_agent:</strong> Max 5 <code>trigger_agent</code> calls per agent per session. Prevents a single agent from spawning unlimited cascades.</li>
+  </ul>
+
+  <h4>Cascade Failure Recovery <span class="badge badge-new">NEW v4</span></h4>
+  <p>When an agent in a cascade fails:</p>
+  <ol>
+    <li><strong>Retry:</strong> Per-agent retry policy (0-3 retries, exponential backoff: 10s, 30s, 90s).</li>
+    <li><strong>If retries exhausted:</strong> Mark this cascade branch as <code>partial_failure</code>. Log failure reason, agent ID, cascade depth.</li>
+    <li><strong>Other branches continue:</strong> A failure in one branch does NOT halt the entire cascade. Only the failed branch stops.</li>
+    <li><strong>Notify:</strong> Emit <code>cascade:branch_failed</code> event. Create Atlas alert: "Agent {name} failed in cascade {id} at depth {n}. Reason: {error}."</li>
+    <li><strong>Cascade status:</strong> Track overall cascade status: <code>in_progress</code>, <code>completed</code>, <code>partial_failure</code>, <code>failed</code> (all branches failed).</li>
+    <li><strong>UI:</strong> Cascade trace view shows failed branches in red with error details and a "Retry branch" button.</li>
+  </ol>
+</div>
+
+<h3 id="trigger-kpi">11.3 KPI-Driven Trigger System <span class="badge badge-new">NEW</span></h3>
+<div class="spec-block">
+  <h4>Data Model Changes:</h4>
+  <pre>
+// Extend strategyKpis schema:
+triggerAgentId      uuid      FK → agents.id   (nullable)
+triggerWorkflowId   uuid      FK → workflows.id (nullable)
+triggerDirection    enum      'above' | 'below' | 'deviation'
+triggerThreshold    numeric   (the threshold value that fires)
+triggerCooldownMin  integer   (min 15, default 60)
+lastTriggeredAt     timestamp (nullable)
+isMonitored         boolean   default false</pre>
+
+  <h4>Dual KPI Monitoring — Event-Driven + Polling <span class="badge badge-new">v4 FIX</span></h4>
+  <p>KPI thresholds are checked in TWO complementary ways (but never duplicated within the same execution):</p>
+  <ol>
+    <li><strong>Event-driven (immediate):</strong> When an agent calls <code>update_strategy_kpi</code>, the tool itself checks the threshold immediately after updating. This gives near-instant KPI reactions — no waiting for the next tick.</li>
+    <li><strong>Polling (safety net):</strong> The orchestrator's 60s tick checks all monitored KPIs. This catches KPIs updated by external sources (database triggers, manual UI edits, webhook integrations) that bypass the tool.</li>
+  </ol>
+  <p>Both paths share a single <code>checkKpiThreshold(kpiId)</code> function with cooldown enforcement, so the same KPI can never double-fire.</p>
+
+  <h4>KPI Update Tool:</h4>
+  <pre>
+update_strategy_kpi tool:
+  Input:  { kpiId: string, value: number, note?: string }
+  Action: 1. Update kpi.current in DB
+          2. Immediately call checkKpiThreshold(kpiId):
+             - Is KPI monitored? Has threshold crossed?
+             - Has cooldown elapsed since lastTriggeredAt?
+             - If YES → enqueue linked agent/workflow with KPI cascade context
+             - Update lastTriggeredAt, emit kpi:trigger_fired
+          3. Emit Socket.IO kpi:updated
+          4. Log to action_logs</pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="pillar-agents">12. PILLAR 1: AGENT SYSTEM</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<h3>12.1 Complete Agent Definition</h3>
+<div class="spec-block">
+  <p>An agent in AI Office Sim is fully defined by:</p>
+  <table>
+    <tr><th>Property</th><th>Purpose</th><th>Status</th></tr>
+    <tr><td>name, slug, archetype</td><td>Identity</td><td><span class="badge badge-done">DONE</span></td></tr>
+    <tr><td>systemPromptEn, systemPromptPtBr</td><td>Soul — personality, rules, expertise</td><td><span class="badge badge-done">DONE</span></td></tr>
+    <tr><td>config (model, temp, maxTokens, budget)</td><td>Brain configuration</td><td><span class="badge badge-done">DONE</span></td></tr>
+    <tr><td>tools[]</td><td>Capabilities / skills</td><td><span class="badge badge-done">DONE</span></td></tr>
+    <tr><td>team</td><td>Organizational grouping</td><td><span class="badge badge-done">DONE</span></td></tr>
+    <tr><td>memoryScope</td><td>Which wiki categories to search</td><td><span class="badge badge-done">DONE</span></td></tr>
+    <tr><td>triggerType, triggerConfig</td><td>What wakes it up</td><td><span class="badge badge-done">DONE</span></td></tr>
+    <tr><td>heartbeatInstructions</td><td>Self-programming future behavior</td><td><span class="badge badge-missing">NEW</span></td></tr>
+    <tr><td>heartbeatIntervalMin</td><td>How often the heartbeat fires</td><td><span class="badge badge-missing">NEW</span></td></tr>
+    <tr><td>maxActionsPerSession</td><td>Safety limit</td><td><span class="badge badge-done">DONE</span></td></tr>
+    <tr><td>approvalRules</td><td>Which actions need human approval</td><td><span class="badge badge-done">DONE</span></td></tr>
+    <tr><td>isActive</td><td>Master on/off switch</td><td><span class="badge badge-done">DONE</span></td></tr>
+  </table>
+</div>
+
+<h3>12.2 Static RAG (Immutable Knowledge) <span class="badge badge-missing">MISSING</span></h3>
+<div class="gap-block">
+  <div class="label">GAP — Archetype Domain Knowledge</div>
+  <p>Each archetype should come with a curated, immutable knowledge base for its domain. This is the "training data" that makes a legal agent actually know about law, not just pretend to.</p>
+  <ul>
+    <li>Add <code>isStatic: boolean</code> to documents table</li>
+    <li>Pre-seed per archetype (e.g., <code>legal-br-laws</code>, <code>finance-accounting-standards</code>)</li>
+    <li>RAG search combines: static archetype docs + agent-scoped dynamic docs + project-wide docs</li>
+    <li>Static docs are read-only — agents reference them, never modify</li>
+  </ul>
+</div>
+
+<h3>12.3 Agent Auto-Recovery <span class="badge badge-new">NEW v4</span></h3>
+<div class="spec-block">
+  <p>Currently, agents auto-disable after 3 consecutive failures — but there's no way back without manual intervention. This is bad UX for a 24/7 autonomous system.</p>
+  <h4>Auto-Recovery Protocol:</h4>
+  <ol>
+    <li><strong>Cooldown state:</strong> After auto-disable, agent enters <code>cooldown</code> status (not fully disabled).</li>
+    <li><strong>First retry:</strong> After 1 hour, orchestrator runs a minimal health check execution (simple "respond OK" prompt, counts as 1 API call).</li>
+    <li><strong>If succeeds:</strong> Agent status → <code>active</code>. Reset failure counter. Emit <code>agent:auto_recovered</code>. Create Atlas notification: "Agent {name} recovered automatically."</li>
+    <li><strong>If fails:</strong> Extend cooldown: 1h → 4h → 24h (exponential). Each failure extends the cooldown.</li>
+    <li><strong>After 3 failed recovery attempts:</strong> Agent moves to <code>disabled</code> (fully off). Create human task: "Agent {name} has failed recovery 3 times. Manual investigation required."</li>
+    <li><strong>Manual override:</strong> User can always force-enable from UI, which resets all counters.</li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="pillar-workflows">13. PILLAR 2: WORKFLOW ENGINE</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<h3>13.1 Current State <span class="badge badge-done">CORE DONE</span></h3>
+<div class="ok-block">
+  <div class="label">What works</div>
+  <ul>
+    <li>React Flow editor with 6 node types: trigger, agent, condition, approval, delay, output</li>
+    <li>DAG execution via topological sort (Kahn's algorithm)</li>
+    <li>Variable system with <code>{{variable}}</code> resolution</li>
+    <li>Pause/resume on approval and delay nodes</li>
+    <li>Retry from exact failure point</li>
+    <li>5 trigger types + event cascading + 88 templates</li>
+  </ul>
+</div>
+
+<h3>13.2 Gaps</h3>
+<div class="gap-block">
+  <div class="label">GAP — Workflow Output → KPI Update</div>
+  <p>When a workflow completes, it should be able to update strategy KPIs. The output node should support a <code>kpiUpdates</code> config that maps output variables to KPI values.</p>
+</div>
+
+<div class="gap-block">
+  <div class="label">GAP — Cascade Metadata Propagation</div>
+  <p>Workflows triggered by cascade must carry and propagate the <code>CascadeContext</code> so depth limits are enforced even within workflow agent nodes.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="pillar-memory">14. PILLAR 3: MEMORY & WIKI</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<h3>14.1 Four Memory Layers (Updated)</h3>
+<table>
+  <tr><th>Layer</th><th>Scope</th><th>Mutability</th><th>Analogy</th><th>Status</th></tr>
+  <tr>
+    <td><strong>Static RAG</strong></td>
+    <td>Per archetype</td>
+    <td>Immutable — platform-provided</td>
+    <td>Textbook knowledge</td>
+    <td><span class="badge badge-missing">MISSING</span></td>
+  </tr>
+  <tr>
+    <td><strong>Agent Memory</strong></td>
+    <td>Per agent</td>
+    <td>Mutable — auto-extracted k/v pairs</td>
+    <td>Personal notebook (OpenClaw's memory.md)</td>
+    <td><span class="badge badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td><strong>Session History</strong></td>
+    <td>Per agent</td>
+    <td>Append-only, compacted over time</td>
+    <td>Work diary (OpenClaw's JSONL)</td>
+    <td><span class="badge badge-partial">PARTIAL</span></td>
+  </tr>
+  <tr>
+    <td><strong>Company Wiki</strong></td>
+    <td>Project-wide</td>
+    <td>Mutable — shared knowledge base</td>
+    <td>Company intranet</td>
+    <td><span class="badge badge-done">DONE</span></td>
+  </tr>
+</table>
+
+<h3>14.2 Gaps</h3>
+<div class="gap-block">
+  <div class="label">GAP — Session Logs → Wiki Documents</div>
+  <p>After each session, generate a markdown summary and store it as a wiki document. Chunk and embed for RAG. Create a "Session Logs" wiki category per agent. This makes Atlas able to RAG-search what any agent did.</p>
+</div>
+
+<div class="gap-block">
+  <div class="label">GAP — Agent Document Edit Tools</div>
+  <p>Agents need <code>update_document</code> and <code>update_wiki_article</code> tools to modify existing knowledge, not just create new documents.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="pillar-atlas">15. PILLAR 4: ATLAS</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<h3>15.1 Atlas as the "Master Harness"</h3>
+<div class="spec-block">
+  <p>Atlas is itself an agent — the most powerful one — with a special harness:</p>
+  <ul>
+    <li><strong>Trigger:</strong> User message (reactive) + scheduled briefing (proactive) + anomaly detection (proactive)</li>
+    <li><strong>Context:</strong> ALL company documents via RAG + ALL agent logs + ALL KPIs + strategic business knowledge</li>
+    <li><strong>Tools:</strong> 22+ tools covering read + write operations across the entire platform</li>
+    <li><strong>Output:</strong> Voice + text responses, platform mutations (with approval), briefings, alerts</li>
+  </ul>
+</div>
+
+<h3>15.2 Gaps</h3>
+<div class="gap-block">
+  <div class="label">GAP — Voice Interface</div>
+  <p>Wire <code>use-speech-recognition.ts</code> output → Atlas chat → <code>use-speech-synthesis.ts</code> for response. Consider Deepgram STT / ElevenLabs TTS for quality.</p>
+</div>
+
+<div class="gap-block">
+  <div class="label">GAP — Atlas Heartbeat (Proactive)</div>
+  <p>Atlas should have its own heartbeat — a daily briefing generator that runs as a scheduled job, creates a summary of yesterday's operations, and stores it so users see it when they open Atlas. Also: anomaly detection on the orchestrator tick — if something looks wrong, Atlas creates an alert.</p>
+</div>
+
+<div class="gap-block">
+  <div class="label">GAP — Missing Atlas Tools</div>
+  <p>Add: <code>search_action_logs</code>, <code>trigger_workflow</code>, <code>update_settings</code>, <code>manage_calendar</code>, <code>update_wiki_article</code>, <code>create_strategy_kpi</code>, <code>update_strategy_kpi</code>.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="pillar-orchestrator">16. PILLAR 5: ORCHESTRATOR</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<h3>16.1 The Orchestrator Is the Heartbeat</h3>
+<div class="spec-block">
+  <p>The orchestrator's 60-second tick is the pulse of the entire system. It is responsible for:</p>
+  <ol>
+    <li><strong>Heartbeat management:</strong> Check all agents with heartbeat config, enqueue those due for execution.</li>
+    <li><strong>KPI monitoring:</strong> Check all monitored KPIs, fire triggers when thresholds cross.</li>
+    <li><strong>Concurrency enforcement:</strong> Ensure no more than <code>maxConcurrency</code> agents run simultaneously.</li>
+    <li><strong>Budget enforcement:</strong> Halt all execution when daily/monthly spend limits are reached.</li>
+    <li><strong>Stall detection:</strong> Identify agents stuck >15min, workflow runs >30min.</li>
+    <li><strong>Health monitoring:</strong> Auto-disable agents with 3+ consecutive failures.</li>
+    <li><strong>Atlas proactive:</strong> Check for anomalies, generate daily briefing at configured time.</li>
+  </ol>
+  <p>Items 1, 2, and 7 are <span class="badge badge-missing">MISSING</span>. Items 3-6 are <span class="badge badge-done">DONE</span>.</p>
+</div>
+
+<h3>16.2 Multi-Tenancy Isolation <span class="badge badge-new">NEW v4</span></h3>
+<div class="spec-block">
+  <p>The orchestrator tick processes ALL active projects. Isolation is critical:</p>
+  <ul>
+    <li><strong>Project scoping:</strong> Every query is scoped by <code>projectId</code>. Agents, KPIs, budgets, cascades — all filtered per project.</li>
+    <li><strong>No cross-project access:</strong> An agent in Project A can never trigger, read, or modify anything in Project B.</li>
+    <li><strong>Per-project concurrency:</strong> Each project has its own <code>maxConcurrency</code> limit. Project A's heavy usage doesn't block Project B.</li>
+    <li><strong>Per-project budgets:</strong> Daily/monthly spend limits are enforced per project, not globally.</li>
+    <li><strong>Index:</strong> Add composite index on <code>(projectId, isActive, lastHeartbeatAt)</code> for efficient heartbeat scans.</li>
+  </ul>
+</div>
+
+<h3>16.3 Horizontal Scaling <span class="badge badge-new">NEW v4</span></h3>
+<div class="spec-block">
+  <p>A single worker is a single point of failure for a "24/7 autonomous" product. The architecture supports horizontal scaling natively:</p>
+  <ul>
+    <li><strong>BullMQ competing consumers:</strong> Deploy 2+ worker replicas. Each picks jobs independently from the same Redis queue. No code changes needed — BullMQ handles job locking automatically.</li>
+    <li><strong>Orchestrator leader election:</strong> Only ONE worker runs the orchestrator tick (to avoid duplicate heartbeat/KPI checks). Use Redis <code>SET NX</code> with TTL as a simple leader lock. If the leader dies, another worker claims the lock within 60s.</li>
+    <li><strong>Health check endpoint:</strong> <code>GET /health</code> returns worker status, active jobs, queue depth, last tick timestamp. Use for Render/Docker health checks.</li>
+    <li><strong>Production recommendation:</strong> Minimum 2 replicas for fault tolerance. Scale based on queue depth.</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="ceo-agent">17. PILLAR 6: THE CEO AGENT — STRATEGIC AUTONOMY LAYER</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">The Missing Brain — Why This Changes Everything</div>
+  <p>Right now, the system has agents that can do things and a strategy screen where users set goals. But nothing connects them. The user sets "increase revenue by 20%" and... the agents don't know. Or if they do (via strategy injection), they don't <em>plan</em> how to get there. The CEO Agent is the strategic intelligence layer that sits between user goals and agent execution. It reads the company's strategy, analyzes KPIs, and actively orchestrates the agent fleet to reach the user's objectives.</p>
+</div>
+
+<h3>17.1 What the CEO Agent Is</h3>
+<div class="spec-block">
+  <p>The CEO Agent is a <strong>special system-level agent</strong> that is auto-created per project. It cannot be deleted or duplicated. It is the only agent with cross-cutting access to the entire company state. Think of it as the autonomous strategic brain.</p>
+
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Archetype</td><td><code>ceo_strategist</code> (unique, system-level)</td></tr>
+    <tr><td>Model</td><td>Best available (Claude Opus) — strategic reasoning requires the strongest model</td></tr>
+    <tr><td>Triage Model</td><td>Claude Haiku — fast, cheap pre-scan before full CEO session</td></tr>
+    <tr><td>Temperature</td><td>0.3 — measured, strategic decisions should be consistent</td></tr>
+    <tr><td>Heartbeat</td><td>Every 2 hours (configurable by user: 1h-8h)</td></tr>
+    <tr><td>Auto-created</td><td>Yes — created automatically when a project is initialized</td></tr>
+    <tr><td>Deletable</td><td>No — can be paused but not deleted</td></tr>
+  </table>
+</div>
+
+<h3>17.1b Two-Pass Triage — Solving the God-Agent Problem <span class="badge badge-new">v4 FIX</span></h3>
+<div class="risk-block">
+  <div class="label">PROBLEM — CEO Agent Contradicts Sniper Agent Philosophy</div>
+  <p>The CEO Agent needs cross-cutting access to ALL strategies, ALL KPIs, ALL agent statuses, ALL recent actions. This could mean 10K+ tokens of context — exactly the bloat that causes context rot. A sniper fleet led by a generalist CEO defeats the purpose.</p>
+</div>
+<div class="spec-block">
+  <h4>Solution: Two-Pass Triage</h4>
+  <p>The CEO Agent doesn't always need full context. Most heartbeat cycles, everything is fine. The triage pass catches this cheaply:</p>
+
+  <h4>Pass 1: Triage (Claude Haiku, ~500 tokens, ~$0.001)</h4>
+  <pre>
+Input (compact, ~500 tokens):
+  KPIs: revenue=$32K/50K(64%) | churn=4.2%/5%(OK) | deals=18/20(90%)
+  Fleet: 8 active, 0 failed, health avg 92%
+  Budget: 38% daily used, on track
+  Approvals: 2 pending (none expired)
+  Last CEO action: 2h ago — triggered content pipeline
+
+Prompt: "Review this company snapshot. Are any KPIs critical?
+  Any agents failing? Any budget alerts? Any urgent action needed?
+  Reply NEEDS_ACTION or ALL_CLEAR with one-line reason."
+
+Output: "ALL_CLEAR — All KPIs within tolerance, fleet healthy, budget on track."</pre>
+
+  <h4>Pass 2: Full CEO Session (Claude Opus, only when needed)</h4>
+  <p>Only runs when triage returns <code>NEEDS_ACTION</code>. Gets the full context injection (strategies, KPI trends, fleet details, recent session summaries). Makes strategic decisions, triggers agents, creates briefings.</p>
+
+  <h4>When to Skip Triage (always run full session):</h4>
+  <ul>
+    <li>Daily briefing schedule (e.g., 8am) — always generates a full report</li>
+    <li>KPI threshold trigger — already know action is needed</li>
+    <li>Agent auto-disabled event — fleet health issue</li>
+    <li>User-initiated "run CEO review" — explicit request</li>
+  </ul>
+
+  <p><strong>Result:</strong> Most heartbeat cycles cost ~$0.001 (Haiku triage). Full CEO sessions only run when something actually needs attention. The CEO Agent is powerful when needed, cheap when idle. This preserves the sniper agent philosophy.</p>
+</div>
+
+<h3>17.2 The CEO Agent's Harness (Four Zones)</h3>
+
+<pre class="arch-diagram">
+  ┌──────────────────────────────────────────────────────────────────┐
+  │               <span class="accent">THE CEO AGENT — STRATEGIC HARNESS</span>                  │
+  │                                                                  │
+  │  <span class="highlight">ZONE 1: TRIGGERS</span>                                               │
+  │  ┌────────────────────────────────────────────────────────────┐ │
+  │  │ • Heartbeat (every 2h) — "CEO review cycle"                │ │
+  │  │ • KPI threshold crossed — immediate strategic reaction     │ │
+  │  │ • User strategy change — user updates goals/KPIs           │ │
+  │  │ • Agent auto-disabled — fleet health event                 │ │
+  │  │ • Budget 80% threshold — cost management                   │ │
+  │  │ • Daily briefing schedule (e.g., 8am) — morning report     │ │
+  │  │ • Manual — user asks Atlas to "run CEO review"             │ │
+  │  └────────────────────────────────────────────────────────────┘ │
+  │                                                                  │
+  │  <span class="highlight">ZONE 2: CONTEXT INJECTION (CEO gets the big picture)</span>            │
+  │  ┌────────────────────────────────────────────────────────────┐ │
+  │  │ • System prompt: CEO strategist personality + rules        │ │
+  │  │ • ALL active strategies (goals, status, deadlines)         │ │
+  │  │ • ALL KPIs with current vs target + trend (last 7 days)   │ │
+  │  │ • Fleet status (agents by status, health scores, costs)    │ │
+  │  │ • Recent session summaries from ALL agents (last 24h)      │ │
+  │  │ • Pending approvals count                                  │ │
+  │  │ • Budget usage (daily/monthly spend vs limits)             │ │
+  │  │ • CEO's own heartbeat instructions (self-programmed)       │ │
+  │  │ • Agent learnings from strategy system                     │ │
+  │  └────────────────────────────────────────────────────────────┘ │
+  │                                                                  │
+  │  <span class="highlight">ZONE 3: TOOLS (CEO controls the fleet)</span>                         │
+  │  ┌────────────────────────────────────────────────────────────┐ │
+  │  │  <span class="ok">READ (auto-execute):</span>                                       │ │
+  │  │  • list_agents, get_agent_metrics — see agent performance  │ │
+  │  │  • list_strategies, get_strategy — read all strategies     │ │
+  │  │  • get_fleet_status — overall fleet health                 │ │
+  │  │  • get_cost_report — budget analysis                       │ │
+  │  │  • search_company_memory — RAG search all company docs     │ │
+  │  │  • search_action_logs — what did agents actually do?       │ │
+  │  │  • list_workflow_runs — recent workflow results             │ │
+  │  │  • get_kpi_trends — KPI values over time                   │ │
+  │  │                                                             │ │
+  │  │  <span class="warn">WRITE (approval required for high-impact):</span>                  │ │
+  │  │  • trigger_agent — wake up a specific agent with a task    │ │
+  │  │  • trigger_workflow — start a workflow with variables       │ │
+  │  │  • update_agent_priority — reprioritize agents             │ │
+  │  │  • update_agent_schedule — change agent cron/heartbeat     │ │
+  │  │  • update_agent_heartbeat — rewrite agent's instructions   │ │
+  │  │  • pause_agents_by_team — pause underperforming team       │ │
+  │  │  • resume_agents_by_team — re-enable paused team           │ │
+  │  │  • update_strategy_kpi — update KPI values                 │ │
+  │  │  • create_strategy_learning — record strategic insight     │ │
+  │  │  • create_human_task — escalate to human when needed       │ │
+  │  │  • update_my_heartbeat — program own future behavior       │ │
+  │  │  • update_my_schedule — change own review frequency        │ │
+  │  └────────────────────────────────────────────────────────────┘ │
+  │                                                                  │
+  │  <span class="highlight">ZONE 4: OUTPUTS (CEO drives the company)</span>                       │
+  │  ┌────────────────────────────────────────────────────────────┐ │
+  │  │ • Agent priority changes → fleet reprioritization          │ │
+  │  │ • Agent schedule changes → execution frequency adapted     │ │
+  │  │ • Agent heartbeat rewrites → change agent behavior         │ │
+  │  │ • Workflow triggers → start strategic initiatives          │ │
+  │  │ • KPI updates → may trigger more agents (cascade)          │ │
+  │  │ • Strategy learnings → institutional knowledge              │ │
+  │  │ • Human tasks → escalate what AI can't solve               │ │
+  │  │ • Session log → "CEO Decision Log" wiki category           │ │
+  │  │ • Daily briefing → stored for Atlas to surface to user     │ │
+  │  │ • Self-heartbeat update → program next review focus        │ │
+  │  └────────────────────────────────────────────────────────────┘ │
+  └──────────────────────────────────────────────────────────────────┘
+</pre>
+
+<h3>17.3 CEO Agent Execution Cycles</h3>
+<div class="spec-block">
+  <h4>Cycle 1: The Heartbeat Review (every 2 hours)</h4>
+  <p>The CEO Agent wakes up, reads company state, and makes strategic decisions:</p>
+  <pre>
+<span class="highlight">CEO Heartbeat — Example Session</span>
+
+CEO wakes up. Reads context:
+  Strategies: "Increase MRR to $50K by Q2" (current: $32K, 64% of target)
+  KPIs: monthly_churn at 7.2% (target: &lt;5%), new_deals at 12 (target: 20)
+  Fleet: 8 agents active, SDR agent health 68% (orange), Marketing OK
+  Budget: 42% of daily limit used, on track
+
+CEO thinks and acts:
+  1. "Churn is too high and we're behind on new deals."
+  → trigger_agent("retention-specialist", "Churn at 7.2%, above 5% target.
+     Analyze last 30 days of churned customers and identify top 3 reasons.
+     Create retention action plan.", priority: "high")
+
+  2. "SDR agent health is orange (68%). Let me check why."
+  → search_action_logs({ agentId: "sdr-agent", status: "failed", last: "24h" })
+  → Sees: 3 failures from RD Station API timeouts
+  → create_human_task("Check RD Station API health — SDR agent failing
+     on CRM calls. May need to increase timeout or check credentials.")
+
+  3. "We need more pipeline. Increase SDR activity."
+  → update_agent_schedule("sdr-agent", { heartbeatIntervalMin: 15 })
+     // Was 30 min, now checks for new leads every 15 min
+
+  4. "Marketing workflow should run more frequently given deal deficit."
+  → trigger_workflow("content-pipeline", {
+       focus: "lead generation content",
+       urgency: "high — 40% behind deal target"
+     })
+
+  5. Self-program for next heartbeat:
+  → update_my_heartbeat("Priority check: Did retention specialist
+     complete churn analysis? Did SDR agent health improve after
+     schedule change? Monitor deal pipeline — need 8 more deals
+     this month to hit target. If content pipeline produced content,
+     verify it was published.")</pre>
+
+  <h4>Cycle 2: KPI Threshold Reaction (immediate)</h4>
+  <p>When a monitored KPI crosses a threshold, the CEO Agent wakes immediately:</p>
+  <pre>
+<span class="highlight">CEO KPI Trigger — Example</span>
+
+Trigger: monthly_churn KPI crossed 8% (critical threshold)
+
+CEO wakes with context: "ALERT: monthly_churn_rate hit 8.1%,
+  above critical threshold of 8%. Previous: 7.2%."
+
+CEO thinks and acts:
+  1. "This is accelerating. Emergency response needed."
+  → trigger_workflow("churn-emergency-response", {
+       churn_rate: "8.1%",
+       threshold: "8%",
+       trend: "accelerating from 7.2%"
+     })
+
+  2. → pause_agents_by_team("acquisition")
+     // Pause new customer acquisition — focus all resources on retention
+
+  3. → trigger_agent("customer-success", "URGENT: Churn spike to 8.1%.
+     Contact top 10 at-risk accounts immediately. Use escalation template.",
+     priority: "critical")
+
+  4. → create_human_task("CEO Alert: Churn spike to 8.1%.
+     Review retention strategy. CEO Agent has paused acquisition team
+     and triggered emergency retention workflow.", priority: "urgent")
+
+  5. Self-program:
+  → update_my_heartbeat("CHURN EMERGENCY: Monitor hourly.
+     Check if retention workflow completed. Check if customer success
+     agent reached at-risk accounts. If churn drops below 7%, resume
+     acquisition team. Report status to user via daily briefing.")
+  → update_my_schedule({ heartbeatIntervalMin: 60 })
+     // Increase monitoring frequency during emergency</pre>
+
+  <h4>Cycle 3: Daily Briefing (scheduled, e.g., 8am)</h4>
+  <p>Every morning, the CEO Agent generates a briefing that Atlas surfaces to the user:</p>
+  <pre>
+<span class="highlight">CEO Daily Briefing — Example</span>
+
+CEO wakes at 8am scheduled briefing trigger.
+
+CEO generates briefing:
+  → Reads all KPIs, agent metrics, costs, approvals
+  → Creates document:
+
+  "📊 Daily CEO Briefing — March 4, 2026
+
+   STRATEGY STATUS:
+   • MRR Growth: $33.2K of $50K target (66%) — +$1.2K from yesterday
+   • Churn: 7.8% (target &lt;5%) — improved from 8.1% after intervention
+   • New Deals: 14 of 20 target — SDR schedule increase showing results
+
+   AGENT FLEET:
+   • 8 active, 2 paused (acquisition team — churn emergency)
+   • SDR agent health recovered to 82% after API fix
+   • Total AI cost yesterday: $12.40 (within $25 daily limit)
+
+   ACTIONS TAKEN BY CEO AGENT:
+   • Triggered churn emergency workflow (completed ✓)
+   • Increased SDR check frequency to 15 min
+   • Paused acquisition team (recommend resume if churn &lt;7%)
+
+   PENDING APPROVALS: 3
+   • Content post to LinkedIn (marketing agent)
+   • Email campaign to 500 contacts (email agent)
+   • Deploy request for website update (devops agent)
+
+   RECOMMENDATIONS:
+   • Resume acquisition team — churn trend is improving
+   • Consider increasing ad budget — content pipeline producing well
+   • Schedule customer success review for Friday"
+
+  → create_document("CEO Briefing - March 4", briefingContent)
+  → Store briefing ID for Atlas to surface</pre>
+</div>
+
+<h3>17.4 CEO Agent System Prompt</h3>
+<div class="spec-block">
+  <pre>
+You are the CEO Agent for {company_name}. You are the autonomous strategic
+brain of this company. Your role is to ensure the company reaches its
+strategic goals by orchestrating the AI agent fleet.
+
+RESPONSIBILITIES:
+1. Monitor all KPIs and compare against strategy targets
+2. Identify underperforming areas and take corrective action
+3. Reprioritize agents based on what the company needs most right now
+4. Trigger workflows when strategic opportunities or threats arise
+5. Escalate to humans (create_human_task) when decisions require human judgment
+6. Generate daily briefings summarizing company status
+7. Program your own future behavior via heartbeat instructions
+
+DECISION FRAMEWORK:
+- Always prioritize strategies marked as "active" over "planned"
+- When KPIs are behind target: increase agent activity in that area
+- When KPIs are ahead of target: maintain current pace, don't over-invest
+- When agent health drops below 70%: investigate and either fix or escalate
+- When budget exceeds 80%: reduce heartbeat frequencies, pause low-priority agents
+- When multiple strategies conflict: prioritize by type order: retention > growth > brand > product
+
+CONSTRAINTS:
+- You CANNOT directly communicate with external parties (no email/WhatsApp)
+- You CANNOT modify billing or payment settings
+- You CAN reprioritize, reschedule, and trigger other agents
+- You CAN pause/resume teams
+- You CAN rewrite other agents' heartbeat instructions
+- You MUST create human tasks for decisions that require human judgment
+- You MUST log all strategic decisions as strategy learnings
+
+STYLE:
+- Be data-driven. Reference specific KPI values and trends.
+- Be decisive. When action is needed, take it immediately.
+- Be concise in heartbeat instructions. You have 500 chars max.
+- Prioritize ruthlessly. Not everything can be urgent.</pre>
+</div>
+
+<h3>17.5 CEO Agent vs Atlas — The Relationship</h3>
+<div class="spec-block">
+  <table>
+    <tr><th>Aspect</th><th>CEO Agent</th><th>Atlas</th></tr>
+    <tr>
+      <td><strong>Purpose</strong></td>
+      <td>Autonomous strategic brain. Runs in background. Makes decisions.</td>
+      <td>User-facing interface. Responds to questions. Executes commands.</td>
+    </tr>
+    <tr>
+      <td><strong>Trigger</strong></td>
+      <td>Heartbeat, KPI thresholds, events — runs WITHOUT user interaction</td>
+      <td>User message, daily briefing display — requires user to open Atlas</td>
+    </tr>
+    <tr>
+      <td><strong>Access</strong></td>
+      <td>Can read everything + write to agent configs + trigger agents/workflows</td>
+      <td>Can read everything + write to anything (with approval) + voice I/O</td>
+    </tr>
+    <tr>
+      <td><strong>Analogy</strong></td>
+      <td>The CEO who runs the company while you sleep</td>
+      <td>The executive assistant you talk to for updates and commands</td>
+    </tr>
+    <tr>
+      <td><strong>Key Interaction</strong></td>
+      <td>CEO Agent generates briefings → Atlas surfaces them to user.<br>CEO Agent creates human tasks → Atlas notifies user.</td>
+      <td>User asks Atlas "what's happening?" → Atlas reads CEO briefing + fleet status.<br>User tells Atlas "change strategy" → Atlas updates → CEO Agent reacts on next heartbeat.</td>
+    </tr>
+  </table>
+
+  <h4>The Flow:</h4>
+  <pre class="arch-diagram">
+  User ←──── <span class="highlight">Atlas</span> ────→ reads CEO briefings, fleet status, KPIs
+    │          ↑                     ↑
+    │          │ surfaces briefings   │ generates briefings
+    │          │ and alerts           │ and strategic actions
+    ▼          │                     │
+  Strategy ───┼──────────────→ <span class="accent">CEO Agent</span> ──→ Agent Fleet
+  Settings    │                     │         ↑    │
+              │                     │         │    │
+              │                     └─────────┘    │
+              │                   orchestrates     │
+              │                                    ▼
+              └──────────── Approvals ←──── Tool Actions
+                         (human checkpoints)</pre>
+</div>
+
+<h3>17.6 CEO Agent Configuration in UI</h3>
+<div class="spec-block">
+  <p>The CEO Agent appears in the agent list with a special icon/badge ("CEO" or crown). Its config page includes:</p>
+  <ul>
+    <li><strong>Review Frequency:</strong> How often the heartbeat fires (slider: 1h-8h, default 2h)</li>
+    <li><strong>Daily Briefing Time:</strong> When the morning briefing generates (default 8am project timezone)</li>
+    <li><strong>Decision Authority:</strong> Toggle which mutations require user approval vs auto-execute:
+      <ul>
+        <li>Trigger agents → auto-execute (default)</li>
+        <li>Trigger workflows → auto-execute (default)</li>
+        <li>Change agent schedules → auto-execute (default)</li>
+        <li>Rewrite agent heartbeats → require approval (default) — high impact</li>
+        <li>Pause/resume teams → require approval (default) — high impact</li>
+      </ul>
+    </li>
+    <li><strong>Budget Allocation:</strong> What % of daily project budget the CEO Agent itself can use (default 10%)</li>
+    <li><strong>Current Heartbeat Instructions:</strong> Read-only view of what the CEO Agent has programmed for itself</li>
+    <li><strong>Decision Log:</strong> History of all strategic actions the CEO Agent has taken (from action_logs + session summaries)</li>
+    <li><strong>Pause/Resume:</strong> Master switch. When paused, no heartbeat, no KPI reactions. Company runs "headless."</li>
+  </ul>
+</div>
+
+<h3>17.7 Implementation Requirements</h3>
+<div class="gap-block">
+  <div class="label">What needs to be built</div>
+  <ul>
+    <li>New archetype: <code>ceo_strategist</code> with system prompt, default tools, and special flag (<code>isSystemAgent: true</code>)</li>
+    <li>Auto-create CEO Agent on project initialization (in onboarding flow)</li>
+    <li>CEO Agent cannot be deleted (UI hides delete button, API rejects delete)</li>
+    <li>New tools: <code>update_agent_schedule</code>, <code>update_agent_heartbeat</code> (modifies OTHER agents' config — only available to CEO)</li>
+    <li>New tool: <code>get_kpi_trends</code> — returns KPI values over last N days for trend analysis</li>
+    <li>Daily briefing scheduler — cron job at configured time, triggers CEO Agent with <code>triggerType: 'briefing'</code></li>
+    <li>Briefing storage — store latest briefing ID in a project-level config so Atlas can find and display it</li>
+    <li>CEO Agent detail page — special UI with decision authority toggles, decision log, briefing history</li>
+    <li>Depends on: heartbeat system (Gap #2), KPI triggers (Gap #3), strategy injection (Gap #4), cascade tracking (Gap #5)</li>
+  </ul>
+</div>
+
+<h3>17.8 Why This Is a Game-Changer</h3>
+<div class="insight-block">
+  <div class="label">The Missing Piece of the Puzzle</div>
+  <p>Without the CEO Agent, the user has to manually:</p>
+  <ul>
+    <li>Check KPIs and decide which agents need schedule changes</li>
+    <li>Trigger workflows when strategic action is needed</li>
+    <li>Reprioritize agents based on changing business conditions</li>
+    <li>Generate their own status reports by checking each dashboard</li>
+    <li>Notice when things are going wrong and intervene</li>
+  </ul>
+  <p>With the CEO Agent, all of this happens autonomously. The user sets the strategy ("increase MRR to $50K"), and the CEO Agent figures out how to get there by orchestrating the fleet. This is the difference between "a platform with AI tools" and "an AI that runs your company."</p>
+  <p><strong>This is the feature that makes the tagline real: "AI Human-Assisted, not Human AI-Assisted."</strong></p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="screen-office">18. FEATURE SCREENS</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<h3>18.1 Office (3D) <span class="badge badge-done">DONE</span></h3>
+<div class="ok-block"><div class="label">Complete</div><ul><li>Isometric Three.js, live status, click-to-inspect, data flow particles, team roster</li></ul></div>
+
+<h3 id="screen-dashboard">18.2 Dashboards (6 Tabs) <span class="badge badge-done">DONE</span></h3>
+<div class="ok-block"><div class="label">Complete</div><ul><li>General, Commercial (Kanban), Finance, Operations, Marketing, Branding</li></ul></div>
+<div class="gap-block"><div class="label">GAP</div><p>Dashboard data needs scheduled sync agents pulling real data from CRM, finance, and ad platforms.</p></div>
+
+<h3 id="screen-strategy">18.3 Strategy <span class="badge badge-partial">PARTIAL</span></h3>
+<div class="ok-block"><div class="label">Works</div><ul><li>Strategy CRUD, KPI management, agent learnings</li></ul></div>
+<div class="gap-block"><div class="label">GAP</div><p>Need: 1yr/6mo/1mo goal hierarchy, timeline visualization, KPI trigger configuration UI, deadline management.</p></div>
+
+<h3 id="screen-approvals">18.4 Approvals <span class="badge badge-done">DONE</span></h3>
+<div class="ok-block"><div class="label">Complete</div><ul><li>Queue, approve/reject, session resume, Atlas popup, real-time badges, expiry countdown</li></ul></div>
+
+<h3 id="screen-messaging">18.5 Communication <span class="badge badge-done">DONE</span></h3>
+<div class="ok-block"><div class="label">Complete</div><ul><li>Unified inbox (WhatsApp + Email + Webchat), assign to agent, real-time</li></ul></div>
+
+<h3 id="screen-calendar">18.6 Calendar <span class="badge badge-done">DONE</span></h3>
+<div class="ok-block"><div class="label">Complete</div><ul><li>Month/agenda views, recurrence, reminders, 2 BullMQ workers</li></ul></div>
+
+<h3 id="screen-devops">18.7 DevOps <span class="badge badge-done">DONE</span></h3>
+<div class="ok-block"><div class="label">Complete</div><ul><li>Kanban board, human tasks, agent tools for deploy/PR requests</li></ul></div>
+
+<h3 id="screen-tools">18.8 Tools <span class="badge badge-done">DONE</span></h3>
+<div class="ok-block"><div class="label">Complete</div><ul><li>Tool catalog, OAuth2 credential management</li></ul></div>
+
+<h3 id="screen-community">18.9 Community <span class="badge badge-done">DONE</span></h3>
+<div class="ok-block"><div class="label">Complete</div><ul><li>Publish, browse, install, review agents and workflows, publisher profiles</li></ul></div>
+
+<h3 id="screen-cascade">18.10 Cascade Trace <span class="badge badge-new">NEW v4</span></h3>
+<div class="spec-block">
+  <p>Users need visibility into cascade chains. Without it, they can't understand why Agent C suddenly ran.</p>
+  <ul>
+    <li><strong>Cascade list:</strong> Table of recent cascades with: ID, root trigger, depth reached, status (completed/partial_failure/failed), total cost, duration.</li>
+    <li><strong>Cascade detail:</strong> Expandable tree visualization showing every agent/workflow in the chain. Each node shows: agent name, status, duration, cost, tools called. Failed branches highlighted in red.</li>
+    <li><strong>Live view:</strong> In-progress cascades update in real-time via Socket.IO events.</li>
+    <li><strong>Access:</strong> Accessible from the Operations dashboard tab and from any agent's session detail page.</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="settings">19. SETTINGS</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="ok-block">
+  <div class="label">8 tabs implemented</div>
+  <ul>
+    <li>General, Team, Billing (stub), Notifications (partial), Navigation, API Keys, Models, Audit Log</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="billing">20. BILLING & MONETIZATION</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="risk-block">
+  <div class="label">CRITICAL for launch — Billing not functional</div>
+  <p>Schema + stubs exist. Stripe SDK not integrated. No pay-as-you-go token billing, no balance system, no auto-recharge. Cost tracking exists in <code>action_logs.costUsd</code> — needs billing aggregation layer.</p>
+</div>
+
+<h3>20.1 Cost Forecasting <span class="badge badge-new">NEW v4</span></h3>
+<div class="spec-block">
+  <p>Autonomous agents running 24/7 can surprise users with costs. Forecasting is a usability must-have:</p>
+  <ul>
+    <li><strong>Daily projection:</strong> Based on last 7 days of <code>action_logs.costUsd</code> data, project today's total spend. Show on dashboard: "Projected daily cost: $X.XX"</li>
+    <li><strong>Monthly projection:</strong> Extrapolate daily average to monthly. "At current usage, this month will cost ~$X."</li>
+    <li><strong>Budget alerts:</strong> When projected monthly cost exceeds the user's configured budget: emit <code>budget:projection_warning</code> at 80% and <code>budget:projection_exceeded</code> at 100%. CEO Agent receives these as triggers.</li>
+    <li><strong>Per-agent breakdown:</strong> Show cost per agent over time in the agent detail page. "This agent costs ~$X.XX/day."</li>
+    <li><strong>Cost simulation:</strong> Before enabling a new agent or changing heartbeat frequency, show estimated cost impact: "Enabling this agent with 15min heartbeat will add ~$X.XX/day."</li>
+  </ul>
+</div>
+
+<h3>20.2 CEO Briefing Delivery <span class="badge badge-new">NEW v4</span></h3>
+<div class="spec-block">
+  <p>The CEO Agent generates daily briefings, but they need to reach the user reliably:</p>
+  <ol>
+    <li><strong>Atlas banner:</strong> When user opens Atlas, a pinned "CEO Briefing" card appears at the top. Dismissible. Shows date + summary preview.</li>
+    <li><strong>Dashboard widget:</strong> "CEO Brief" card in the General dashboard tab. Shows latest briefing with key metrics highlighted.</li>
+    <li><strong>Push notification (web):</strong> Browser notification when briefing is generated (if user is not on the app).</li>
+    <li><strong>Email digest (optional):</strong> Configurable in Settings → Notifications. Daily email with the full briefing. Default: off.</li>
+  </ol>
+  <p>Briefings stored in <code>documents</code> table with category "CEO Briefings". Latest briefing ID cached in project config for instant Atlas lookup.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="security">21. SECURITY & COMPLIANCE</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="ok-block">
+  <div class="label">Implemented</div>
+  <ul>
+    <li>RBAC (4 roles, all routers), Audit logging (all mutations), PII masking, Rate limiting (120 req/min), Request body limit (1MB), Security headers, Clerk JWT verification, Sentry, Error boundaries, tRPC retry</li>
+  </ul>
+</div>
+<div class="gap-block"><div class="label">GAP</div><p>LGPD compliance (data export, erasure, privacy policy, cookie consent). Load/pen testing.</p></div>
+
+<h3>21.1 Webhook Authentication <span class="badge badge-new">NEW v4</span></h3>
+<div class="spec-block">
+  <p>Agent/workflow webhooks must be authenticated to prevent abuse:</p>
+  <ul>
+    <li><strong>Signing secret:</strong> Each webhook endpoint gets a unique <code>webhookSecret</code> (generated on creation, rotatable).</li>
+    <li><strong>HMAC-SHA256:</strong> Incoming requests must include <code>X-Signature-256</code> header = HMAC-SHA256(body, secret).</li>
+    <li><strong>Verification:</strong> Worker verifies signature before processing. Invalid signatures → 401, logged as security event.</li>
+    <li><strong>Replay protection:</strong> Include <code>X-Timestamp</code> header. Reject requests older than 5 minutes.</li>
+    <li><strong>UI:</strong> Webhook config page shows the signing secret (revealable) and provides example code for callers.</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="realtime">22. REAL-TIME LAYER</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="ok-block">
+  <div class="label">15+ Socket.IO events implemented</div>
+  <p>Agent status/action/session/error, approval requested/resolved, workflow started/node/complete, KPI updated, conversation messages/status/assigned.</p>
+</div>
+<div class="gap-block">
+  <div class="label">New events needed</div>
+  <p><code>kpi:trigger_fired</code>, <code>atlas:briefing</code>, <code>atlas:anomaly</code>, <code>budget:warning</code>, <code>budget:exceeded</code>, <code>budget:projection_warning</code>, <code>agent:heartbeat_fired</code>, <code>agent:auto_recovered</code>, <code>cascade:started</code>, <code>cascade:branch_failed</code>, <code>cascade:depth_exceeded</code>, <code>approval:expired</code>.</p>
+</div>
+
+<h3>22.1 Offline & Disconnection Handling <span class="badge badge-new">NEW v4</span></h3>
+<div class="spec-block">
+  <p>Autonomous agents run 24/7. Users are not always online. Critical events must not be lost:</p>
+  <ul>
+    <li><strong>Event queue:</strong> When a Socket.IO event has no connected client for that project, queue it in Redis (<code>pending_events:{projectId}</code> list, TTL 7 days).</li>
+    <li><strong>On reconnect:</strong> Client receives all queued events in chronological order. UI processes them to update state.</li>
+    <li><strong>Critical event escalation:</strong> For high-priority events (approval requests, cascade failures, budget exceeded, CEO briefings), also send:
+      <ul>
+        <li>Web push notification (if browser permission granted)</li>
+        <li>Email notification (configurable per event type in Settings → Notifications)</li>
+      </ul>
+    </li>
+    <li><strong>Notification preferences:</strong> Users configure which events trigger email/push in Settings. Defaults: approvals=push, briefings=push, budget exceeded=push+email, cascade failures=push.</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="sniper-vs-generalist">23. SNIPER AGENTS vs GENERALIST — WHY OUR APPROACH WINS</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">Architectural Advantage</div>
+  <p>OpenClaw is a generalist — one agent that does everything via browser control, terminal access, and a growing pile of skills and plugins. After months of use, context overhead grows to 45K+ tokens and performance drops 40-90%. Our architecture avoids this entirely.</p>
+</div>
+
+<h3>23.1 The Comparison</h3>
+<table>
+  <tr><th>Aspect</th><th>OpenClaw (Generalist)</th><th>AI Office Sim (Sniper Fleet)</th></tr>
+  <tr>
+    <td>Agents</td>
+    <td>1 agent does everything</td>
+    <td>55 specialized agents, each with focused role</td>
+  </tr>
+  <tr>
+    <td>Context overhead (Day 1)</td>
+    <td>~7,000 tokens</td>
+    <td>~2,000-4,000 tokens per agent</td>
+  </tr>
+  <tr>
+    <td>Context overhead (Month 6)</td>
+    <td>~45,000+ tokens (with skills, plugins, memory bloat)</td>
+    <td>~3,000-5,000 per agent (compaction keeps it stable)</td>
+  </tr>
+  <tr>
+    <td>Performance degradation</td>
+    <td>40-90% after months of use</td>
+    <td>Minimal — each agent stays lean</td>
+  </tr>
+  <tr>
+    <td>Cost per message</td>
+    <td>~$0.52 extra per message from context overhead</td>
+    <td>~$0.02-0.05 overhead per agent execution</td>
+  </tr>
+  <tr>
+    <td>Tool access</td>
+    <td>All tools always in context</td>
+    <td>Only 3-8 tools per agent (assigned by archetype)</td>
+  </tr>
+  <tr>
+    <td>Memory</td>
+    <td>One memory.md, grows unbounded, hard truncation at limits</td>
+    <td>Per-agent memory with compaction, token-budgeted layers</td>
+  </tr>
+  <tr>
+    <td>Computer control</td>
+    <td>Raw browser + terminal (powerful but unsafe)</td>
+    <td>Structured API tools with schemas + approval system (safer, more reliable)</td>
+  </tr>
+  <tr>
+    <td>Autonomy</td>
+    <td>Single heartbeat (30 min) for one agent</td>
+    <td>Per-agent heartbeat + KPI triggers + event cascade + cron — fleet-wide autonomy</td>
+  </tr>
+  <tr>
+    <td>Self-programming</td>
+    <td>Agent writes to heartbeat.md</td>
+    <td>Agent writes to heartbeatInstructions + can modify own schedule</td>
+  </tr>
+  <tr>
+    <td>Safety</td>
+    <td>Minimal guardrails, full computer access</td>
+    <td>Approval system, budget limits, cascade depth, health monitoring, RBAC</td>
+  </tr>
+</table>
+
+<h3>23.2 The Key Principle</h3>
+<div class="spec-block">
+  <p><strong>Give each agent just enough context to operate well without giving it too much and causing context rot.</strong></p>
+  <p>This means:</p>
+  <ul>
+    <li>Each agent gets only the tools it needs (not all 30+)</li>
+    <li>Each agent's system prompt is focused on its role (not a generic "you can do anything")</li>
+    <li>Each agent's memory is scoped to its domain (not shared with every other agent)</li>
+    <li>Each agent's session history is compacted to stay within token budget</li>
+    <li>Strategy context is compact (goals + KPIs as numbers, not full strategy documents)</li>
+    <li>Static RAG is pre-filtered to the archetype's domain</li>
+  </ul>
+  <p>The result: 55 agents that each perform at near-peak capability, versus 1 bloated agent that gets worse over time.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="execution-risks">24. EXECUTION RISKS</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="risk-block">
+  <div class="label">RISK 1 — Infinite Cascade Loops</div>
+  <p>Agent A → Agent B → KPI update → triggers Agent A again. <strong>Fix:</strong> Cascade depth limit (max 5), loop detection via cascadePath, KPI cooldowns (min 15 min), per-agent hourly trigger cap.</p>
+</div>
+
+<div class="risk-block">
+  <div class="label">RISK 2 — LLM Cost Explosion</div>
+  <p>Autonomous agents running 24/7 with heartbeats can accumulate costs rapidly. <strong>Fix:</strong> Daily budget per agent (exists), project spend cap (exists), cost estimation before agent creation (needed), hard stop at zero balance (needed).</p>
+</div>
+
+<div class="risk-block">
+  <div class="label">RISK 3 — Heartbeat Runaway</div>
+  <p>An agent sets its heartbeat to 5 minutes and does expensive operations each time. <strong>Fix:</strong> Budget enforcement counts heartbeat costs. Agent auto-disables when budget runs out. Minimum interval of 5 minutes.</p>
+</div>
+
+<div class="risk-block">
+  <div class="label">RISK 4 — Context Rot Over Time</div>
+  <p>Even with sniper agents, memory and session history grow. <strong>Fix:</strong> Token budget system with compaction engine. Hard caps on every injection layer. Periodic memory merging/cleanup.</p>
+</div>
+
+<div class="risk-block">
+  <div class="label">RISK 5 — Agent Reliability at Scale</div>
+  <p>LLMs are probabilistic — 10% failure rate at scale means dozens of bad outputs daily. <strong>Fix:</strong> Approval system for high-risk actions, health monitoring with auto-disable, reviewer agents at end of workflows, confidence scoring.</p>
+</div>
+
+<div class="risk-block">
+  <div class="label">RISK 6 — User Onboarding Complexity</div>
+  <p>24+ screens is overwhelming. <strong>Fix:</strong> Company templates (exists), Atlas-guided onboarding ("Tell me about your company"), guided setup flow to first autonomous workflow in 10 minutes.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="design-flaws">25. DESIGN FLAWS & FIXES</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="spec-block">
+  <h4>Flaw 1: "Always-On" Has No Mechanism</h4>
+  <p><code>triggerType: 'always_on'</code> exists in schema but nothing implements it. LLMs are request/response — an agent can't truly run continuously.</p>
+  <p><strong>Fix:</strong> "Always-on" = heartbeat every 5-15 minutes + event subscriptions. It's a UI preset combining frequent heartbeat with broad event triggers. No new enum value needed — it's a convenience shortcut in the agent config UI. The agent checks for work on each heartbeat and responds to events as they arrive.</p>
+</div>
+
+<div class="spec-block">
+  <h4>Flaw 2: No Standard KPI → Trigger Path</h4>
+  <p>Agents can't update KPIs, and KPIs can't trigger agents. The autonomous loop has no closing mechanism.</p>
+  <p><strong>Fix:</strong> Add <code>update_strategy_kpi</code> tool + event-driven threshold check in tool + polling safety net in orchestrator tick + trigger config on KPIs.</p>
+</div>
+
+<div class="spec-block">
+  <h4>Flaw 3: Dashboard Data is Isolated</h4>
+  <p>Dashboard tables need data from external systems. No automatic sync.</p>
+  <p><strong>Fix:</strong> Create scheduled "data sync" agents per integration (RD Station hourly, Meta Ads daily). This is the natural use case for cron triggers.</p>
+</div>
+
+<div class="spec-block">
+  <h4>Flaw 4: Session Logs Not in Knowledge Graph</h4>
+  <p>Action logs are in a separate table. Atlas can't RAG-search what agents did.</p>
+  <p><strong>Fix:</strong> Post-execution, generate markdown session summary → wiki document → chunk + embed. Now Atlas can search past operations.</p>
+</div>
+
+<div class="spec-block">
+  <h4>Flaw 5: No Cascade Depth Tracking</h4>
+  <p>No metadata tracking cascade depth, making infinite loops possible.</p>
+  <p><strong>Fix:</strong> <code>CascadeContext</code> metadata on every execution. Increment depth, check loop detection, enforce max depth.</p>
+</div>
+
+<div class="spec-block">
+  <h4>Flaw 6: No Context Budget (OpenClaw Lesson)</h4>
+  <p>Session history and memory load without token limits. Over time, this will cause context rot.</p>
+  <p><strong>Fix:</strong> Token budget per context layer + compaction engine. Hard caps enforced before every LLM call. Use Anthropic's count_tokens API for exact validation.</p>
+</div>
+
+<div class="spec-block">
+  <h4>Flaw 7: CEO Agent = Potential God-Agent <span class="badge badge-new">v4</span></h4>
+  <p>CEO Agent needs cross-cutting access (all KPIs, all agents, all strategies) which contradicts the sniper agent philosophy and risks context rot.</p>
+  <p><strong>Fix:</strong> Two-pass triage. Claude Haiku scans a compact KPI snapshot (~500 tokens) first. Full CEO session (Opus) only runs when triage detects something requiring action. Most heartbeat cycles cost ~$0.001. See section 17.1b.</p>
+</div>
+
+<div class="spec-block">
+  <h4>Flaw 8: No Approval Timeout <span class="badge badge-new">v4</span></h4>
+  <p>Agents requesting approval could wait forever if the user never responds, blocking cascade branches and concurrency slots indefinitely.</p>
+  <p><strong>Fix:</strong> Configurable expiry (default 48h). Escalating notifications at 50% and 90%. On expiry, agent receives "expired" message and can try an alternative. See section 6.2.</p>
+</div>
+
+<div class="spec-block">
+  <h4>Flaw 9: No Cascade Failure Recovery <span class="badge badge-new">v4</span></h4>
+  <p>When an agent fails mid-cascade, the entire cascade is undefined — no retry, no notification, no status tracking.</p>
+  <p><strong>Fix:</strong> Per-agent retry policy (0-3, exponential backoff). Failed branches marked <code>partial_failure</code>, other branches continue. Atlas alert on failure. Cascade trace UI shows status. See section 11.2.</p>
+</div>
+
+<div class="spec-block">
+  <h4>Flaw 10: Agent Auto-Disable Has No Recovery <span class="badge badge-new">v4</span></h4>
+  <p>Agents that hit 3 consecutive failures are disabled forever (until manual intervention). In a 24/7 system, transient API failures could disable half the fleet.</p>
+  <p><strong>Fix:</strong> Cooldown state with exponential retry (1h → 4h → 24h). Auto-recovery health check. After 3 failed recoveries, create human task. See section 12.3.</p>
+</div>
+
+<div class="spec-block">
+  <h4>Flaw 11: Session Summaries Pollute Agent Memory <span class="badge badge-new">v4</span></h4>
+  <p>Session summaries stored in <code>agent_memory</code> table compete with operational knowledge. Busy agents fill memory with summaries.</p>
+  <p><strong>Fix:</strong> Dedicated <code>agent_session_summaries</code> table. Memory stays for operational k/v pairs only. See section 8.1.</p>
+</div>
+
+<div class="spec-block">
+  <h4>Flaw 12: Single Worker = Single Point of Failure <span class="badge badge-new">v4</span></h4>
+  <p>One Render worker runs the entire autonomous system. If it goes down, all agents stop.</p>
+  <p><strong>Fix:</strong> BullMQ competing consumers — deploy 2+ replicas with zero code changes. Leader election for orchestrator tick via Redis SET NX. See section 16.3.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="build-order">26. P0 BUILD ORDER <span class="badge badge-new">NEW v4</span></h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">Why order matters</div>
+  <p>There are 8 P0 gaps, but they have dependencies. Building them in the wrong order means building on stubs. This is the correct sequence, where each step builds on the previous.</p>
+</div>
+
+<div class="spec-block">
+  <table>
+    <tr><th>Phase</th><th>Gap</th><th>Why This Order</th><th>Effort</th></tr>
+    <tr>
+      <td><strong>P0-A</strong></td>
+      <td><strong>Token Budget System</strong> (Gap #6)</td>
+      <td>Foundation. Every other system needs token counting to enforce context limits. Build the <code>@ai-office/tokenizer</code> package and the context builder's budget enforcement first.</td>
+      <td>Small-Medium</td>
+    </tr>
+    <tr>
+      <td><strong>P0-B</strong></td>
+      <td><strong>Wire Scheduled Agent Worker</strong> (Gap #1)</td>
+      <td>The stub worker already exists. Just wire it to <code>processAgentExecution()</code>. Unlocks all cron-triggered agents immediately.</td>
+      <td>Small</td>
+    </tr>
+    <tr>
+      <td><strong>P0-C</strong></td>
+      <td><strong>Strategy Context Injection</strong> (Gap #4)</td>
+      <td>Small change — add strategy goals + KPI values to the context builder. Now agents are strategy-aware. Needed by heartbeat and CEO Agent.</td>
+      <td>Small</td>
+    </tr>
+    <tr>
+      <td><strong>P0-D</strong></td>
+      <td><strong>Cascade Depth Tracking</strong> (Gap #5)</td>
+      <td>Safety net. Must exist before enabling heartbeat/KPI triggers, which create cascades. Add CascadeContext, depth checks, loop detection, failure recovery.</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td><strong>P0-E</strong></td>
+      <td><strong>Heartbeat System</strong> (Gap #2)</td>
+      <td>Core autonomy. Add heartbeat fields to agents table, orchestrator heartbeat check, <code>update_my_heartbeat</code> + <code>update_my_schedule</code> tools, heartbeat version history.</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td><strong>P0-F</strong></td>
+      <td><strong>KPI Monitor + Trigger System</strong> (Gap #3)</td>
+      <td>Closes the autonomous loop. Add trigger fields to KPIs, event-driven check in <code>update_strategy_kpi</code> tool, polling safety net in orchestrator, approval timeout check.</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td><strong>P0-G</strong></td>
+      <td><strong>Session Logs → Wiki</strong> (Gap #7)</td>
+      <td>Visibility layer. Post-exec summaries → wiki documents → RAG searchable. Needed by CEO Agent to read what agents did. Also enables Atlas full visibility.</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td><strong>P0-H</strong></td>
+      <td><strong>CEO Agent</strong> (Gap #8)</td>
+      <td>The crown jewel. Depends on ALL above: token budgets (context discipline), heartbeat (execution), KPI triggers (reactions), cascade safety (prevents runaway), session logs (reads agent actions), strategy injection (reads goals).</td>
+      <td>Large</td>
+    </tr>
+  </table>
+  <p><strong>Estimated total P0:</strong> 4-6 weeks of focused development. Each phase can be shipped and tested independently.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="gap-summary">27. GAP SUMMARY MATRIX</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<table>
+  <tr><th>#</th><th>Gap</th><th>Priority</th><th>Effort</th><th>Blocks</th></tr>
+  <tr><td>1</td><td><strong>Wire Scheduled Agent Worker</strong> — stub → real <code>processAgentExecution()</code> call</td><td><span class="badge badge-risk">P0-B</span></td><td>Small</td><td>Cron agents</td></tr>
+  <tr><td>2</td><td><strong>Heartbeat System</strong> — heartbeatInstructions field, orchestrator heartbeat check, <code>update_my_heartbeat</code> + <code>update_my_schedule</code> tools, heartbeat version history</td><td><span class="badge badge-risk">P0-E</span></td><td>Medium</td><td>Agent autonomy</td></tr>
+  <tr><td>3</td><td><strong>KPI Monitor + Trigger System</strong> — triggerThreshold/cooldown on KPIs, event-driven check in tool + polling in tick, approval timeout, <code>update_strategy_kpi</code> tool</td><td><span class="badge badge-risk">P0-F</span></td><td>Medium</td><td>Autonomous cascade</td></tr>
+  <tr><td>4</td><td><strong>Strategy Context Injection</strong> — inject active goals + KPI values into agent system prompt</td><td><span class="badge badge-risk">P0-C</span></td><td>Small</td><td>Strategy-aware agents</td></tr>
+  <tr><td>5</td><td><strong>Cascade Depth Tracking</strong> — CascadeContext metadata, max depth, loop detection, cooldowns, failure recovery, cascade trace UI</td><td><span class="badge badge-risk">P0-D</span></td><td>Medium</td><td>Cascade safety</td></tr>
+  <tr><td>6</td><td><strong>Context Token Budget System</strong> — per-layer token caps, compaction engine, <code>@ai-office/tokenizer</code> package, Anthropic count_tokens API</td><td><span class="badge badge-risk">P0-A</span></td><td>Small-Med</td><td>Long-term reliability. <strong>BUILD FIRST</strong> — foundation for everything.</td></tr>
+  <tr><td>7</td><td><strong>Session Logs → Wiki</strong> — post-exec summary document, chunk + embed, "Session Logs" category, <code>agent_session_summaries</code> table</td><td><span class="badge badge-risk">P0-G</span></td><td>Medium</td><td>Atlas full visibility, CEO Agent reads agent actions, cascade debugging</td></tr>
+  <tr><td>8</td><td><strong>CEO Agent</strong> — <code>ceo_strategist</code> archetype, two-pass triage (Haiku scan + Opus action), auto-create on project init, fleet orchestration tools, daily briefing scheduler + delivery, decision authority config UI, decision log. Depends on: ALL P0-A through P0-G.</td><td><span class="badge badge-risk">P0-H</span></td><td>Large</td><td>Strategic autonomy — THE core differentiator. <strong>BUILD LAST</strong> in P0.</td></tr>
+  <tr><td>9</td><td><strong>Atlas Voice Wiring</strong> — connect STT/TTS hooks to chat pipeline</td><td><span class="badge badge-risk">P1</span></td><td>Medium</td><td>Voice-first UX</td></tr>
+  <tr><td>10</td><td><strong>Static RAG (Archetype Knowledge)</strong> — isStatic flag, pre-seed docs, combined RAG search</td><td><span class="badge badge-risk">P1</span></td><td>Medium-Large</td><td>Agent domain accuracy</td></tr>
+  <tr><td>11</td><td><strong>Atlas Proactive / Heartbeat</strong> — daily briefing via CEO Agent, anomaly alerts, proactive messages in Atlas transcript</td><td><span class="badge badge-risk">P1</span></td><td>Medium</td><td>Proactive intelligence</td></tr>
+  <tr><td>12</td><td><strong>Atlas Missing Tools</strong> — search_action_logs, trigger_workflow, wiki edit, calendar, settings</td><td><span class="badge badge-risk">P1</span></td><td>Medium</td><td>Full platform control</td></tr>
+  <tr><td>13</td><td><strong>Agent Doc Edit Tools</strong> — update_document, update_wiki_article</td><td><span class="badge badge-risk">P1</span></td><td>Small</td><td>Wiki as living KB</td></tr>
+  <tr><td>14</td><td><strong>Inbound Message Agent Trigger</strong> — auto-trigger assigned agent on new conversation message</td><td><span class="badge badge-risk">P1</span></td><td>Small</td><td>Real-time customer support</td></tr>
+  <tr><td>15</td><td><strong>Strategy Goal Timeline</strong> — 1yr/6mo/1mo hierarchy, Gantt, deadlines, KPI trigger config UI</td><td><span class="badge badge-risk">P1</span></td><td>Medium</td><td>Strategy UX</td></tr>
+  <tr><td>16</td><td><strong>Stripe Billing Integration</strong> — subscriptions, pay-as-you-go token billing, balance/auto-recharge</td><td><span class="badge badge-risk">P2</span></td><td>Large</td><td>Monetization</td></tr>
+  <tr><td>17</td><td><strong>Notification Worker (Email/Push)</strong> — extend beyond Socket.IO</td><td><span class="badge badge-risk">P2</span></td><td>Medium</td><td>Offline awareness</td></tr>
+  <tr><td>18</td><td><strong>Data Sync Agents</strong> — scheduled agents pulling CRM/finance/ads data into dashboard tables</td><td><span class="badge badge-risk">P2</span></td><td>Medium</td><td>Real dashboard data</td></tr>
+  <tr><td>19</td><td><strong>LGPD Compliance</strong> — data export, erasure, privacy policy, cookie consent</td><td><span class="badge badge-risk">P2</span></td><td>Medium</td><td>Brazil legal</td></tr>
+  <tr><td>20</td><td><strong>Atlas Strategic RAG</strong> — business operations knowledge base</td><td><span class="badge badge-risk">P2</span></td><td>Medium-Large</td><td>Advisory quality</td></tr>
+  <tr><td>21</td><td><strong>Guided Onboarding + Atlas Setup</strong> — "new account to first autonomous workflow in 10 min"</td><td><span class="badge badge-risk">P2</span></td><td>Medium</td><td>User activation</td></tr>
+  <tr><td>22</td><td><strong>Webhook Authentication</strong> — HMAC-SHA256 signing, replay protection, per-endpoint secrets</td><td><span class="badge badge-risk">P1</span></td><td>Small</td><td>Security for external triggers</td></tr>
+  <tr><td>23</td><td><strong>Offline Notification Queue</strong> — Redis event queue, push notifications, email escalation for critical events</td><td><span class="badge badge-risk">P1</span></td><td>Medium</td><td>24/7 awareness when user is offline</td></tr>
+  <tr><td>24</td><td><strong>Cost Forecasting</strong> — daily/monthly projections, per-agent breakdown, cost simulation for config changes</td><td><span class="badge badge-risk">P1</span></td><td>Medium</td><td>Budget predictability</td></tr>
+  <tr><td>25</td><td><strong>Horizontal Worker Scaling</strong> — 2+ replicas, leader election for orchestrator tick, health endpoint</td><td><span class="badge badge-risk">P1</span></td><td>Small</td><td>Production fault tolerance</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<hr>
+<h2>28. GLOSSARY</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<table>
+  <tr><th>Term</th><th>Definition</th></tr>
+  <tr><td><strong>Harness</strong></td><td>The exoskeleton around an LLM that gives it triggers, context, tools, and output channels. Each agent runs inside a harness.</td></tr>
+  <tr><td><strong>Agentic Loop</strong></td><td>The core execution cycle: LLM → tool call → result → LLM → next tool call → ... → completion. The agent decides each step.</td></tr>
+  <tr><td><strong>Sniper Agent</strong></td><td>A focused agent with minimal context overhead, specialized for one domain. Opposite of a generalist agent.</td></tr>
+  <tr><td><strong>Context Rot</strong></td><td>Performance degradation caused by too much information in the LLM's context window. More tokens = less attention per token.</td></tr>
+  <tr><td><strong>Compaction</strong></td><td>Summarizing old context into fewer tokens to stay within budget. Applied to session history, memory, and in-session messages.</td></tr>
+  <tr><td><strong>Heartbeat</strong></td><td>A periodic timer that wakes an agent to check its self-written instructions and act. Enables self-programming behavior.</td></tr>
+  <tr><td><strong>Self-Programming</strong></td><td>An agent's ability to write its own future instructions (heartbeat.md pattern). The agent decides what its future self should do.</td></tr>
+  <tr><td><strong>Cascade</strong></td><td>A chain reaction where one agent's output triggers another. KPI update → threshold crossed → next agent triggers → more outputs → more triggers.</td></tr>
+  <tr><td><strong>Cascade Depth</strong></td><td>How many levels deep a chain of triggered executions has gone. Limited to prevent infinite loops.</td></tr>
+  <tr><td><strong>Static RAG</strong></td><td>Immutable, platform-provided knowledge documents for an archetype's domain. The agent's "textbook."</td></tr>
+  <tr><td><strong>Dynamic Memory</strong></td><td>Mutable key-value pairs auto-extracted from sessions. The agent's "personal notes."</td></tr>
+  <tr><td><strong>Four Zones</strong></td><td>The framework: (1) What triggers the agent, (2) What's injected as context, (3) What tools it can call, (4) What it outputs.</td></tr>
+  <tr><td><strong>CEO Agent</strong></td><td>A special system-level agent that reads company strategy, monitors KPIs, and orchestrates the agent fleet to reach the user's goals. Runs autonomously via heartbeat. The strategic brain of the company.</td></tr>
+  <tr><td><strong>Daily Briefing</strong></td><td>A morning report generated by the CEO Agent summarizing KPI status, fleet health, actions taken, pending items, and recommendations. Surfaced to the user via Atlas.</td></tr>
+  <tr><td><strong>Two-Pass Triage</strong></td><td>CEO Agent optimization: Claude Haiku scans a compact snapshot first (cheap). Only escalates to full Opus session when action is needed. Prevents god-agent bloat.</td></tr>
+  <tr><td><strong>Cascade Trace</strong></td><td>A UI visualization showing the full chain of agents/workflows triggered in a cascade, with status, cost, and duration per node.</td></tr>
+  <tr><td><strong>Approval Expiry</strong></td><td>Automatic timeout on pending approvals (default 48h). Prevents agents from being stuck indefinitely waiting for human response.</td></tr>
+  <tr><td><strong>Auto-Recovery</strong></td><td>Automatic re-enablement of disabled agents after a cooldown period, using a health check execution to verify the agent works again.</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="attribution">29. ATTRIBUTION</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="spec-block">
+  <p>The autonomous agent harness architecture in this specification draws significant inspiration from <strong>OpenClaw (ClawdBot)</strong>, an open-source autonomous AI agent project. Key patterns adapted from OpenClaw:</p>
+  <ul>
+    <li><strong>Heartbeat timer</strong> — periodic agent wake-up mechanism</li>
+    <li><strong>Self-programming</strong> — agents writing their own future instructions (heartbeat.md pattern)</li>
+    <li><strong>Context rot</strong> — performance degradation from context window bloat, measured at 40-90% in production</li>
+    <li><strong>Session persistence</strong> — JSONL transcript storage with compaction</li>
+    <li><strong>Four categories of agent behavior</strong> — triggers, injection, tools, outputs</li>
+    <li><strong>Memory extraction</strong> — post-session k/v pair extraction for operational memory</li>
+  </ul>
+  <p>These patterns were adapted from a single-agent architecture to a multi-agent "sniper fleet" system with cascade execution, KPI-driven triggers, and fleet-wide orchestration — capabilities not present in the original OpenClaw design.</p>
+</div>
+
+<hr>
+<p style="text-align: center; color: var(--text-dim); font-size: 11px; margin-top: 48px;">
+  AI OFFICE SIM — SOFTWARE SPECIFICATION v4<br>
+  Generated 2026-03-03 &nbsp;|&nbsp; 110 commits analyzed &nbsp;|&nbsp; OpenClaw architecture patterns integrated<br>
+  25 gaps identified &nbsp;|&nbsp; 12 design flaws documented &nbsp;|&nbsp; 8 P0 priorities with explicit build order<br>
+  6 pillars &nbsp;|&nbsp; CEO Agent with two-pass triage &nbsp;|&nbsp; All v3 architectural flaws resolved
+</p>
+
+</main>
+</body>
+</html>

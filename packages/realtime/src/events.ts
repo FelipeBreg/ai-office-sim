@@ -18,7 +18,7 @@ export interface AgentActionEvent {
 export interface AgentSessionStartedEvent {
   agentId: string;
   sessionId: string;
-  triggerType: 'always_on' | 'scheduled' | 'event' | 'manual' | 'agent';
+  triggerType: 'always_on' | 'scheduled' | 'event' | 'manual' | 'agent' | 'agent_message' | 'heartbeat' | 'kpi' | 'webhook' | 'briefing';
 }
 
 export interface AgentSessionCompleteEvent {

@@ -5,19 +5,25 @@ import {
   loadMemory,
   autoExtractAndSave,
   toolRegistry,
+  loadStrategyContext,
   DEFAULT_SAFETY_LIMITS,
 } from '@ai-office/ai';
 import type { AgentContext, AgentSession, SerializedSessionState } from '@ai-office/ai';
 import { getNotificationQueue } from '@ai-office/queue';
+import { CONTEXT_TOKEN_BUDGETS } from '@ai-office/shared';
+import { estimateTokens, truncateToTokenBudget } from '@ai-office/tokenizer';
 import { fireEventTriggers } from '../scheduler/workflow-event-triggers.js';
 import * as Sentry from '@sentry/node';
 import { randomUUID } from 'crypto';
 import { emitToProject } from '../socket/server.js';
 
+import type { TriggerType } from '@ai-office/ai';
+
 interface AgentExecutionJobData {
   agentId: string;
   projectId: string;
   sessionId?: string;
+  triggerType?: TriggerType;
   triggerPayload?: unknown;
   /** When resuming from an approved/rejected approval (serialized as Record) */
   resumeState?: Record<string, unknown>;
@@ -38,6 +44,7 @@ export async function processAgentExecution(
   data: AgentExecutionJobData,
 ): Promise<void> {
   const { agentId, projectId, triggerPayload } = data;
+  const triggerType: TriggerType = data.triggerType ?? 'manual';
   const sessionId = data.sessionId ?? randomUUID();
   const isResume = !!data.resumeState;
 
@@ -146,93 +153,7 @@ export async function processAgentExecution(
       );
     } else {
       // ── NEW execution ──
-      const memory = await loadMemory(agentId, projectId);
-
-      const config = agent.config ?? { model: 'claude-sonnet-4-6', temperature: 0.7, maxTokens: 4096, budget: 1.0 };
-      const agentTools = agent.tools
-        ? toolRegistry.getByNames(agent.tools)
-        : toolRegistry.getAll();
-
-      // Load last 5 session summaries for multi-turn context
-      let sessionHistory = '';
-      try {
-        const recentSessions = await db
-          .select({
-            sessionId: actionLogs.sessionId,
-            actionType: actionLogs.actionType,
-            toolName: actionLogs.toolName,
-            status: actionLogs.status,
-            createdAt: actionLogs.createdAt,
-          })
-          .from(actionLogs)
-          .where(and(eq(actionLogs.agentId, agentId), eq(actionLogs.projectId, projectId)))
-          .orderBy(desc(actionLogs.createdAt))
-          .limit(50);
-
-        // Group by sessionId, take last 5 unique sessions
-        const sessionsMap = new Map<string, typeof recentSessions>();
-        for (const log of recentSessions) {
-          if (!log.sessionId || log.sessionId === sessionId) continue;
-          const arr = sessionsMap.get(log.sessionId) ?? [];
-          arr.push(log);
-          sessionsMap.set(log.sessionId, arr);
-        }
-
-        const pastSessions = [...sessionsMap.entries()].slice(0, 5);
-        if (pastSessions.length > 0) {
-          const summaries = pastSessions.map(([sid, logs]) => {
-            const tools = logs
-              .filter((l) => l.toolName)
-              .map((l) => `${l.toolName}(${l.status})`)
-              .join(', ');
-            const date = logs[0]?.createdAt
-              ? new Date(logs[0].createdAt).toISOString().slice(0, 16)
-              : 'unknown';
-            return `- Session ${sid.slice(0, 8)} (${date}): ${logs.length} actions [${tools || 'no tools'}]`;
-          });
-          sessionHistory = `\n\n[Previous Sessions]\n${summaries.join('\n')}`;
-        }
-      } catch {
-        // Non-blocking
-      }
-
-      const basePrompt = agent.systemPromptEn ?? agent.systemPromptPtBr ??
-        `You are ${agent.name}, a ${agent.archetype} agent. Complete the assigned task using the available tools.`;
-
-      // Append inter-agent message context if triggered by another agent
-      let agentMessageContext = '';
-      if (triggerPayload && typeof triggerPayload === 'object' && (triggerPayload as Record<string, unknown>).type === 'agent_message') {
-        const payload = triggerPayload as { fromAgentId: string; message: string; priority?: string };
-        // Look up source agent name
-        const [sourceAgent] = await db
-          .select({ name: agents.name })
-          .from(agents)
-          .where(eq(agents.id, payload.fromAgentId))
-          .limit(1);
-        const sourceName = sourceAgent?.name ?? payload.fromAgentId;
-        agentMessageContext = `\n\n[Incoming Message from Agent "${sourceName}"]\n${payload.message}`;
-        if (payload.priority === 'high') {
-          agentMessageContext += '\n[Priority: HIGH — please handle this promptly]';
-        }
-      }
-
-      const systemPrompt = basePrompt + sessionHistory + agentMessageContext;
-
-      const context: AgentContext = {
-        agent: {
-          id: agent.id,
-          name: agent.name,
-          archetype: agent.archetype,
-          model: config.model,
-          temperature: config.temperature,
-          maxTokens: config.maxTokens,
-        },
-        systemPrompt,
-        tools: agentTools,
-        memory,
-        conversationHistory: [],
-        triggerPayload,
-      };
+      const { context, config: agentConfig } = await buildAgentContext(agent, projectId, sessionId, triggerType, triggerPayload);
 
       const session: AgentSession = {
         sessionId,
@@ -249,13 +170,13 @@ export async function processAgentExecution(
       emitToProject(projectId, 'agent:session_started', {
         agentId,
         sessionId,
-        triggerType: 'manual',
+        triggerType,
       });
 
       result = await executeAgent(context, session, {
         ...DEFAULT_SAFETY_LIMITS,
         maxActionsPerSession: agent.maxActionsPerSession,
-        maxTokensPerSession: config.budget ? config.budget * 100_000 : 100_000,
+        maxTokensPerSession: agentConfig.budget ? agentConfig.budget * 100_000 : 100_000,
       });
     }
 
@@ -430,4 +351,178 @@ export async function processAgentExecution(
 
     throw err;
   }
+}
+
+
+// ────────────────────────────────────────────────────────────────────────
+// Context Builder — assembles AgentContext with per-layer token budgets
+// ────────────────────────────────────────────────────────────────────────
+
+interface AgentRow {
+  id: string;
+  name: string;
+  archetype: string;
+  systemPromptEn: string | null;
+  systemPromptPtBr: string | null;
+  config: unknown;
+  tools: string[] | null;
+}
+
+interface AgentConfig {
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  budget: number;
+}
+
+async function buildAgentContext(
+  agent: AgentRow,
+  projectId: string,
+  sessionId: string,
+  triggerType: TriggerType,
+  triggerPayload: unknown,
+): Promise<{ context: AgentContext; config: AgentConfig }> {
+  const budgets = CONTEXT_TOKEN_BUDGETS;
+  const tokenReport: Record<string, { estimated: number; budget: number }> = {};
+
+  // 1. Load agent config
+  const config: AgentConfig = (agent.config as AgentConfig | null) ?? {
+    model: 'claude-sonnet-4-6',
+    temperature: 0.7,
+    maxTokens: 4096,
+    budget: 1.0,
+  };
+
+  // 2. Resolve tools
+  const agentTools = agent.tools
+    ? toolRegistry.getByNames(agent.tools)
+    : toolRegistry.getAll();
+
+  // 3. Build system prompt (base) — budget: systemPrompt
+  const basePrompt = agent.systemPromptEn ?? agent.systemPromptPtBr ??
+    `You are ${agent.name}, a ${agent.archetype} agent. Complete the assigned task using the available tools.`;
+  const trimmedPrompt = truncateToTokenBudget(basePrompt, budgets.systemPrompt);
+  tokenReport['systemPrompt'] = { estimated: estimateTokens(trimmedPrompt), budget: budgets.systemPrompt };
+
+  // 3b. Load strategy context — budget: strategyContext
+  let strategyContext = '';
+  try {
+    strategyContext = await loadStrategyContext(projectId);
+    if (strategyContext) {
+      strategyContext = '\n\n' + truncateToTokenBudget(strategyContext, budgets.strategyContext);
+    }
+  } catch {
+    // Non-blocking
+  }
+  tokenReport['strategyContext'] = { estimated: estimateTokens(strategyContext), budget: budgets.strategyContext };
+
+  // 4. Load memory — budget: dynamicMemory
+  const rawMemory = await loadMemory(agent.id, projectId);
+  let memory = rawMemory;
+  const memoryText = rawMemory.map((m) => `${m.key}: ${JSON.stringify(m.value)}`).join('\n');
+  if (estimateTokens(memoryText) > budgets.dynamicMemory) {
+    // Keep most recent entries that fit within budget
+    let tokenCount = 0;
+    const fittingMemory: typeof rawMemory = [];
+    for (const item of [...rawMemory].reverse()) {
+      const itemTokens = estimateTokens(`${item.key}: ${JSON.stringify(item.value)}`);
+      if (tokenCount + itemTokens > budgets.dynamicMemory) break;
+      tokenCount += itemTokens;
+      fittingMemory.unshift(item);
+    }
+    memory = fittingMemory;
+  }
+  const finalMemoryText = memory.map((m) => `${m.key}: ${JSON.stringify(m.value)}`).join('\n');
+  tokenReport['dynamicMemory'] = { estimated: estimateTokens(finalMemoryText), budget: budgets.dynamicMemory };
+
+  // 5. Load session history — budget: sessionHistory
+  let sessionHistory = '';
+  try {
+    const recentSessions = await db
+      .select({
+        sessionId: actionLogs.sessionId,
+        actionType: actionLogs.actionType,
+        toolName: actionLogs.toolName,
+        status: actionLogs.status,
+        createdAt: actionLogs.createdAt,
+      })
+      .from(actionLogs)
+      .where(and(eq(actionLogs.agentId, agent.id), eq(actionLogs.projectId, projectId)))
+      .orderBy(desc(actionLogs.createdAt))
+      .limit(50);
+
+    const sessionsMap = new Map<string, typeof recentSessions>();
+    for (const log of recentSessions) {
+      if (!log.sessionId || log.sessionId === sessionId) continue;
+      const arr = sessionsMap.get(log.sessionId) ?? [];
+      arr.push(log);
+      sessionsMap.set(log.sessionId, arr);
+    }
+
+    const pastSessions = [...sessionsMap.entries()].slice(0, 5);
+    if (pastSessions.length > 0) {
+      const summaries = pastSessions.map(([sid, logs]) => {
+        const tools = logs
+          .filter((l) => l.toolName)
+          .map((l) => `${l.toolName}(${l.status})`)
+          .join(', ');
+        const date = logs[0]?.createdAt
+          ? new Date(logs[0].createdAt).toISOString().slice(0, 16)
+          : 'unknown';
+        return `- Session ${sid.slice(0, 8)} (${date}): ${logs.length} actions [${tools || 'no tools'}]`;
+      });
+      const rawHistory = `\n\n[Previous Sessions]\n${summaries.join('\n')}`;
+      sessionHistory = truncateToTokenBudget(rawHistory, budgets.sessionHistory);
+    }
+  } catch {
+    // Non-blocking
+  }
+  tokenReport['sessionHistory'] = { estimated: estimateTokens(sessionHistory), budget: budgets.sessionHistory };
+
+  // 6. Build trigger payload text — budget: triggerPayload
+  let triggerText = '';
+  if (triggerPayload && typeof triggerPayload === 'object' && (triggerPayload as Record<string, unknown>).type === 'agent_message') {
+    const payload = triggerPayload as { fromAgentId: string; message: string; priority?: string };
+    const [sourceAgent] = await db
+      .select({ name: agents.name })
+      .from(agents)
+      .where(eq(agents.id, payload.fromAgentId))
+      .limit(1);
+    const sourceName = sourceAgent?.name ?? payload.fromAgentId;
+    triggerText = `\n\n[Incoming Message from Agent "${sourceName}"]\n${payload.message}`;
+    if (payload.priority === 'high') {
+      triggerText += '\n[Priority: HIGH — please handle this promptly]';
+    }
+    triggerText = truncateToTokenBudget(triggerText, budgets.triggerPayload);
+  }
+  tokenReport['triggerPayload'] = { estimated: estimateTokens(triggerText), budget: budgets.triggerPayload };
+
+  // 7. Assemble final system prompt
+  const systemPrompt = trimmedPrompt + strategyContext + sessionHistory + triggerText;
+
+  // Log token budget report
+  const totalEstimated = Object.values(tokenReport).reduce((sum, r) => sum + r.estimated, 0);
+  console.log(
+    `[context-builder] Token budget report for agent ${agent.id}:`,
+    JSON.stringify({ ...tokenReport, total: { estimated: totalEstimated, budget: budgets.totalOverhead } }),
+  );
+
+  const context: AgentContext = {
+    agent: {
+      id: agent.id,
+      name: agent.name,
+      archetype: agent.archetype,
+      model: config.model,
+      temperature: config.temperature,
+      maxTokens: config.maxTokens,
+    },
+    systemPrompt,
+    tools: agentTools,
+    memory,
+    conversationHistory: [],
+    triggerType,
+    triggerPayload,
+  };
+
+  return { context, config };
 }

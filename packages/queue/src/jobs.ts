@@ -1,10 +1,16 @@
 import { z } from 'zod';
 
 // ── Agent Execution ──
+export const triggerTypeEnum = z.enum([
+  'manual', 'scheduled', 'event', 'agent_message', 'heartbeat', 'kpi', 'webhook', 'briefing',
+]);
+export type TriggerType = z.infer<typeof triggerTypeEnum>;
+
 export const agentExecutionJobSchema = z.object({
   agentId: z.string().uuid(),
   projectId: z.string().uuid(),
   sessionId: z.string().uuid(),
+  triggerType: triggerTypeEnum.default('manual'),
   triggerPayload: z.record(z.unknown()).optional(),
   /** Serialized session state for resuming after approval */
   resumeState: z.record(z.unknown()).optional(),

@@ -16,6 +16,9 @@ export interface AgentSession {
   sandboxMode?: boolean;
 }
 
+/** Trigger types for agent execution */
+export type TriggerType = 'manual' | 'scheduled' | 'event' | 'agent_message' | 'heartbeat' | 'kpi' | 'webhook' | 'briefing';
+
 /** Full context assembled before calling Claude */
 export interface AgentContext {
   agent: {
@@ -30,6 +33,7 @@ export interface AgentContext {
   tools: ToolDefinition[];
   memory: Array<{ key: string; value: unknown }>;
   conversationHistory: Anthropic.MessageParam[];
+  triggerType: TriggerType;
   triggerPayload?: unknown;
 }
 

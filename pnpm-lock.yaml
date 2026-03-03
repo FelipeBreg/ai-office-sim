@@ -153,6 +153,9 @@ importers:
       '@ai-office/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@ai-office/tokenizer':
+        specifier: workspace:*
+        version: link:../../packages/tokenizer
       '@bull-board/api':
         specifier: ^6.0.0
         version: 6.20.2(@bull-board/ui@6.20.2)
@@ -211,6 +214,9 @@ importers:
       '@ai-office/shared':
         specifier: workspace:*
         version: link:../shared
+      '@ai-office/tokenizer':
+        specifier: workspace:*
+        version: link:../tokenizer
       '@anthropic-ai/sdk':
         specifier: ^0.39.0
         version: 0.39.0
@@ -393,6 +399,28 @@ importers:
       zod:
         specifier: ^3.24.0
         version: 3.25.76
+    devDependencies:
+      '@ai-office/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@ai-office/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.11
+      eslint:
+        specifier: ^9.0.0
+        version: 9.39.3(jiti@2.6.1)
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/tokenizer:
+    dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.39.0
+        version: 0.39.0
     devDependencies:
       '@ai-office/eslint-config':
         specifier: workspace:*

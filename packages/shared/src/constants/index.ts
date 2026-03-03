@@ -12,6 +12,28 @@ export const AGENT_DEFAULTS = {
   defaultModel: 'claude-sonnet-4-6',
 } as const;
 
+// Token budgets per context injection layer (in tokens)
+export const CONTEXT_TOKEN_BUDGETS = {
+  systemPrompt: 800,
+  strategyContext: 400,
+  heartbeatInstructions: 300,
+  dynamicMemory: 600,
+  sessionHistory: 1000,
+  toolSchemas: 800,
+  triggerPayload: 500,
+  totalOverhead: 4400,
+} as const;
+
+// Model context windows
+export const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
+  'claude-sonnet-4-6': 200_000,
+  'claude-haiku-4-5-20251001': 200_000,
+  'claude-opus-4-6': 200_000,
+} as const;
+
+// Context compaction triggers at this % of model context
+export const CONTEXT_COMPACTION_THRESHOLD = 0.8;
+
 // Embedding dimensions
 export const EMBEDDING_DIMENSIONS = 1536;
 

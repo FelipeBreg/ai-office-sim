@@ -27,7 +27,7 @@ export function createAgentScheduledWorker() {
 
       await queue.add(
         `scheduled-${agentId}`,
-        { agentId, projectId, sessionId },
+        { agentId, projectId, sessionId, triggerType: 'scheduled' },
         { priority: toBullMQPriority(priority) },
       );
 

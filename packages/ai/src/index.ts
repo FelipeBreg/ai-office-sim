@@ -10,6 +10,7 @@ export { resumeAgent } from './engine/resume.js';
 export type {
   AgentSession,
   AgentContext,
+  TriggerType,
   ToolDefinition,
   ToolExecutionContext,
   ExecutionResult,
@@ -99,6 +100,9 @@ export { getValidAccessToken } from './tools/oauth2-helper.js';
 
 // Agent-to-Agent Communication
 export { triggerAgentTool } from './tools/agents/trigger-agent.js';
+
+// Context
+export { loadStrategyContext } from './context/strategy-loader.js';
 
 // Memory
 export { loadMemory, saveMemory, searchMemory } from './memory/individual.js';

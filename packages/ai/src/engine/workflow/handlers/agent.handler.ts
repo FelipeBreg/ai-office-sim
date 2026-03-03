@@ -85,6 +85,7 @@ export const agentHandler: NodeHandler = {
       tools: agentTools,
       memory,
       conversationHistory: [],
+      triggerType: 'event',
       triggerPayload,
     };
 

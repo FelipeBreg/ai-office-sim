@@ -11,7 +11,8 @@ import type {
 } from './types.js';
 import { DEFAULT_SAFETY_LIMITS } from './types.js';
 import { db, actionLogs } from '@ai-office/db';
-import { maskPII } from '@ai-office/shared';
+import { maskPII, MODEL_CONTEXT_WINDOWS, CONTEXT_COMPACTION_THRESHOLD } from '@ai-office/shared';
+import { countTokensExact, estimateTokens } from '@ai-office/tokenizer';
 
 const TOOL_CALL_TIMEOUT_MS = 60_000; // 60s per tool call
 const MAX_TOOL_RESULT_LENGTH = 10_000; // Truncate large tool outputs
@@ -94,6 +95,41 @@ export async function executeAgent(
 
   let finalResponse: string | null = null;
   session.status = 'running';
+
+  // ── Pre-loop: Validate total context with exact token count ──
+  try {
+    const contextWindow = MODEL_CONTEXT_WINDOWS[context.agent.model] ?? 200_000;
+    const threshold = Math.floor(contextWindow * CONTEXT_COMPACTION_THRESHOLD);
+
+    const exactTokens = await countTokensExact(
+      context.agent.model,
+      messages,
+      context.systemPrompt,
+      anthropicTools.length > 0 ? anthropicTools : undefined,
+    );
+
+    console.log(
+      `[executor] Pre-loop token validation: exact=${exactTokens}, threshold=${threshold} (${Math.round((exactTokens / contextWindow) * 100)}% of context window)`,
+    );
+
+    if (exactTokens > threshold) {
+      // Compact: summarize oldest messages to free space
+      console.warn(`[executor] Context at ${Math.round((exactTokens / contextWindow) * 100)}% — compacting oldest messages`);
+      while (messages.length > 2) {
+        const oldestIdx = messages[0]?.role === 'user' ? 0 : 1;
+        const removed = messages.splice(oldestIdx, 1)[0];
+        if (!removed) break;
+        const removedTokens = estimateTokens(
+          typeof removed.content === 'string' ? removed.content : JSON.stringify(removed.content),
+        );
+        const newEstimate = exactTokens - removedTokens;
+        if (newEstimate <= threshold) break;
+      }
+    }
+  } catch (err) {
+    // Non-blocking — if count_tokens fails, proceed with estimate
+    console.warn('[executor] Token validation failed, proceeding with estimate:', err);
+  }
 
   // ── Main Execution Loop ──
   while (session.status === 'running') {

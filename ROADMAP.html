@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Office Sim — Development Roadmap v1</title>
+  <style>
+    :root {
+      --bg: #0A0E14;
+      --surface: #0F1419;
+      --border: #1A2030;
+      --cyan: #00C8E0;
+      --cyan-dim: #00C8E033;
+      --green: #00E070;
+      --green-dim: #00E07033;
+      --yellow: #FFD000;
+      --yellow-dim: #FFD00033;
+      --red: #FF4060;
+      --red-dim: #FF406033;
+      --orange: #FF8C00;
+      --orange-dim: #FF8C0033;
+      --purple: #B080FF;
+      --purple-dim: #B080FF33;
+      --text: #C5D0DC;
+      --text-dim: #6B7D8D;
+      --text-bright: #E8EDF2;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'IBM Plex Mono', 'Cascadia Code', 'Fira Code', monospace;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 0;
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 24px 16px;
+      z-index: 100;
+    }
+
+    nav h2 {
+      color: var(--cyan);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav .nav-group { margin-bottom: 20px; }
+
+    nav .nav-group-title {
+      color: var(--text-dim);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 6px;
+    }
+
+    nav a {
+      display: block;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-left: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    nav a:hover {
+      color: var(--cyan);
+      border-left-color: var(--cyan);
+      background: var(--cyan-dim);
+    }
+
+    main {
+      margin-left: 280px;
+      padding: 48px 64px;
+      max-width: 1100px;
+    }
+
+    h1 { color: var(--cyan); font-size: 28px; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px; }
+    .subtitle { color: var(--text-dim); font-size: 14px; margin-bottom: 48px; }
+    h2 { color: var(--cyan); font-size: 20px; font-weight: 600; margin-top: 56px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    h3 { color: var(--text-bright); font-size: 16px; font-weight: 600; margin-top: 32px; margin-bottom: 12px; }
+    h4 { color: var(--text); font-size: 14px; font-weight: 600; margin-top: 20px; margin-bottom: 8px; }
+    p, li { font-size: 13px; margin-bottom: 8px; }
+    ul, ol { padding-left: 24px; margin-bottom: 16px; }
+    li { margin-bottom: 4px; }
+    strong { color: var(--text-bright); }
+
+    .badge { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 2px 8px; border: 1px solid; margin-left: 8px; vertical-align: middle; }
+    .badge-p0 { color: var(--red); border-color: var(--red); background: var(--red-dim); }
+    .badge-p1 { color: var(--yellow); border-color: var(--yellow); background: var(--yellow-dim); }
+    .badge-p2 { color: var(--text-dim); border-color: var(--text-dim); background: #6B7D8D22; }
+    .badge-done { color: var(--green); border-color: var(--green); background: var(--green-dim); }
+    .badge-size { color: var(--purple); border-color: var(--purple); background: var(--purple-dim); font-size: 9px; }
+
+    .spec-block { background: var(--surface); border: 1px solid var(--border); padding: 20px 24px; margin: 16px 0; }
+    .spec-block h4 { margin-top: 0; }
+
+    .phase-header {
+      background: var(--surface);
+      border: 1px solid var(--cyan);
+      padding: 20px 24px;
+      margin: 16px 0;
+    }
+    .phase-header .phase-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--cyan);
+      margin-bottom: 4px;
+    }
+    .phase-header .phase-goal {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .epic-block {
+      border-left: 3px solid var(--purple);
+      background: var(--surface);
+      padding: 16px 20px;
+      margin: 16px 0;
+    }
+    .epic-block .label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+      color: var(--purple);
+    }
+
+    .task-block {
+      border-left: 3px solid var(--border);
+      background: var(--surface);
+      padding: 12px 16px;
+      margin: 8px 0 8px 16px;
+    }
+    .task-block .task-title {
+      color: var(--text-bright);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .task-block .task-files {
+      color: var(--cyan);
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+    .task-block .task-detail {
+      color: var(--text-dim);
+      font-size: 11px;
+    }
+
+    .ok-block { border-left: 3px solid var(--green); background: var(--surface); padding: 16px 20px; margin: 12px 0; }
+    .ok-block .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; color: var(--green); }
+
+    .risk-block { border-left: 3px solid var(--red); background: var(--surface); padding: 16px 20px; margin: 12px 0; }
+    .risk-block .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; color: var(--red); }
+
+    .insight-block { border-left: 3px solid var(--purple); background: var(--surface); padding: 16px 20px; margin: 12px 0; }
+    .insight-block .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; color: var(--purple); }
+
+    .gap-block { border-left: 3px solid var(--yellow); background: var(--surface); padding: 16px 20px; margin: 12px 0; }
+    .gap-block .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; color: var(--yellow); }
+
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12px; }
+    th { text-align: left; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); color: var(--cyan); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+    td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: top; }
+    code { background: var(--surface); border: 1px solid var(--border); padding: 1px 6px; font-size: 12px; color: var(--cyan); }
+    pre { background: var(--surface); border: 1px solid var(--border); padding: 16px; overflow-x: auto; font-size: 12px; margin: 12px 0; color: var(--text); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 16px 0; }
+    .summary-card { background: var(--surface); border: 1px solid var(--border); padding: 16px; text-align: center; }
+    .summary-card .number { font-size: 28px; font-weight: 700; color: var(--cyan); }
+    .summary-card .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+    .arch-diagram { background: var(--surface); border: 1px solid var(--border); padding: 24px; margin: 16px 0; font-size: 11px; line-height: 1.4; white-space: pre; overflow-x: auto; color: var(--text-dim); }
+    .arch-diagram .highlight { color: var(--cyan); }
+    .arch-diagram .accent { color: var(--purple); }
+    .arch-diagram .warn { color: var(--yellow); }
+    .arch-diagram .ok { color: var(--green); }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+    @media (max-width: 900px) { nav { display: none; } main { margin-left: 0; padding: 24px; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <h2>Roadmap v1</h2>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Overview</div>
+    <a href="#summary">Executive Summary</a>
+    <a href="#principles">Build Principles</a>
+    <a href="#timeline">Timeline Overview</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">P0 — Core Autonomy</div>
+    <a href="#phase-1">Phase 1: Foundation</a>
+    <a href="#phase-2">Phase 2: Safety Infra</a>
+    <a href="#phase-3">Phase 3: Autonomy</a>
+    <a href="#phase-4">Phase 4: Visibility</a>
+    <a href="#phase-5">Phase 5: CEO Agent</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">P1 — Platform</div>
+    <a href="#phase-6">Phase 6: Hardening</a>
+    <a href="#phase-7">Phase 7: Intelligence</a>
+    <a href="#phase-8">Phase 8: Strategy UX</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">P2 — Launch</div>
+    <a href="#phase-9">Phase 9: Monetization</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Reference</div>
+    <a href="#file-map">Key File Map</a>
+    <a href="#schema-changes">All Schema Changes</a>
+    <a href="#new-tools">All New Tools</a>
+    <a href="#checklist">Master Checklist</a>
+  </div>
+</nav>
+
+<main>
+
+<h1>AI OFFICE SIM — DEVELOPMENT ROADMAP v1</h1>
+<p class="subtitle">
+  From "85% infrastructure built" to "fully autonomous AI company runner."<br>
+  9 phases, 25 epics, ~120 tasks. Ordered by dependency for maximum velocity.<br>
+  Every task references exact files. Every phase has acceptance criteria.<br>
+  Based on SOFTWARE_SPEC v4 &nbsp;|&nbsp; Generated: 2026-03-03 &nbsp;|&nbsp; 110 commits analyzed
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="summary">EXECUTIVE SUMMARY</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<p>The software has <strong>42 DB tables, 34 tRPC routers, 30+ agent tools, 12 BullMQ workers, 55 agent templates, and 88 workflow templates</strong>. The infrastructure is built. What's missing is the <strong>autonomous execution loop</strong> — the heartbeat, KPI triggers, cascade safety, and the CEO Agent that ties it all together.</p>
+
+<div class="summary-grid">
+  <div class="summary-card"><div class="number">9</div><div class="label">Phases</div></div>
+  <div class="summary-card"><div class="number">25</div><div class="label">Epics</div></div>
+  <div class="summary-card"><div class="number">~120</div><div class="label">Tasks</div></div>
+  <div class="summary-card"><div class="number">8</div><div class="label">P0 Gaps</div></div>
+  <div class="summary-card"><div class="number">11</div><div class="label">P1 Gaps</div></div>
+  <div class="summary-card"><div class="number">6</div><div class="label">P2 Gaps</div></div>
+  <div class="summary-card"><div class="number">~8</div><div class="label">New Tables</div></div>
+  <div class="summary-card"><div class="number">~12</div><div class="label">New Tools</div></div>
+</div>
+
+<pre class="arch-diagram">
+  <span class="highlight">BUILD ORDER — DEPENDENCY FLOW</span>
+
+  <span class="accent">Phase 1</span>: Token Budget → Scheduled Worker → Strategy Injection
+       │              │                    │
+       └──────────────┴────────────────────┘
+                      │
+  <span class="accent">Phase 2</span>: Cascade Safety ← (needed before any triggers)
+                      │
+  <span class="accent">Phase 3</span>: Heartbeat System + KPI Triggers ← (core autonomy)
+                      │
+  <span class="accent">Phase 4</span>: Session Logs → Wiki ← (visibility for CEO)
+                      │
+  <span class="accent">Phase 5</span>: <span class="warn">CEO AGENT</span> ← (depends on ALL above)
+                      │
+  ────────── P0 COMPLETE ── system is autonomous ──────────
+                      │
+  <span class="accent">Phase 6</span>: Horizontal Scaling + Webhook Auth + Offline Notifications
+  <span class="accent">Phase 7</span>: Atlas Voice + Static RAG + Atlas Tools + Cost Forecasting
+  <span class="accent">Phase 8</span>: Strategy Timeline UI + Inbound Message Triggers
+                      │
+  ────────── P1 COMPLETE ── production-ready ──────────
+                      │
+  <span class="accent">Phase 9</span>: Stripe Billing + LGPD + Onboarding + Data Sync
+                      │
+  ────────── P2 COMPLETE ── launch-ready ──────────
+</pre>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="principles">BUILD PRINCIPLES</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="spec-block">
+  <ol>
+    <li><strong>Dependency order, not priority order.</strong> Every phase builds on the previous. No phase requires work from a later phase.</li>
+    <li><strong>Ship and test each phase independently.</strong> After each phase, the system should be testable. Don't build Phase 3 features into Phase 1 code.</li>
+    <li><strong>Maximum usability over cost savings.</strong> Use the best models. Keep all memory layers. Don't cut features to save API cost.</li>
+    <li><strong>One vendor.</strong> All LLM calls use Anthropic Claude (Opus for reasoning, Haiku for extraction/triage). No OpenAI dependency for core features.</li>
+    <li><strong>Schema changes via raw SQL.</strong> drizzle-kit is broken in WSL. All migrations run via <code>node -e</code> with the <code>postgres</code> driver against Neon.</li>
+    <li><strong>Test in the worker.</strong> Agent execution code lives in <code>apps/worker</code>. Test by triggering agents via the UI "Run" button or BullMQ enqueue.</li>
+    <li><strong>Exact file paths.</strong> Every task lists the files to modify. No guessing.</li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="timeline">TIMELINE OVERVIEW</h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<table>
+  <tr><th>Phase</th><th>Name</th><th>Priority</th><th>Epics</th><th>Key Deliverable</th></tr>
+  <tr><td><strong>1</strong></td><td>Foundation Layer</td><td><span class="badge badge-p0">P0</span></td><td>3</td><td>Token budgets + scheduled agents work + strategy-aware context</td></tr>
+  <tr><td><strong>2</strong></td><td>Safety Infrastructure</td><td><span class="badge badge-p0">P0</span></td><td>3</td><td>Cascade tracking + approval timeout + agent auto-recovery</td></tr>
+  <tr><td><strong>3</strong></td><td>Agent Autonomy</td><td><span class="badge badge-p0">P0</span></td><td>3</td><td>Heartbeat system + KPI triggers + self-programming</td></tr>
+  <tr><td><strong>4</strong></td><td>Knowledge & Visibility</td><td><span class="badge badge-p0">P0</span></td><td>2</td><td>Session logs in wiki + memory separation + doc edit tools</td></tr>
+  <tr><td><strong>5</strong></td><td>The CEO Agent</td><td><span class="badge badge-p0">P0</span></td><td>3</td><td>CEO Agent running, two-pass triage, daily briefings</td></tr>
+  <tr><td><strong>6</strong></td><td>Platform Hardening</td><td><span class="badge badge-p1">P1</span></td><td>3</td><td>Horizontal scaling + webhook auth + offline notifications</td></tr>
+  <tr><td><strong>7</strong></td><td>Atlas & Intelligence</td><td><span class="badge badge-p1">P1</span></td><td>4</td><td>Atlas voice + static RAG + missing tools + cost forecasting</td></tr>
+  <tr><td><strong>8</strong></td><td>Strategy & UX</td><td><span class="badge badge-p1">P1</span></td><td>2</td><td>Strategy timeline + inbound message triggers</td></tr>
+  <tr><td><strong>9</strong></td><td>Launch Readiness</td><td><span class="badge badge-p2">P2</span></td><td>4</td><td>Stripe billing + LGPD + onboarding + data sync agents</td></tr>
+</table>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════ PHASE 1 ═══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="phase-1">PHASE 1: FOUNDATION LAYER <span class="badge badge-p0">P0</span></h2>
+
+<div class="phase-header">
+  <div class="phase-label">Phase Goal</div>
+  <div class="phase-goal">Every agent execution enforces token budgets, scheduled agents actually run, and agents receive strategy context. This is the foundation that everything else builds on.</div>
+</div>
+
+<!-- ─── EPIC 1.1 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 1.1 — Token Budget System &amp; Tokenizer</div>
+  <p>Build the <code>@ai-office/tokenizer</code> package and integrate token budgets into the context builder. Every context injection layer gets a hard cap.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">1.1.1 Create <code>@ai-office/tokenizer</code> package <span class="badge badge-size">S</span></div>
+  <div class="task-files">CREATE: <code>packages/tokenizer/src/index.ts</code>, <code>packages/tokenizer/package.json</code>, <code>packages/tokenizer/tsconfig.json</code></div>
+  <div class="task-detail">
+    Export two functions:<br>
+    &bull; <code>estimateTokens(text: string): number</code> — <code>Math.ceil(text.length / 4)</code> for fast checks<br>
+    &bull; <code>countTokensExact(messages: Message[]): Promise&lt;number&gt;</code> — calls Anthropic's <code>count_tokens</code> API endpoint<br>
+    Add to pnpm workspace. Add as dependency to <code>packages/ai</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">1.1.2 Define token budget constants <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>packages/shared/src/constants/index.ts</code></div>
+  <div class="task-detail">
+    Add <code>CONTEXT_TOKEN_BUDGETS</code> object: <code>{ systemPrompt: 800, strategyContext: 400, heartbeatInstructions: 300, dynamicMemory: 600, sessionHistory: 1000, toolSchemas: 800, triggerPayload: 500, totalOverhead: 4400 }</code>
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">1.1.3 Refactor context builder with token budgets <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/jobs/agent-execution.ts</code></div>
+  <div class="task-detail">
+    Extract context assembly into a dedicated <code>buildAgentContext()</code> function.<br>
+    For each injection layer: estimate tokens, truncate/compact if over budget.<br>
+    &bull; System prompt: validate at agent creation time (already fits)<br>
+    &bull; Dynamic memory: keep N most recent k/v pairs that fit in 600 tokens<br>
+    &bull; Session history: if last 5 summaries exceed 1000 tokens, drop oldest<br>
+    &bull; Trigger payload: truncate at 500 tokens<br>
+    Call <code>estimateTokens()</code> from the new tokenizer package for each layer.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">1.1.4 Validate total context with exact count before LLM call <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>packages/ai/src/engine/executor.ts</code></div>
+  <div class="task-detail">
+    Before the first <code>callLLM()</code>, call <code>countTokensExact(messages)</code>. If total exceeds 80% of model context window, trigger in-session compaction (summarize oldest messages). Log actual vs estimated token counts for calibration.
+  </div>
+</div>
+
+<div class="ok-block">
+  <div class="label">Acceptance — Epic 1.1</div>
+  <p>&bull; Run an agent manually. Verify logs show token budget per layer.<br>
+  &bull; Inject >600 tokens of memory. Verify it's truncated to budget.<br>
+  &bull; Total overhead stays under 4,400 tokens on every execution.</p>
+</div>
+
+<!-- ─── EPIC 1.2 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 1.2 — Wire Scheduled Agent Worker</div>
+  <p>The scheduled worker stub already enqueues agent-execution jobs. Verify it's fully wired and working end-to-end.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">1.2.1 Verify scheduled worker → execution pipeline <span class="badge badge-size">S</span></div>
+  <div class="task-files">READ: <code>apps/worker/src/workers/agent-scheduled.worker.ts</code><br>READ: <code>apps/worker/src/workers/agent-execution.worker.ts</code><br>READ: <code>apps/worker/src/scheduler/cron-scheduler.ts</code></div>
+  <div class="task-detail">
+    The scheduled worker already enqueues AGENT_EXECUTION jobs (commit #75 wired this). Verify the full chain works:<br>
+    1. <code>registerAllScheduledAgents()</code> creates BullMQ repeatables on startup<br>
+    2. BullMQ fires at cron time → <code>agent-scheduled.worker.ts</code> picks up<br>
+    3. Worker enqueues <code>AGENT_EXECUTION</code> job → <code>agent-execution.worker.ts</code> picks up<br>
+    4. <code>processAgentExecution()</code> runs the full agentic loop<br>
+    Test: Create an agent with <code>triggerType: 'scheduled'</code> and a cron like <code>*/2 * * * *</code> (every 2 min). Verify it runs automatically.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">1.2.2 Add <code>triggerType</code> to execution context <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/jobs/agent-execution.ts</code><br>EDIT: <code>packages/ai/src/engine/types.ts</code></div>
+  <div class="task-detail">
+    Add <code>triggerType: 'manual' | 'scheduled' | 'event' | 'agent_message' | 'heartbeat' | 'kpi' | 'webhook'</code> to <code>AgentContext</code>. Pass it from the job data. This is needed for cascade tracking and post-execution logic branching.
+  </div>
+</div>
+
+<div class="ok-block">
+  <div class="label">Acceptance — Epic 1.2</div>
+  <p>&bull; An agent with cron <code>*/5 * * * *</code> fires automatically every 5 minutes and completes successfully.<br>
+  &bull; Action logs show <code>triggerType: 'scheduled'</code> on the session.</p>
+</div>
+
+<!-- ─── EPIC 1.3 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 1.3 — Strategy Context Injection</div>
+  <p>Inject active strategy goals + current KPI values into every agent's context so they make strategy-aware decisions.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">1.3.1 Build strategy context loader <span class="badge badge-size">S</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/context/strategy-loader.ts</code></div>
+  <div class="task-detail">
+    <code>loadStrategyContext(projectId): Promise&lt;string&gt;</code><br>
+    Query active strategies + their KPIs. Format as compact text: <code>"[Strategy] {name} | Status: {status} | KPIs: {kpiName}={current}/{target} ({pct}%)"</code><br>
+    Cap output at 400 tokens using <code>estimateTokens()</code>. If over, keep top 3 strategies by priority.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">1.3.2 Inject strategy context into agent prompt <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/jobs/agent-execution.ts</code></div>
+  <div class="task-detail">
+    In <code>buildAgentContext()</code>, call <code>loadStrategyContext(projectId)</code> and prepend to the system prompt after the agent's soul prompt: <code>"[Company Strategy]\n{strategyContext}\n\n"</code><br>
+    This makes every agent aware of company goals without needing special tools.
+  </div>
+</div>
+
+<div class="ok-block">
+  <div class="label">Acceptance — Epic 1.3</div>
+  <p>&bull; Run an agent manually. Its system prompt includes <code>[Company Strategy]</code> with current KPI values.<br>
+  &bull; Agent references strategy goals in its reasoning (visible in session transcript).</p>
+</div>
+
+
+<div class="gap-block">
+  <div class="label">Workflow Checkpoint — End of Phase 1</div>
+  <p><strong>Before moving to Phase 2, run the standard workflow:</strong><br>
+  1. <code>pnpm typecheck</code> — fix all type errors<br>
+  2. Review changed files (agent review or manual)<br>
+  3. Fix any issues found in review<br>
+  4. <code>pnpm typecheck</code> again — confirm clean<br>
+  5. <code>git add</code> + <code>git commit</code> with descriptive message<br>
+  6. Update <code>DEVLOG.txt</code> with what was built, decisions made, and any gotchas<br>
+  7. <code>git push</code> to remote</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════ PHASE 2 ═══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="phase-2">PHASE 2: SAFETY INFRASTRUCTURE <span class="badge badge-p0">P0</span></h2>
+
+<div class="phase-header">
+  <div class="phase-label">Phase Goal</div>
+  <div class="phase-goal">Before enabling autonomous triggers (heartbeat, KPI), the safety nets must exist. Cascade depth tracking, failure recovery, approval timeouts, and agent auto-recovery.</div>
+</div>
+
+<!-- ─── EPIC 2.1 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 2.1 — Cascade Depth Tracking &amp; Failure Recovery</div>
+  <p>Every execution carries cascade metadata. Depth limits, loop detection, and failure recovery prevent runaway cascades.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">2.1.1 Define CascadeContext type <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>packages/shared/src/types/index.ts</code></div>
+  <div class="task-detail">
+    Add interface: <code>CascadeContext { cascadeId: string; cascadeDepth: number; cascadeRootType: string; cascadeRootAgentId?: string; cascadePath: string[]; cascadeStatus: 'in_progress' | 'completed' | 'partial_failure' | 'failed' }</code>
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">2.1.2 Add cascade fields to job schemas <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>packages/queue/src/jobs.ts</code></div>
+  <div class="task-detail">
+    Add optional <code>cascade?: CascadeContext</code> to <code>AgentExecutionJob</code> and <code>WorkflowExecutionJob</code> Zod schemas. Non-cascaded executions have <code>cascade: undefined</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">2.1.3 Enforce cascade limits in agent execution <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/jobs/agent-execution.ts</code></div>
+  <div class="task-detail">
+    In the pre-flight checks (before <code>executeAgent()</code>):<br>
+    &bull; If <code>cascade.cascadeDepth > maxCascadeDepth</code> (default 5 from orchestrator_config): reject, log, emit <code>cascade:depth_exceeded</code><br>
+    &bull; If <code>cascade.cascadePath.includes(agentId)</code>: loop detected, reject, log, alert<br>
+    In post-execution: if agent failed and has cascade context, apply retry policy (0-3 retries, exponential backoff 10s/30s/90s). On exhaust: mark branch <code>partial_failure</code>, emit <code>cascade:branch_failed</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">2.1.4 Propagate cascade in trigger_agent tool <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>packages/ai/src/tools/registry.ts</code> (trigger_agent handler)</div>
+  <div class="task-detail">
+    When <code>trigger_agent</code> is called during a cascade: increment <code>cascadeDepth</code>, append current agentId to <code>cascadePath</code>, pass cascade to enqueued job.<br>
+    Rate limit: max 5 <code>trigger_agent</code> calls per session.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">2.1.5 Add cascade Socket.IO events <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>packages/realtime/src/events.ts</code></div>
+  <div class="task-detail">
+    Add to <code>ServerToClientEvents</code>: <code>cascade:started</code>, <code>cascade:branch_failed</code>, <code>cascade:depth_exceeded</code>, <code>cascade:completed</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">2.1.6 Store cascade events for trace UI <span class="badge badge-size">M</span></div>
+  <div class="task-files">CREATE SQL migration: <code>cascade_events</code> table<br>EDIT: <code>packages/db/src/schema/</code> — add cascade-events.ts</div>
+  <div class="task-detail">
+    Table: <code>cascade_events(id, projectId, cascadeId, agentId, workflowId, depth, status, triggerType, costUsd, durationMs, parentEventId, error, createdAt)</code><br>
+    Insert a row for every agent/workflow execution in a cascade. Used by the Cascade Trace UI (Phase 8).
+  </div>
+</div>
+
+<div class="ok-block">
+  <div class="label">Acceptance — Epic 2.1</div>
+  <p>&bull; Manually chain 3 agents via <code>trigger_agent</code>. Verify cascade metadata increments depth correctly.<br>
+  &bull; Set max depth to 2. Verify 3rd agent is rejected with <code>cascade:depth_exceeded</code>.<br>
+  &bull; Create a loop (A→B→A). Verify loop detection prevents infinite cycle.</p>
+</div>
+
+<!-- ─── EPIC 2.2 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 2.2 — Approval Timeout System</div>
+  <p>Approvals expire after configurable duration. Agents don't wait forever.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">2.2.1 Add expiry fields to approvals table <span class="badge badge-size">S</span></div>
+  <div class="task-files">SQL migration against Neon<br>EDIT: <code>packages/db/src/schema/approvals.ts</code></div>
+  <div class="task-detail">
+    Add columns: <code>expiresAt timestamp</code> (set to <code>createdAt + project.approvalTimeoutHours</code>), <code>expiredAt timestamp nullable</code>.<br>
+    Add <code>approvalTimeoutHours integer default 48</code> to <code>orchestrator_config</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">2.2.2 Check expired approvals in orchestrator tick <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/workers/orchestrator.worker.ts</code></div>
+  <div class="task-detail">
+    In the tick: query <code>approvals WHERE status = 'pending' AND expiresAt < now()</code>.<br>
+    For each: set <code>status = 'expired'</code>, <code>expiredAt = now()</code>, enqueue an AGENT_EXECUTION job with the serialized session state + an injected "Approval expired" message. Emit <code>approval:expired</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">2.2.3 Show expiry countdown in approvals UI <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>apps/web/src/app/[locale]/(auth)/approvals/</code> components</div>
+  <div class="task-detail">
+    Show time remaining on each pending approval card. Yellow at 25% remaining, red at 10%. Add <code>approval:expired</code> to the Socket.IO listener to auto-remove cards.
+  </div>
+</div>
+
+<!-- ─── EPIC 2.3 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 2.3 — Agent Auto-Recovery</div>
+  <p>Agents that auto-disable after 3 failures don't stay dead forever. Automatic recovery with exponential cooldown.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">2.3.1 Add recovery fields to agents table <span class="badge badge-size">S</span></div>
+  <div class="task-files">SQL migration<br>EDIT: <code>packages/db/src/schema/agents.ts</code></div>
+  <div class="task-detail">
+    Add: <code>cooldownUntil timestamp nullable</code>, <code>recoveryAttempts integer default 0</code>. When auto-disabled, set <code>status = 'cooldown'</code> and <code>cooldownUntil = now() + 1h</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">2.3.2 Add recovery check to orchestrator tick <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/workers/orchestrator.worker.ts</code></div>
+  <div class="task-detail">
+    Query <code>agents WHERE status = 'cooldown' AND cooldownUntil < now()</code>.<br>
+    For each: enqueue a minimal health-check execution (system prompt: "Respond OK", max 1 action). If succeeds: <code>status = 'idle'</code>, reset counters, emit <code>agent:auto_recovered</code>. If fails: increment <code>recoveryAttempts</code>, set <code>cooldownUntil = now() + (1h * 4^attempts)</code>. After 3 failed recoveries: <code>status = 'disabled'</code>, create human task.
+  </div>
+</div>
+
+<div class="ok-block">
+  <div class="label">Acceptance — Phase 2</div>
+  <p>&bull; Cascade chains respect depth limits and detect loops<br>
+  &bull; An approval left pending for 48h auto-expires and the agent resumes<br>
+  &bull; A disabled agent recovers automatically after 1 hour if the underlying issue is fixed</p>
+</div>
+
+
+<div class="gap-block">
+  <div class="label">Workflow Checkpoint — End of Phase 2</div>
+  <p><strong>Before moving to Phase 3, run the standard workflow:</strong><br>
+  1. <code>pnpm typecheck</code> — fix all type errors<br>
+  2. Review changed files (agent review or manual)<br>
+  3. Fix any issues found in review<br>
+  4. <code>pnpm typecheck</code> again — confirm clean<br>
+  5. <code>git add</code> + <code>git commit</code> with descriptive message<br>
+  6. Update <code>DEVLOG.txt</code> with what was built, decisions made, and any gotchas<br>
+  7. <code>git push</code> to remote</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════ PHASE 3 ═══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="phase-3">PHASE 3: AGENT AUTONOMY <span class="badge badge-p0">P0</span></h2>
+
+<div class="phase-header">
+  <div class="phase-label">Phase Goal</div>
+  <div class="phase-goal">The heartbeat system and KPI triggers go live. Agents wake themselves up, check on things, self-program future behavior, and react to business metric changes. The company becomes "alive."</div>
+</div>
+
+<!-- ─── EPIC 3.1 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 3.1 — Heartbeat System</div>
+  <p>The periodic wake-up timer that lets agents check on things and self-program future behavior.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">3.1.1 Add heartbeat fields to agents table <span class="badge badge-size">S</span></div>
+  <div class="task-files">SQL migration<br>EDIT: <code>packages/db/src/schema/agents.ts</code></div>
+  <div class="task-detail">
+    Add: <code>heartbeatInstructions text nullable</code> (max 500 chars), <code>heartbeatIntervalMin integer nullable</code> (default null = no heartbeat, min 5, max 1440), <code>lastHeartbeatAt timestamp nullable</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">3.1.2 Add heartbeat check to orchestrator tick <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/workers/orchestrator.worker.ts</code></div>
+  <div class="task-detail">
+    On each tick, query: <code>agents WHERE heartbeatIntervalMin IS NOT NULL AND isActive = true AND status = 'idle' AND (lastHeartbeatAt IS NULL OR now() - lastHeartbeatAt >= heartbeatIntervalMin * interval '1 minute')</code>.<br>
+    For each: check budget remaining, concurrency slot available. If OK: enqueue AGENT_EXECUTION with <code>triggerType: 'heartbeat'</code> and payload: <code>"Heartbeat check. Your instructions: {heartbeatInstructions}"</code>. Update <code>lastHeartbeatAt = now()</code>. Emit <code>agent:heartbeat_fired</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">3.1.3 Create <code>update_my_heartbeat</code> tool <span class="badge badge-size">S</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/tools/self-config/update-my-heartbeat.ts</code><br>EDIT: <code>packages/ai/src/tools/registry.ts</code></div>
+  <div class="task-detail">
+    Input: <code>{ instructions: string }</code> (max 500 chars).<br>
+    Action: Update <code>agents.heartbeatInstructions</code> in DB. Insert row in <code>agent_heartbeat_history</code>. Log to action_logs with <code>actionType: 'self_program'</code>. Rate limit: 3 calls per session.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">3.1.4 Create <code>update_my_schedule</code> tool <span class="badge badge-size">S</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/tools/self-config/update-my-schedule.ts</code><br>EDIT: <code>packages/ai/src/tools/registry.ts</code></div>
+  <div class="task-detail">
+    Input: <code>{ intervalMin?: number, cron?: string, disable?: boolean }</code>.<br>
+    Validates: <code>intervalMin >= 5</code>. Updates <code>agents.heartbeatIntervalMin</code> and/or <code>triggerConfig</code>. Calls <code>syncAgentSchedule(agentId)</code> to update BullMQ repeatable.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">3.1.5 Create <code>agent_heartbeat_history</code> table <span class="badge badge-size">S</span></div>
+  <div class="task-files">SQL migration<br>CREATE: <code>packages/db/src/schema/agent-heartbeat-history.ts</code></div>
+  <div class="task-detail">
+    Table: <code>agent_heartbeat_history(id, agentId, instructions, previousInstructions, changedAt, changedBySessionId)</code>. Cap at 20 entries per agent (delete oldest on insert). Used for UI diff view and rollback.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">3.1.6 Heartbeat config in agent detail UI <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/web/src/app/[locale]/(auth)/agents/[id]/</code> components</div>
+  <div class="task-detail">
+    Add to agent config tab: heartbeat interval slider (5min - 24h), current heartbeat instructions (read-only display), heartbeat history with diff view, manual rollback button, enable/disable toggle.
+  </div>
+</div>
+
+<!-- ─── EPIC 3.2 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 3.2 — KPI Monitor &amp; Trigger System</div>
+  <p>KPIs can trigger agents/workflows when thresholds are crossed. Closes the autonomous loop.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">3.2.1 Add trigger fields to strategyKpis table <span class="badge badge-size">S</span></div>
+  <div class="task-files">SQL migration<br>EDIT: <code>packages/db/src/schema/strategies.ts</code></div>
+  <div class="task-detail">
+    Add: <code>triggerAgentId uuid FK nullable</code>, <code>triggerWorkflowId uuid FK nullable</code>, <code>triggerDirection enum('above','below','deviation')</code>, <code>triggerThreshold numeric</code>, <code>triggerCooldownMin integer default 60 min 15</code>, <code>lastTriggeredAt timestamp nullable</code>, <code>isMonitored boolean default false</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">3.2.2 Create <code>checkKpiThreshold()</code> shared function <span class="badge badge-size">M</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/triggers/kpi-monitor.ts</code></div>
+  <div class="task-detail">
+    <code>checkKpiThreshold(kpiId): Promise&lt;void&gt;</code><br>
+    Load KPI. If not monitored: return. Check if current crosses threshold in triggerDirection. Check cooldown. If fire: enqueue linked agent/workflow with KPI data as trigger payload + cascade context. Update lastTriggeredAt. Emit <code>kpi:trigger_fired</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">3.2.3 Create <code>update_strategy_kpi</code> agent tool <span class="badge badge-size">S</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/tools/strategy/update-strategy-kpi.ts</code><br>EDIT: <code>packages/ai/src/tools/registry.ts</code></div>
+  <div class="task-detail">
+    Input: <code>{ kpiId: string, value: number, note?: string }</code>.<br>
+    Action: Update <code>kpi.currentValue</code>. Call <code>checkKpiThreshold(kpiId)</code> for event-driven trigger. Emit <code>kpi:updated</code>. Log to action_logs.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">3.2.4 Add KPI polling to orchestrator tick <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/workers/orchestrator.worker.ts</code></div>
+  <div class="task-detail">
+    On each tick: query <code>strategyKpis WHERE isMonitored = true</code>. For each: call <code>checkKpiThreshold(kpiId)</code>. This is the polling safety net (catches KPIs updated outside agent tools).
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">3.2.5 KPI trigger config in Strategy UI <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/web/src/app/[locale]/(auth)/strategy/</code> components<br>EDIT: <code>packages/api/src/routers/strategies.ts</code></div>
+  <div class="task-detail">
+    On the KPI detail panel, add: "Monitor this KPI" toggle, threshold value input, direction selector, cooldown input, agent/workflow picker for trigger target. Wire to tRPC mutation for updating KPI trigger fields.
+  </div>
+</div>
+
+<!-- ─── EPIC 3.3 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 3.3 — Heartbeat Instructions Injection</div>
+  <p>When agents wake via heartbeat, inject their self-written instructions as trigger payload.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">3.3.1 Handle heartbeat trigger type in context builder <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/jobs/agent-execution.ts</code></div>
+  <div class="task-detail">
+    When <code>triggerType === 'heartbeat'</code>: load <code>agent.heartbeatInstructions</code> from DB. Build trigger payload: <code>"[Heartbeat Check]\nYour self-programmed instructions:\n{instructions}\n\nReview your instructions and take any actions needed. Update your instructions for the next heartbeat if appropriate."</code><br>
+    If heartbeatInstructions is empty: <code>"[Heartbeat Check]\nNo instructions set. Review your current situation and decide if any action is needed."</code>
+  </div>
+</div>
+
+<div class="ok-block">
+  <div class="label">Acceptance — Phase 3</div>
+  <p>&bull; Create an agent with heartbeat every 5 minutes. Verify it wakes up, reads instructions, and acts.<br>
+  &bull; Agent calls <code>update_my_heartbeat</code> — next heartbeat shows updated instructions.<br>
+  &bull; Create a KPI with threshold. Manually update KPI past threshold. Verify linked agent triggers immediately.<br>
+  &bull; KPI cooldown prevents re-fire for configured minutes.<br>
+  &bull; <strong>The system is now autonomous.</strong> Agents wake up, check things, act, and trigger each other.</p>
+</div>
+
+
+<div class="gap-block">
+  <div class="label">Workflow Checkpoint — End of Phase 3</div>
+  <p><strong>Before moving to Phase 4, run the standard workflow:</strong><br>
+  1. <code>pnpm typecheck</code> — fix all type errors<br>
+  2. Review changed files (agent review or manual)<br>
+  3. Fix any issues found in review<br>
+  4. <code>pnpm typecheck</code> again — confirm clean<br>
+  5. <code>git add</code> + <code>git commit</code> with descriptive message<br>
+  6. Update <code>DEVLOG.txt</code> with what was built, decisions made, and any gotchas<br>
+  7. <code>git push</code> to remote</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════ PHASE 4 ═══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="phase-4">PHASE 4: KNOWLEDGE & VISIBILITY <span class="badge badge-p0">P0</span></h2>
+
+<div class="phase-header">
+  <div class="phase-label">Phase Goal</div>
+  <div class="phase-goal">Agent sessions become searchable knowledge. Session summaries get their own storage. Agents can edit documents. This gives the CEO Agent (Phase 5) the ability to read what every agent did.</div>
+</div>
+
+<!-- ─── EPIC 4.1 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 4.1 — Session Logs → Wiki + Memory Separation</div>
+  <p>Post-execution, generate a wiki document from the session. Store summaries separately from operational memory. Back up transcripts to PostgreSQL.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">4.1.1 Create <code>agent_session_summaries</code> table <span class="badge badge-size">S</span></div>
+  <div class="task-files">SQL migration<br>CREATE: <code>packages/db/src/schema/agent-session-summaries.ts</code></div>
+  <div class="task-detail">
+    Table: <code>agent_session_summaries(id, agentId, projectId, sessionId, summary text, tokenCount integer, createdAt)</code>. Index on <code>(agentId, createdAt DESC)</code>. This replaces storing summaries in <code>agent_memory</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">4.1.2 Create <code>session_transcripts</code> table <span class="badge badge-size">S</span></div>
+  <div class="task-files">SQL migration<br>CREATE: <code>packages/db/src/schema/session-transcripts.ts</code></div>
+  <div class="task-detail">
+    Table: <code>session_transcripts(id, agentId, projectId, sessionId, messages jsonb, triggerType text, tokenCount integer, costUsd numeric, createdAt)</code>. Write-through: save to both Redis AND this table on every session. Redis is the hot cache; PostgreSQL is permanent.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">4.1.3 Generate session summary → wiki document <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/jobs/agent-execution.ts</code> (post-execution)</div>
+  <div class="task-detail">
+    After each successful session:<br>
+    1. Call Claude Haiku: "Summarize this agent session in 100-200 words: what the agent did, key decisions, outcomes." → save to <code>agent_session_summaries</code><br>
+    2. Create a wiki document: title = <code>"{agentName} Session Log — {date}"</code>, category = "Session Logs", content = markdown summary<br>
+    3. Chunk + embed the document (call existing <code>ingestDocument()</code>)<br>
+    4. Save full transcript to <code>session_transcripts</code> table<br>
+    Now Atlas and CEO Agent can RAG-search what any agent did.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">4.1.4 Migrate session history loading from agent_memory <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/jobs/agent-execution.ts</code> (context builder)<br>EDIT: <code>packages/ai/src/memory/individual.ts</code></div>
+  <div class="task-detail">
+    Change session history loading to read from <code>agent_session_summaries</code> instead of <code>agent_memory</code> keys matching <code>session_summary_*</code>. Load last 5 summaries. If over 1000 token budget, drop oldest.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">4.1.5 Swap auto-extract from OpenAI to Claude Haiku <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>packages/ai/src/memory/auto-extract.ts</code></div>
+  <div class="task-detail">
+    Replace the OpenAI GPT-4o-mini call with Anthropic Claude Haiku for memory extraction. Use the existing <code>callLLM()</code> from <code>packages/ai/src/engine/llm.ts</code> with model override. Remove OpenAI dependency for this feature.
+  </div>
+</div>
+
+<!-- ─── EPIC 4.2 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 4.2 — Agent Document Edit Tools</div>
+  <p>Agents need to update existing wiki articles and documents, not just create new ones.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">4.2.1 Create <code>update_document</code> tool <span class="badge badge-size">S</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/tools/documents/update-document.ts</code><br>EDIT: <code>packages/ai/src/tools/registry.ts</code></div>
+  <div class="task-detail">
+    Input: <code>{ documentId: string, content: string, title?: string }</code>. Requires approval.<br>
+    Action: Update document content in DB. Re-chunk and re-embed (delete old chunks, create new). Log to action_logs.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">4.2.2 Create <code>update_wiki_article</code> tool <span class="badge badge-size">S</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/tools/documents/update-wiki-article.ts</code><br>EDIT: <code>packages/ai/src/tools/registry.ts</code></div>
+  <div class="task-detail">
+    Input: <code>{ articleId: string, content: string, summary?: string }</code>. Requires approval.<br>
+    Action: Update wiki article content + summary. Log to action_logs.
+  </div>
+</div>
+
+<div class="ok-block">
+  <div class="label">Acceptance — Phase 4</div>
+  <p>&bull; After any agent runs, a new wiki document appears in "Session Logs" category.<br>
+  &bull; Atlas can search "what did the SDR agent do yesterday?" and find session logs via RAG.<br>
+  &bull; An agent can call <code>update_document</code> to modify an existing wiki article.</p>
+</div>
+
+
+<div class="gap-block">
+  <div class="label">Workflow Checkpoint — End of Phase 4</div>
+  <p><strong>Before moving to Phase 5, run the standard workflow:</strong><br>
+  1. <code>pnpm typecheck</code> — fix all type errors<br>
+  2. Review changed files (agent review or manual)<br>
+  3. Fix any issues found in review<br>
+  4. <code>pnpm typecheck</code> again — confirm clean<br>
+  5. <code>git add</code> + <code>git commit</code> with descriptive message<br>
+  6. Update <code>DEVLOG.txt</code> with what was built, decisions made, and any gotchas<br>
+  7. <code>git push</code> to remote</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════ PHASE 5 ═══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="phase-5">PHASE 5: THE CEO AGENT <span class="badge badge-p0">P0</span></h2>
+
+<div class="phase-header">
+  <div class="phase-label">Phase Goal</div>
+  <div class="phase-goal">The crown jewel. The CEO Agent runs autonomously, reads company state, orchestrates the fleet, generates daily briefings, and self-programs. This is what makes the tagline real: "AI runs your company."</div>
+</div>
+
+<div class="risk-block">
+  <div class="label">Dependency check</div>
+  <p>CEO Agent requires ALL previous phases: token budgets (context discipline), scheduled worker (cron), strategy injection (reads goals), cascade safety (prevents runaway), heartbeat (execution), KPI triggers (reactions), session logs (reads agent actions). Do not start Phase 5 until Phases 1-4 are complete.</p>
+</div>
+
+<!-- ─── EPIC 5.1 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 5.1 — CEO Agent Archetype &amp; Auto-Creation</div>
+  <p>Create the <code>ceo_strategist</code> archetype and auto-create it on project initialization.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">5.1.1 Add <code>ceo_strategist</code> archetype <span class="badge badge-size">S</span></div>
+  <div class="task-files">SQL: seed <code>agent_archetypes</code><br>EDIT: <code>packages/db/src/schema/agents.ts</code> — add to enum<br>EDIT: <code>packages/shared/src/constants/index.ts</code></div>
+  <div class="task-detail">
+    Add <code>'ceo_strategist'</code> to <code>agentArchetypeEnum</code>. Seed archetype with bilingual system prompt from SOFTWARE_SPEC v4 section 17.4. Default tools: <code>list_agents, get_agent_metrics, list_strategies, get_strategy, get_fleet_status, get_cost_report, search_company_memory, search_action_logs, trigger_agent, trigger_workflow, update_agent_priority, update_agent_schedule, update_agent_heartbeat, pause_agents_by_team, resume_agents_by_team, update_strategy_kpi, create_strategy_learning, create_human_task, update_my_heartbeat, update_my_schedule</code>. Add <code>isSystemAgent: boolean default false</code> to agents table.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">5.1.2 Auto-create CEO Agent on project init <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>packages/api/src/routers/projects.ts</code> (create mutation)</div>
+  <div class="task-detail">
+    After creating a new project, auto-insert a CEO Agent: archetype <code>ceo_strategist</code>, <code>isSystemAgent: true</code>, <code>heartbeatIntervalMin: 120</code>, <code>isActive: true</code>, model: <code>claude-opus</code>, temperature: 0.3. Prevent deletion in the agents router (reject delete if <code>isSystemAgent</code>).
+  </div>
+</div>
+
+<!-- ─── EPIC 5.2 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 5.2 — CEO Fleet Orchestration Tools</div>
+  <p>Tools that only the CEO Agent can use to manage the fleet.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">5.2.1 Create <code>update_agent_schedule</code> tool <span class="badge badge-size">S</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/tools/fleet/update-agent-schedule.ts</code></div>
+  <div class="task-detail">
+    Input: <code>{ agentId: string, heartbeatIntervalMin?: number, cron?: string }</code>.<br>
+    Changes ANOTHER agent's schedule (not self). Calls <code>syncAgentSchedule()</code>. CEO-only tool.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">5.2.2 Create <code>update_agent_heartbeat</code> tool <span class="badge badge-size">S</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/tools/fleet/update-agent-heartbeat.ts</code></div>
+  <div class="task-detail">
+    Input: <code>{ agentId: string, instructions: string }</code>.<br>
+    Rewrites ANOTHER agent's heartbeat instructions. Requires approval (high impact). Logs change to <code>agent_heartbeat_history</code>.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">5.2.3 Create <code>get_kpi_trends</code> tool <span class="badge badge-size">S</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/tools/strategy/get-kpi-trends.ts</code></div>
+  <div class="task-detail">
+    Input: <code>{ kpiId?: string, days?: number }</code> (default: all KPIs, last 7 days).<br>
+    Returns KPI values over time from action_logs where <code>actionType = 'kpi_update'</code>. Format: compact table.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">5.2.4 Create <code>get_fleet_status</code>, <code>get_cost_report</code>, <code>search_action_logs</code>, <code>pause/resume_agents_by_team</code> tools <span class="badge badge-size">M</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/tools/fleet/</code> — multiple files<br>EDIT: <code>packages/ai/src/tools/registry.ts</code></div>
+  <div class="task-detail">
+    &bull; <code>get_fleet_status</code>: agents grouped by status (active/idle/working/cooldown/disabled), health scores, costs per team<br>
+    &bull; <code>get_cost_report</code>: daily/weekly spend from action_logs, per-agent breakdown<br>
+    &bull; <code>search_action_logs</code>: filter by agentId, status, actionType, date range<br>
+    &bull; <code>pause_agents_by_team</code>: set all agents in a team to <code>isActive: false</code>. Requires approval.<br>
+    &bull; <code>resume_agents_by_team</code>: reverse of pause.
+  </div>
+</div>
+
+<!-- ─── EPIC 5.3 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 5.3 — Two-Pass Triage &amp; Daily Briefing</div>
+  <p>The CEO Agent uses a cheap Haiku triage pass before running a full Opus session. Daily briefings are generated and delivered.</p>
+</div>
+
+<div class="task-block">
+  <div class="task-title">5.3.1 Implement two-pass triage in CEO execution <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/jobs/agent-execution.ts</code></div>
+  <div class="task-detail">
+    When <code>triggerType === 'heartbeat' AND agent.archetype === 'ceo_strategist'</code> AND it's NOT a daily briefing trigger:<br>
+    1. Build compact KPI snapshot (~500 tokens): <code>"KPIs: revenue=$32K/50K(64%) | churn=4.2%/5%(OK)..."</code><br>
+    2. Call Claude Haiku: "Review snapshot. Reply NEEDS_ACTION or ALL_CLEAR with one-line reason."<br>
+    3. If ALL_CLEAR: log "CEO triage: all clear", skip full session, update lastHeartbeatAt<br>
+    4. If NEEDS_ACTION: proceed with full CEO Agent session (Claude Opus, full context)<br>
+    Skip triage for: daily briefing, KPI threshold triggers, agent-disabled events, manual triggers.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">5.3.2 Daily briefing scheduler <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/scheduler/cron-scheduler.ts</code><br>EDIT: <code>packages/db/src/schema/orchestrator-config.ts</code></div>
+  <div class="task-detail">
+    Add <code>ceoBriefingCron text default '0 8 * * *'</code> to orchestrator_config. On startup, register a BullMQ repeatable for the CEO briefing. Job triggers CEO Agent with <code>triggerType: 'briefing'</code> — always skips triage, always runs full session.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">5.3.3 Briefing delivery: Atlas banner + dashboard widget <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/web/src/app/[locale]/(auth)/atlas/</code> components<br>EDIT: <code>apps/web/src/app/[locale]/(auth)/dashboard/</code> — General tab<br>EDIT: <code>packages/db/src/schema/orchestrator-config.ts</code></div>
+  <div class="task-detail">
+    Store <code>latestBriefingDocumentId</code> in orchestrator_config (updated after each CEO briefing).<br>
+    Atlas: show pinned "CEO Briefing" card at top of transcript when briefing exists. Dismissible.<br>
+    Dashboard General tab: "CEO Brief" card showing latest briefing content with key metrics highlighted.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">5.3.4 CEO Agent detail page <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/web/src/app/[locale]/(auth)/agents/[id]/</code> components</div>
+  <div class="task-detail">
+    When viewing the CEO Agent (<code>isSystemAgent: true</code>), show special UI:<br>
+    &bull; Crown icon badge<br>
+    &bull; Review frequency slider (1h-8h)<br>
+    &bull; Daily briefing time config<br>
+    &bull; Decision authority toggles (which mutations auto-execute vs require approval)<br>
+    &bull; Decision log (filtered action_logs for CEO Agent)<br>
+    &bull; Current heartbeat instructions (read-only, with rollback)<br>
+    &bull; Hide delete button
+  </div>
+</div>
+
+<div class="ok-block">
+  <div class="label">Acceptance — Phase 5</div>
+  <p>&bull; CEO Agent wakes every 2 hours via heartbeat. Triage: if all KPIs OK, costs ~$0.001 (Haiku only).<br>
+  &bull; When a KPI crosses threshold, CEO Agent wakes with full context and takes strategic action.<br>
+  &bull; Daily briefing generates at 8am, visible in Atlas and Dashboard.<br>
+  &bull; CEO Agent can trigger other agents, change schedules, pause teams, create human tasks.<br>
+  &bull; <strong>The system is now strategically autonomous. User sets goals, CEO Agent drives execution.</strong></p>
+</div>
+
+<div class="insight-block">
+  <div class="label">P0 COMPLETE — The Autonomous Loop</div>
+  <p>After Phase 5, the full autonomous loop works: User sets strategy → CEO Agent reads goals → monitors KPIs → orchestrates agent fleet → agents run via heartbeat/schedule/triggers → agents update KPIs → CEO Agent reacts → agents adapt. The company runs itself.</p>
+</div>
+
+
+<div class="gap-block">
+  <div class="label">Workflow Checkpoint — End of Phase 5 (P0 COMPLETE)</div>
+  <p><strong>Before moving to Phase 6, run the standard workflow:</strong><br>
+  1. <code>pnpm typecheck</code> — fix all type errors<br>
+  2. Review changed files (agent review or manual)<br>
+  3. Fix any issues found in review<br>
+  4. <code>pnpm typecheck</code> again — confirm clean<br>
+  5. <code>git add</code> + <code>git commit</code> with descriptive message<br>
+  6. Update <code>DEVLOG.txt</code> with what was built, decisions made, and any gotchas<br>
+  7. <code>git push</code> to remote<br>
+  8. <strong>Deploy to Vercel + Render and smoke-test the full autonomous loop end-to-end</strong></p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════ PHASE 6 ═══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="phase-6">PHASE 6: PLATFORM HARDENING <span class="badge badge-p1">P1</span></h2>
+
+<div class="phase-header">
+  <div class="phase-label">Phase Goal</div>
+  <div class="phase-goal">Make the autonomous system production-ready: fault tolerance (horizontal scaling), security (webhook auth), and reliability (offline notifications).</div>
+</div>
+
+<!-- ─── EPIC 6.1 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 6.1 — Horizontal Worker Scaling</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">6.1.1 Add orchestrator leader election <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/workers/orchestrator.worker.ts</code></div>
+  <div class="task-detail">
+    Before running the tick: <code>SET orchestrator_lock {workerId} NX EX 90</code> in Redis. If fails: this worker is not the leader, skip tick. If succeeds: run tick, refresh lock TTL. This allows 2+ worker replicas safely.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">6.1.2 Add health check endpoint <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/index.ts</code></div>
+  <div class="task-detail">
+    <code>GET /health</code> → returns <code>{ status: 'ok', workerId, activeJobs, queueDepth, lastTickAt, isLeader, uptime }</code>. Use for Render health checks.
+  </div>
+</div>
+
+<!-- ─── EPIC 6.2 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 6.2 — Webhook Authentication</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">6.2.1 Add webhook signing to workflow/agent webhook endpoints <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/</code> webhook handler<br>EDIT: <code>packages/db/src/schema/workflows.ts</code> — add <code>webhookSecret</code></div>
+  <div class="task-detail">
+    Generate <code>webhookSecret</code> per endpoint (crypto.randomBytes(32).toString('hex')).<br>
+    Verify: check <code>X-Signature-256</code> header = HMAC-SHA256(body, secret). Reject invalid with 401.<br>
+    Replay protection: check <code>X-Timestamp</code>, reject if >5 min old.
+  </div>
+</div>
+
+<!-- ─── EPIC 6.3 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 6.3 — Offline Notification Queue</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">6.3.1 Queue Socket.IO events for offline clients <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>packages/realtime/src/</code> — server emission logic</div>
+  <div class="task-detail">
+    On emit: check if any client is connected for the project's Socket.IO room. If not: push event to Redis list <code>pending_events:{projectId}</code> (TTL 7 days). On <code>subscribe:project</code>: drain queued events and emit in order.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">6.3.2 Web push notifications for critical events <span class="badge badge-size">M</span></div>
+  <div class="task-files">CREATE: <code>apps/web/src/lib/push-notifications.ts</code><br>EDIT: <code>apps/worker/src/workers/notification.worker.ts</code></div>
+  <div class="task-detail">
+    Use Web Push API. Register service worker. Send push for: approval requests, cascade failures, budget exceeded, CEO briefings. User configures preferences in Settings → Notifications.
+  </div>
+</div>
+
+
+<div class="gap-block">
+  <div class="label">Workflow Checkpoint — End of Phase 6</div>
+  <p><strong>Before moving to Phase 7, run the standard workflow:</strong><br>
+  1. <code>pnpm typecheck</code> — fix all type errors<br>
+  2. Review changed files (agent review or manual)<br>
+  3. Fix any issues found in review<br>
+  4. <code>pnpm typecheck</code> again — confirm clean<br>
+  5. <code>git add</code> + <code>git commit</code> with descriptive message<br>
+  6. Update <code>DEVLOG.txt</code> with what was built, decisions made, and any gotchas<br>
+  7. <code>git push</code> to remote</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════ PHASE 7 ═══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="phase-7">PHASE 7: ATLAS & INTELLIGENCE <span class="badge badge-p1">P1</span></h2>
+
+<div class="phase-header">
+  <div class="phase-label">Phase Goal</div>
+  <div class="phase-goal">Atlas becomes the full control interface: voice input, all platform tools, proactive briefings. Static RAG gives agents domain expertise. Cost forecasting gives users budget predictability.</div>
+</div>
+
+<!-- ─── EPIC 7.1 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 7.1 — Atlas Voice Interface</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">7.1.1 Wire STT → Atlas chat → TTS <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/web/src/app/[locale]/(auth)/atlas/</code> components<br>READ: <code>apps/web/src/hooks/use-speech-recognition.ts</code>, <code>apps/web/src/hooks/use-speech-synthesis.ts</code></div>
+  <div class="task-detail">
+    Hooks exist but are not connected to the real Atlas LLM pipeline. Wire: STT output → Atlas chat input → send to tRPC → receive response → TTS output. Consider Deepgram STT / ElevenLabs TTS for quality (user wants max usability, cost secondary).
+  </div>
+</div>
+
+<!-- ─── EPIC 7.2 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 7.2 — Atlas Missing Tools + Proactive</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">7.2.1 Add missing Atlas tools <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: Atlas tool definitions in <code>packages/api/src/routers/atlas.ts</code></div>
+  <div class="task-detail">
+    Add: <code>search_action_logs</code>, <code>trigger_workflow</code>, <code>update_wiki_article</code>, <code>manage_calendar</code>, <code>update_settings</code>, <code>create_strategy_kpi</code>, <code>update_strategy_kpi</code>, <code>get_kpi_trends</code>. Atlas should be able to do everything the user can do in the UI.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">7.2.2 Atlas proactive briefing display <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>apps/web/src/app/[locale]/(auth)/atlas/</code> components</div>
+  <div class="task-detail">
+    When Atlas opens: check for latest CEO briefing. If exists and not dismissed: show as pinned card above the conversation. Also show any anomaly alerts (cascade failures, budget warnings) as dismissible banners.
+  </div>
+</div>
+
+<!-- ─── EPIC 7.3 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 7.3 — Static RAG (Archetype Knowledge)</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">7.3.1 Add <code>isStatic</code> flag to documents table <span class="badge badge-size">S</span></div>
+  <div class="task-files">SQL migration<br>EDIT: <code>packages/db/src/schema/documents.ts</code></div>
+  <div class="task-detail">
+    Add <code>isStatic boolean default false</code>, <code>archetypeSlug text nullable</code>. Static docs are read-only, platform-provided, and pre-seeded per archetype.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">7.3.2 Create initial static knowledge base <span class="badge badge-size">L</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/knowledge/</code> — per-archetype knowledge files</div>
+  <div class="task-detail">
+    Create curated knowledge documents for top archetypes: legal (Brazilian law basics), finance (accounting standards), sales (CRM methodology), marketing (campaign frameworks). Use the 62 RAG document templates as a starting point. Chunk and embed on seed. Priority: start with 5 most-used archetypes.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">7.3.3 Combined RAG search: static + dynamic + project-wide <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>packages/ai/src/memory/rag-search.ts</code></div>
+  <div class="task-detail">
+    Modify <code>ragSearch()</code>: query static docs (filtered by agent's archetype) + agent-scoped dynamic docs + project-wide docs. Weighted: static docs get slight relevance boost (they're curated).
+  </div>
+</div>
+
+<!-- ─── EPIC 7.4 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 7.4 — Cost Forecasting</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">7.4.1 Build cost projection engine <span class="badge badge-size">M</span></div>
+  <div class="task-files">CREATE: <code>packages/ai/src/billing/cost-forecast.ts</code><br>EDIT: <code>packages/api/src/routers/dashboard.ts</code></div>
+  <div class="task-detail">
+    Query last 7 days of <code>action_logs.costUsd</code>. Calculate daily average. Project: <code>projectedMonthly = dailyAvg * 30</code>. Per-agent breakdown: group by agentId. Return in dashboard tRPC endpoint.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">7.4.2 Cost forecasting UI + budget alerts <span class="badge badge-size">S</span></div>
+  <div class="task-files">EDIT: <code>apps/web/src/app/[locale]/(auth)/dashboard/</code> General tab<br>EDIT: <code>apps/web/src/app/[locale]/(auth)/settings/</code> Billing tab</div>
+  <div class="task-detail">
+    Dashboard: "Projected Cost" card showing daily/monthly estimate.<br>
+    Settings Billing: per-agent cost chart, cost simulation ("If you enable this agent with 15min heartbeat, it adds ~$X/day").<br>
+    Budget alerts: emit <code>budget:projection_warning</code> at 80% of monthly limit.
+  </div>
+</div>
+
+
+<div class="gap-block">
+  <div class="label">Workflow Checkpoint — End of Phase 7</div>
+  <p><strong>Before moving to Phase 8, run the standard workflow:</strong><br>
+  1. <code>pnpm typecheck</code> — fix all type errors<br>
+  2. Review changed files (agent review or manual)<br>
+  3. Fix any issues found in review<br>
+  4. <code>pnpm typecheck</code> again — confirm clean<br>
+  5. <code>git add</code> + <code>git commit</code> with descriptive message<br>
+  6. Update <code>DEVLOG.txt</code> with what was built, decisions made, and any gotchas<br>
+  7. <code>git push</code> to remote</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════ PHASE 8 ═══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="phase-8">PHASE 8: STRATEGY & UX <span class="badge badge-p1">P1</span></h2>
+
+<div class="phase-header">
+  <div class="phase-label">Phase Goal</div>
+  <div class="phase-goal">Strategy UX improvements and remaining agent triggers. Make the platform feel complete.</div>
+</div>
+
+<!-- ─── EPIC 8.1 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 8.1 — Strategy Goal Timeline</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">8.1.1 Goal hierarchy + timeline visualization <span class="badge badge-size">L</span></div>
+  <div class="task-files">EDIT: <code>apps/web/src/app/[locale]/(auth)/strategy/</code> components<br>EDIT: <code>packages/api/src/routers/strategies.ts</code></div>
+  <div class="task-detail">
+    Add: 1-year / 6-month / 1-month goal hierarchy. Gantt-style timeline visualization. Deadline management with alerts when approaching. KPI trigger configuration directly from the strategy detail panel.
+  </div>
+</div>
+
+<!-- ─── EPIC 8.2 ─── -->
+<div class="epic-block">
+  <div class="label">Epic 8.2 — Inbound Message Agent Trigger + Cascade Trace UI</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">8.2.1 Auto-trigger agent on inbound message <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/worker/src/workers/email-inbound.worker.ts</code><br>EDIT: messaging webhook handlers</div>
+  <div class="task-detail">
+    When a new message arrives in a conversation assigned to an agent: auto-enqueue that agent with <code>triggerType: 'inbound_message'</code> and the message content as payload. The agent wakes and handles the conversation.
+  </div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">8.2.2 Cascade Trace UI <span class="badge badge-size">M</span></div>
+  <div class="task-files">CREATE: <code>apps/web/src/app/[locale]/(auth)/dashboard/</code> — Operations tab cascade section<br>EDIT: <code>packages/api/src/routers/dashboard.ts</code></div>
+  <div class="task-detail">
+    Table of recent cascades from <code>cascade_events</code>: ID, root trigger, depth, status, total cost, duration.<br>
+    Expandable tree view: each node shows agent name, status (green/yellow/red), duration, cost, tools called. Failed branches highlighted red with error details and "Retry branch" button.<br>
+    Live updates via Socket.IO <code>cascade:*</code> events.
+  </div>
+</div>
+
+
+<div class="gap-block">
+  <div class="label">Workflow Checkpoint — End of Phase 8 (P1 COMPLETE)</div>
+  <p><strong>Before moving to Phase 9, run the standard workflow:</strong><br>
+  1. <code>pnpm typecheck</code> — fix all type errors<br>
+  2. Review changed files (agent review or manual)<br>
+  3. Fix any issues found in review<br>
+  4. <code>pnpm typecheck</code> again — confirm clean<br>
+  5. <code>git add</code> + <code>git commit</code> with descriptive message<br>
+  6. Update <code>DEVLOG.txt</code> with what was built, decisions made, and any gotchas<br>
+  7. <code>git push</code> to remote<br>
+  8. <strong>Deploy to Vercel + Render and full regression test — system is production-ready after this</strong></p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════ PHASE 9 ═══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="phase-9">PHASE 9: LAUNCH READINESS <span class="badge badge-p2">P2</span></h2>
+
+<div class="phase-header">
+  <div class="phase-label">Phase Goal</div>
+  <div class="phase-goal">Monetization, compliance, and user activation. Everything needed to charge real money and operate legally in Brazil.</div>
+</div>
+
+<div class="epic-block">
+  <div class="label">Epic 9.1 — Stripe Billing Integration</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">9.1.1 Stripe integration: subscriptions + token billing <span class="badge badge-size">L</span></div>
+  <div class="task-files">EDIT: <code>apps/web/src/app/[locale]/(auth)/settings/</code> Billing tab<br>EDIT: <code>packages/api/src/routers/</code> — billing router<br>CREATE: <code>apps/worker/src/workers/billing.worker.ts</code></div>
+  <div class="task-detail">
+    Plans: Free (limited agents/runs), Pro (unlimited agents, pay-as-you-go tokens), Enterprise.<br>
+    Token billing: aggregate <code>action_logs.costUsd</code> daily. Create Stripe usage records. Auto-recharge balance when below threshold. Hard stop at zero balance (pause all agents). Stripe webhooks for subscription events.
+  </div>
+</div>
+
+<div class="epic-block">
+  <div class="label">Epic 9.2 — LGPD Compliance</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">9.2.1 LGPD implementation <span class="badge badge-size">M</span></div>
+  <div class="task-files">Multiple files across web + api</div>
+  <div class="task-detail">
+    Data export endpoint (download all user data as JSON). Data deletion flow (cascade delete all project data). Privacy policy page (PT-BR). Cookie consent banner. Data processing agreement template. PII masking option in LLM context (hash CPF, phone, etc. before sending to Claude).
+  </div>
+</div>
+
+<div class="epic-block">
+  <div class="label">Epic 9.3 — Guided Onboarding</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">9.3.1 Atlas-guided first-run experience <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: <code>apps/web/src/app/[locale]/(auth)/onboarding/</code><br>EDIT: Atlas initial state</div>
+  <div class="task-detail">
+    New user → Atlas greets: "Tell me about your company." → Atlas suggests template → auto-creates agents → guides through first workflow → shows first heartbeat firing → "Your AI company is running." Goal: first autonomous workflow in 10 minutes.
+  </div>
+</div>
+
+<div class="epic-block">
+  <div class="label">Epic 9.4 — Data Sync Agents</div>
+</div>
+
+<div class="task-block">
+  <div class="task-title">9.4.1 Scheduled data sync agent templates <span class="badge badge-size">M</span></div>
+  <div class="task-files">EDIT: template data files</div>
+  <div class="task-detail">
+    Create agent templates for automated data sync: RD Station → deals table (hourly), Meta Ads → marketing_campaigns (daily), Google Ads → ad performance data (daily). These use existing tools + cron triggers. Dashboard data becomes live.
+  </div>
+</div>
+
+
+<div class="gap-block">
+  <div class="label">Workflow Checkpoint — End of Phase 9 (P2 COMPLETE — LAUNCH READY)</div>
+  <p><strong>Final workflow before launch:</strong><br>
+  1. <code>pnpm typecheck</code> — fix all type errors<br>
+  2. Full code review across all Phase 9 changes<br>
+  3. Fix any issues found in review<br>
+  4. <code>pnpm typecheck</code> again — confirm clean<br>
+  5. <code>git add</code> + <code>git commit</code> with descriptive message<br>
+  6. Update <code>DEVLOG.txt</code> — final entry before launch<br>
+  7. <code>git push</code> to remote<br>
+  8. <strong>Deploy to Vercel + Render — full end-to-end test of all 9 phases</strong><br>
+  9. <strong>Stripe test mode → live mode cutover</strong><br>
+  10. <strong>Ship it.</strong></p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════ REFERENCE ══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<hr>
+<h2 id="file-map">KEY FILE MAP</h2>
+
+<table>
+  <tr><th>Area</th><th>File</th><th>Purpose</th></tr>
+  <tr><td>Context Builder</td><td><code>apps/worker/src/jobs/agent-execution.ts</code></td><td>Builds agent context, runs execution, post-processing. THE most-edited file.</td></tr>
+  <tr><td>Agentic Loop</td><td><code>packages/ai/src/engine/executor.ts</code></td><td>Inner loop: LLM call → tool dispatch → repeat. Safety limits.</td></tr>
+  <tr><td>LLM Wrapper</td><td><code>packages/ai/src/engine/llm.ts</code></td><td>Anthropic API call via Helicone. Cost tracking.</td></tr>
+  <tr><td>Tool Registry</td><td><code>packages/ai/src/tools/registry.ts</code></td><td>All agent tools registered here.</td></tr>
+  <tr><td>Orchestrator</td><td><code>apps/worker/src/workers/orchestrator.worker.ts</code></td><td>60s tick: concurrency, budgets, stall detection. Add: heartbeat, KPI, recovery.</td></tr>
+  <tr><td>Scheduled Worker</td><td><code>apps/worker/src/workers/agent-scheduled.worker.ts</code></td><td>Cron-triggered agent execution.</td></tr>
+  <tr><td>Cron Scheduler</td><td><code>apps/worker/src/scheduler/cron-scheduler.ts</code></td><td>BullMQ repeatable job management.</td></tr>
+  <tr><td>Agent Schema</td><td><code>packages/db/src/schema/agents.ts</code></td><td>agents + agent_memory tables.</td></tr>
+  <tr><td>Strategy Schema</td><td><code>packages/db/src/schema/strategies.ts</code></td><td>strategies + strategy_kpis + strategy_learnings tables.</td></tr>
+  <tr><td>Approval Schema</td><td><code>packages/db/src/schema/approvals.ts</code></td><td>approvals + approval_rules tables.</td></tr>
+  <tr><td>Documents Schema</td><td><code>packages/db/src/schema/documents.ts</code></td><td>documents + document_chunks (pgvector).</td></tr>
+  <tr><td>Wiki Schema</td><td><code>packages/db/src/schema/wiki.ts</code></td><td>wiki_categories + wiki_articles.</td></tr>
+  <tr><td>Queue Schemas</td><td><code>packages/queue/src/jobs.ts</code></td><td>BullMQ job Zod schemas. Add cascade context here.</td></tr>
+  <tr><td>Socket Events</td><td><code>packages/realtime/src/events.ts</code></td><td>Typed Socket.IO events. Add cascade/heartbeat/approval events.</td></tr>
+  <tr><td>Memory</td><td><code>packages/ai/src/memory/individual.ts</code></td><td>Load/save/search agent memory.</td></tr>
+  <tr><td>Auto-Extract</td><td><code>packages/ai/src/memory/auto-extract.ts</code></td><td>Post-session k/v extraction. Swap from OpenAI to Claude Haiku.</td></tr>
+  <tr><td>RAG Search</td><td><code>packages/ai/src/memory/rag-search.ts</code></td><td>pgvector cosine similarity search. Add static RAG layer.</td></tr>
+  <tr><td>Ingest</td><td><code>packages/ai/src/memory/ingest.ts</code></td><td>Document chunking + embedding.</td></tr>
+  <tr><td>Approval Check</td><td><code>packages/ai/src/engine/approval-check.ts</code></td><td>Per-agent per-tool approval rule lookup.</td></tr>
+  <tr><td>Resume</td><td><code>packages/ai/src/engine/resume.ts</code></td><td>Deserialize and continue paused sessions.</td></tr>
+  <tr><td>Shared Constants</td><td><code>packages/shared/src/constants/index.ts</code></td><td>Token budgets, default configs, enums.</td></tr>
+</table>
+
+
+<h2 id="schema-changes">ALL SCHEMA CHANGES (MIGRATIONS)</h2>
+
+<table>
+  <tr><th>Phase</th><th>Table</th><th>Change</th></tr>
+  <tr><td>2</td><td><code>cascade_events</code></td><td>CREATE — cascade trace storage</td></tr>
+  <tr><td>2</td><td><code>approvals</code></td><td>ADD <code>expiresAt</code>, <code>expiredAt</code></td></tr>
+  <tr><td>2</td><td><code>orchestrator_config</code></td><td>ADD <code>approvalTimeoutHours</code>, <code>maxCascadeDepth</code></td></tr>
+  <tr><td>2</td><td><code>agents</code></td><td>ADD <code>cooldownUntil</code>, <code>recoveryAttempts</code></td></tr>
+  <tr><td>3</td><td><code>agents</code></td><td>ADD <code>heartbeatInstructions</code>, <code>heartbeatIntervalMin</code>, <code>lastHeartbeatAt</code></td></tr>
+  <tr><td>3</td><td><code>agent_heartbeat_history</code></td><td>CREATE — version history for self-programming</td></tr>
+  <tr><td>3</td><td><code>strategy_kpis</code></td><td>ADD <code>triggerAgentId</code>, <code>triggerWorkflowId</code>, <code>triggerDirection</code>, <code>triggerThreshold</code>, <code>triggerCooldownMin</code>, <code>lastTriggeredAt</code>, <code>isMonitored</code></td></tr>
+  <tr><td>4</td><td><code>agent_session_summaries</code></td><td>CREATE — separate from agent_memory</td></tr>
+  <tr><td>4</td><td><code>session_transcripts</code></td><td>CREATE — PostgreSQL backup for Redis transcripts</td></tr>
+  <tr><td>5</td><td><code>agents</code></td><td>ADD <code>isSystemAgent</code></td></tr>
+  <tr><td>5</td><td><code>orchestrator_config</code></td><td>ADD <code>ceoBriefingCron</code>, <code>latestBriefingDocumentId</code></td></tr>
+  <tr><td>6</td><td><code>workflows</code></td><td>ADD <code>webhookSecret</code></td></tr>
+  <tr><td>7</td><td><code>documents</code></td><td>ADD <code>isStatic</code>, <code>archetypeSlug</code></td></tr>
+</table>
+
+
+<h2 id="new-tools">ALL NEW AGENT TOOLS</h2>
+
+<table>
+  <tr><th>Phase</th><th>Tool</th><th>Category</th><th>Approval</th></tr>
+  <tr><td>3</td><td><code>update_my_heartbeat</code></td><td>Self-Config</td><td>Auto-execute</td></tr>
+  <tr><td>3</td><td><code>update_my_schedule</code></td><td>Self-Config</td><td>Auto-execute</td></tr>
+  <tr><td>3</td><td><code>update_strategy_kpi</code></td><td>KPI</td><td>Auto-execute</td></tr>
+  <tr><td>4</td><td><code>update_document</code></td><td>Documents</td><td>Required</td></tr>
+  <tr><td>4</td><td><code>update_wiki_article</code></td><td>Documents</td><td>Required</td></tr>
+  <tr><td>5</td><td><code>update_agent_schedule</code></td><td>Fleet (CEO)</td><td>Auto-execute</td></tr>
+  <tr><td>5</td><td><code>update_agent_heartbeat</code></td><td>Fleet (CEO)</td><td>Required</td></tr>
+  <tr><td>5</td><td><code>get_kpi_trends</code></td><td>Strategy</td><td>Auto-execute</td></tr>
+  <tr><td>5</td><td><code>get_fleet_status</code></td><td>Fleet (CEO)</td><td>Auto-execute</td></tr>
+  <tr><td>5</td><td><code>get_cost_report</code></td><td>Fleet (CEO)</td><td>Auto-execute</td></tr>
+  <tr><td>5</td><td><code>search_action_logs</code></td><td>Fleet (CEO)</td><td>Auto-execute</td></tr>
+  <tr><td>5</td><td><code>pause_agents_by_team</code></td><td>Fleet (CEO)</td><td>Required</td></tr>
+  <tr><td>5</td><td><code>resume_agents_by_team</code></td><td>Fleet (CEO)</td><td>Required</td></tr>
+</table>
+
+
+<h2 id="checklist">MASTER CHECKLIST</h2>
+
+<table>
+  <tr><th>Done?</th><th>Phase</th><th>Task</th></tr>
+  <tr><td>☐</td><td>1</td><td>@ai-office/tokenizer package</td></tr>
+  <tr><td>☐</td><td>1</td><td>Token budget constants</td></tr>
+  <tr><td>☐</td><td>1</td><td>Context builder refactor with budgets</td></tr>
+  <tr><td>☐</td><td>1</td><td>Exact token validation before LLM call</td></tr>
+  <tr><td>☐</td><td>1</td><td>Verify scheduled worker pipeline</td></tr>
+  <tr><td>☐</td><td>1</td><td>Add triggerType to execution context</td></tr>
+  <tr><td>☐</td><td>1</td><td>Strategy context loader</td></tr>
+  <tr><td>☐</td><td>1</td><td>Inject strategy into agent prompt</td></tr>
+  <tr><td>☐</td><td>2</td><td>CascadeContext type</td></tr>
+  <tr><td>☐</td><td>2</td><td>Cascade fields in job schemas</td></tr>
+  <tr><td>☐</td><td>2</td><td>Enforce cascade limits in execution</td></tr>
+  <tr><td>☐</td><td>2</td><td>Propagate cascade in trigger_agent</td></tr>
+  <tr><td>☐</td><td>2</td><td>Cascade Socket.IO events</td></tr>
+  <tr><td>☐</td><td>2</td><td>cascade_events table</td></tr>
+  <tr><td>☐</td><td>2</td><td>Approval expiry fields</td></tr>
+  <tr><td>☐</td><td>2</td><td>Expired approval check in orchestrator</td></tr>
+  <tr><td>☐</td><td>2</td><td>Approval countdown UI</td></tr>
+  <tr><td>☐</td><td>2</td><td>Agent recovery fields</td></tr>
+  <tr><td>☐</td><td>2</td><td>Auto-recovery in orchestrator</td></tr>
+  <tr><td>☐</td><td>3</td><td>Heartbeat fields on agents</td></tr>
+  <tr><td>☐</td><td>3</td><td>Heartbeat check in orchestrator</td></tr>
+  <tr><td>☐</td><td>3</td><td>update_my_heartbeat tool</td></tr>
+  <tr><td>☐</td><td>3</td><td>update_my_schedule tool</td></tr>
+  <tr><td>☐</td><td>3</td><td>agent_heartbeat_history table</td></tr>
+  <tr><td>☐</td><td>3</td><td>Heartbeat config UI</td></tr>
+  <tr><td>☐</td><td>3</td><td>KPI trigger fields on strategy_kpis</td></tr>
+  <tr><td>☐</td><td>3</td><td>checkKpiThreshold() function</td></tr>
+  <tr><td>☐</td><td>3</td><td>update_strategy_kpi tool</td></tr>
+  <tr><td>☐</td><td>3</td><td>KPI polling in orchestrator</td></tr>
+  <tr><td>☐</td><td>3</td><td>KPI trigger config UI</td></tr>
+  <tr><td>☐</td><td>3</td><td>Heartbeat trigger context injection</td></tr>
+  <tr><td>☐</td><td>4</td><td>agent_session_summaries table</td></tr>
+  <tr><td>☐</td><td>4</td><td>session_transcripts table</td></tr>
+  <tr><td>☐</td><td>4</td><td>Session summary → wiki document</td></tr>
+  <tr><td>☐</td><td>4</td><td>Migrate history from agent_memory</td></tr>
+  <tr><td>☐</td><td>4</td><td>Swap auto-extract to Claude Haiku</td></tr>
+  <tr><td>☐</td><td>4</td><td>update_document tool</td></tr>
+  <tr><td>☐</td><td>4</td><td>update_wiki_article tool</td></tr>
+  <tr><td>☐</td><td>5</td><td>ceo_strategist archetype + seed</td></tr>
+  <tr><td>☐</td><td>5</td><td>Auto-create CEO on project init</td></tr>
+  <tr><td>☐</td><td>5</td><td>update_agent_schedule tool</td></tr>
+  <tr><td>☐</td><td>5</td><td>update_agent_heartbeat tool</td></tr>
+  <tr><td>☐</td><td>5</td><td>get_kpi_trends tool</td></tr>
+  <tr><td>☐</td><td>5</td><td>Fleet tools (get_fleet_status, get_cost_report, search_action_logs, pause/resume)</td></tr>
+  <tr><td>☐</td><td>5</td><td>Two-pass triage implementation</td></tr>
+  <tr><td>☐</td><td>5</td><td>Daily briefing scheduler</td></tr>
+  <tr><td>☐</td><td>5</td><td>Briefing delivery (Atlas + Dashboard)</td></tr>
+  <tr><td>☐</td><td>5</td><td>CEO Agent detail page</td></tr>
+  <tr><td>☐</td><td>6</td><td>Orchestrator leader election</td></tr>
+  <tr><td>☐</td><td>6</td><td>Health check endpoint</td></tr>
+  <tr><td>☐</td><td>6</td><td>Webhook HMAC signing</td></tr>
+  <tr><td>☐</td><td>6</td><td>Offline event queue</td></tr>
+  <tr><td>☐</td><td>6</td><td>Web push notifications</td></tr>
+  <tr><td>☐</td><td>7</td><td>Atlas voice wiring (STT → LLM → TTS)</td></tr>
+  <tr><td>☐</td><td>7</td><td>Atlas missing tools</td></tr>
+  <tr><td>☐</td><td>7</td><td>Atlas proactive briefing display</td></tr>
+  <tr><td>☐</td><td>7</td><td>Static RAG isStatic flag</td></tr>
+  <tr><td>☐</td><td>7</td><td>Initial static knowledge base</td></tr>
+  <tr><td>☐</td><td>7</td><td>Combined RAG search</td></tr>
+  <tr><td>☐</td><td>7</td><td>Cost projection engine</td></tr>
+  <tr><td>☐</td><td>7</td><td>Cost forecasting UI</td></tr>
+  <tr><td>☐</td><td>8</td><td>Strategy goal timeline</td></tr>
+  <tr><td>☐</td><td>8</td><td>Inbound message agent trigger</td></tr>
+  <tr><td>☐</td><td>8</td><td>Cascade Trace UI</td></tr>
+  <tr><td>☐</td><td>9</td><td>Stripe billing integration</td></tr>
+  <tr><td>☐</td><td>9</td><td>LGPD compliance</td></tr>
+  <tr><td>☐</td><td>9</td><td>Atlas-guided onboarding</td></tr>
+  <tr><td>☐</td><td>9</td><td>Data sync agent templates</td></tr>
+</table>
+
+<hr>
+<p style="text-align: center; color: var(--text-dim); font-size: 11px; margin-top: 48px;">
+  AI OFFICE SIM — DEVELOPMENT ROADMAP v1<br>
+  9 phases &nbsp;|&nbsp; 25 epics &nbsp;|&nbsp; ~120 tasks &nbsp;|&nbsp; 13 new agent tools &nbsp;|&nbsp; 8 new DB tables &nbsp;|&nbsp; 12 schema migrations<br>
+  Based on SOFTWARE_SPEC v4 &nbsp;|&nbsp; Generated 2026-03-03<br>
+  Build order: Foundation → Safety → Autonomy → Visibility → CEO Agent → Hardening → Intelligence → UX → Launch
+</p>
+
+</main>
+</body>
+</html>

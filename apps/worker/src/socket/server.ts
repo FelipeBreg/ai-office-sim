@@ -137,6 +137,7 @@ export function createSocketServer(httpServer: HttpServer): TypedSocketServer {
         agentId,
         projectId: [...socket.rooms].find((r) => r.startsWith('project:'))?.replace('project:', '') ?? '',
         sessionId,
+        triggerType: 'manual' as const,
         triggerPayload: payload as Record<string, unknown> | undefined,
       });
     });
