@@ -7,6 +7,39 @@
 
 
 ================================================================================
+COMMIT #108 — Security Hardening (Phase 4.4)
+================================================================================
+Hash:     73d554c
+Date:     2026-03-03
+Scope:    apps/web, packages/ai, packages/shared
+
+PII Masking:
+  - New utility: packages/shared/src/utils/pii.ts
+  - Detects & masks: email, phone (intl/BR/US), credit card, CPF, CNPJ, SSN, IP
+  - maskPII() replaces with tagged placeholders ([EMAIL], [PHONE], etc.)
+  - countPII() counts occurrences for analytics/alerting
+  - Wired into agent executor: trigger payload + memory sanitized before LLM context
+
+Rate Limiting:
+  - In-memory sliding window per-user (120 req/min, 1-minute window)
+  - Periodic cleanup of stale entries (every 5 minutes)
+  - Rate limit headers: X-RateLimit-Limit, X-RateLimit-Remaining, Retry-After
+  - 429 response with JSON error when limit exceeded
+  - Note: swap for Upstash Ratelimit in production (multi-instance)
+
+Request Size Limit:
+  - 1MB max body size on tRPC API route (returns 413)
+
+Security Headers (next.config.mjs):
+  - X-Content-Type-Options: nosniff
+  - X-Frame-Options: DENY
+  - Referrer-Policy: strict-origin-when-cross-origin
+  - Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+Phase 4 Complete: RBAC (#105), Audit Log (#106), Resilience (#107), Security (#108)
+
+
+================================================================================
 COMMIT #107 — Error Handling & Resilience (Phase 4.3)
 ================================================================================
 Hash:     ffad8ab
