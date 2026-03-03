@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter, Link } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRole } from '@/hooks/use-role';
 
 /* -------------------------------------------------------------------------- */
 /*  Status configuration                                                      */
@@ -278,6 +279,7 @@ function AgentCard({
 export default function AgentsPage() {
   const t = useTranslations('agents');
   const router = useRouter();
+  const { isManager } = useRole();
   const { data: agents, isLoading, isError } = trpc.agents.list.useQuery();
   const { data: fleetHealth } = trpc.agents.getFleetHealth.useQuery();
 
@@ -293,10 +295,12 @@ export default function AgentsPage() {
           </h1>
           <p className="mt-0.5 text-[10px] text-text-muted">{t('subtitle')}</p>
         </div>
-        <Button size="sm" onClick={handleCreateAgent}>
-          <Plus size={12} strokeWidth={2} className="mr-1" />
-          {t('newAgent')}
-        </Button>
+        {isManager && (
+          <Button size="sm" onClick={handleCreateAgent}>
+            <Plus size={12} strokeWidth={2} className="mr-1" />
+            {t('newAgent')}
+          </Button>
+        )}
       </div>
 
       {/* Content */}

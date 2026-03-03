@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button, Badge, Skeleton } from '@/components/ui';
+import { useRole } from '@/hooks/use-role';
 
 // ── Types ──
 
@@ -124,18 +125,20 @@ function ApprovalItem({
   onApprove,
   onReject,
   isActioning,
+  canReview,
 }: {
   approval: Approval;
   agent: Agent | undefined;
   onApprove: (id: string, comment: string) => void;
   onReject: (id: string, comment: string) => void;
   isActioning: boolean;
+  canReview?: boolean;
 }) {
   const t = useTranslations('approvals');
   const [expanded, setExpanded] = useState(false);
   const [commentOpen, setCommentOpen] = useState(false);
   const [comment, setComment] = useState('');
-  const isPending = approval.status === 'pending';
+  const isPending = approval.status === 'pending' && canReview;
 
   const agentName = agent?.name ?? t('unknownAgent');
   const archetype = agent?.archetype ?? 'custom';
@@ -272,6 +275,7 @@ function ApprovalItem({
 export default function ApprovalsPage() {
   const t = useTranslations('approvals');
   const utils = trpc.useUtils();
+  const { isAdmin } = useRole();
 
   const [activeTab, setActiveTab] = useState<Tab>('pending');
 
@@ -423,6 +427,7 @@ export default function ApprovalsPage() {
                 onApprove={handleApprove}
                 onReject={handleReject}
                 isActioning={isActioning}
+                canReview={isAdmin}
               />
             ))}
           </div>

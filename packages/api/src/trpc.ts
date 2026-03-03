@@ -190,6 +190,7 @@ export const requireRole = (minimumRole: 'viewer' | 'manager' | 'admin' | 'owner
   });
 
 // Convenience procedures with role checks
+export const managerProcedure = projectProcedure.use(requireRole('manager'));
 export const adminProcedure = projectProcedure.use(requireRole('admin'));
 export const ownerProcedure = projectProcedure.use(requireRole('owner'));
 

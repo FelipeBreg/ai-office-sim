@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
+import { createTRPCRouter, projectProcedure, managerProcedure, adminProcedure } from '../trpc.js';
 import { db, deals, pipelineStages, eq, and, asc, desc, gte, lt, sql, count } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 
@@ -46,7 +46,7 @@ export const dealsRouter = createTRPCRouter({
     return rows;
   }),
 
-  create: projectProcedure
+  create: managerProcedure
     .input(
       z.object({
         title: z.string().min(1).max(200),
@@ -70,7 +70,7 @@ export const dealsRouter = createTRPCRouter({
       return deal!;
     }),
 
-  update: projectProcedure
+  update: managerProcedure
     .input(
       z.object({
         id: z.string().uuid(),
@@ -98,7 +98,7 @@ export const dealsRouter = createTRPCRouter({
       return updated;
     }),
 
-  updateStage: projectProcedure
+  updateStage: managerProcedure
     .input(
       z.object({
         id: z.string().uuid(),

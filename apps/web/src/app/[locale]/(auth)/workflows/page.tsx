@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from '@/i18n/navigation';
+import { useRole } from '@/hooks/use-role';
 
 /* -------------------------------------------------------------------------- */
 /*  Node-type colors (same as templates)                                      */
@@ -162,7 +163,7 @@ function WorkflowCard({
 }: {
   workflow: Workflow;
   t: ReturnType<typeof useTranslations<'workflows'>>;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
 }) {
   const { nodeTypes, agentCount, nodeCount } = extractNodeInfo(workflow.definition);
   const runCount = 0; // TODO: wire up when run history is available
@@ -171,6 +172,7 @@ function WorkflowCard({
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!onDelete) return;
     if (!confirmDelete) {
       setConfirmDelete(true);
       setTimeout(() => setConfirmDelete(false), 3000);
@@ -241,18 +243,20 @@ function WorkflowCard({
             <span className="text-[10px] text-text-muted opacity-0 transition-opacity group-hover:opacity-100">
               {timeAgo(workflow.updatedAt)}
             </span>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="flex h-5 w-5 items-center justify-center text-text-muted opacity-0 transition-all hover:text-status-error group-hover:opacity-100"
-              aria-label={t('deleteWorkflow')}
-            >
-              {confirmDelete ? (
-                <span className="text-[8px] text-status-error">{t('confirmDelete')}</span>
-              ) : (
-                <Trash2 size={10} strokeWidth={1.5} />
-              )}
-            </button>
+            {onDelete && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="flex h-5 w-5 items-center justify-center text-text-muted opacity-0 transition-all hover:text-status-error group-hover:opacity-100"
+                aria-label={t('deleteWorkflow')}
+              >
+                {confirmDelete ? (
+                  <span className="text-[8px] text-status-error">{t('confirmDelete')}</span>
+                ) : (
+                  <Trash2 size={10} strokeWidth={1.5} />
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -430,6 +434,7 @@ type Tab = 'workflows' | 'runs';
 export default function WorkflowsPage() {
   const t = useTranslations('workflows');
   const utils = trpc.useUtils();
+  const { isManager, isAdmin } = useRole();
   const [activeTab, setActiveTab] = useState<Tab>('workflows');
   const { data: workflows, isLoading, isError } = trpc.workflows.list.useQuery();
   const deleteMutation = trpc.workflows.delete.useMutation({
@@ -476,12 +481,14 @@ export default function WorkflowsPage() {
               {t('browseTemplates')}
             </Button>
           </Link>
-          <Link href="/workflows/new">
-            <Button size="sm">
-              <Plus size={12} strokeWidth={2} className="mr-1" />
-              {t('newWorkflow')}
-            </Button>
-          </Link>
+          {isManager && (
+            <Link href="/workflows/new">
+              <Button size="sm">
+                <Plus size={12} strokeWidth={2} className="mr-1" />
+                {t('newWorkflow')}
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -514,7 +521,7 @@ export default function WorkflowsPage() {
                     key={workflow.id}
                     workflow={workflow as unknown as Workflow}
                     t={t}
-                    onDelete={handleDelete}
+                    onDelete={isAdmin ? handleDelete : undefined}
                   />
                 ))}
               </div>

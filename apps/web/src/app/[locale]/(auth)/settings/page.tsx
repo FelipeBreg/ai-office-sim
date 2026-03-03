@@ -305,22 +305,30 @@ function GeneralTab() {
 // ===========================================================================
 function MembersTab() {
   const t = useTranslations('settings');
-  const { user } = useUser();
-  const userRole = useProjectStore((s) => s.userRole);
+  const { user: clerkUser } = useUser();
+  const { data: currentUser } = trpc.users.getCurrent.useQuery();
+  const utils = trpc.useUtils();
+
+  const membersQuery = trpc.members.list.useQuery();
+  const updateRoleMutation = trpc.members.updateRole.useMutation({
+    onSuccess: () => {
+      utils.members.list.invalidate();
+    },
+  });
+  const removeMutation = trpc.members.remove.useMutation({
+    onSuccess: () => {
+      utils.members.list.invalidate();
+    },
+  });
 
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'admin' | 'viewer'>('viewer');
+  const [inviteRole, setInviteRole] = useState<'admin' | 'manager' | 'viewer'>('viewer');
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
-  // Current user as the only "member" for now
-  const displayName = user?.fullName || user?.primaryEmailAddress?.emailAddress || 'User';
-  const displayEmail = user?.primaryEmailAddress?.emailAddress || '';
-  const initials = displayName
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const myRole = currentUser?.role ?? 'viewer';
+  const isAdmin = myRole === 'admin' || myRole === 'owner';
+  const isOwner = myRole === 'owner';
 
   const roleBadge = (role: string) => {
     switch (role) {
@@ -336,6 +344,12 @@ function MembersTab() {
             {t('admin')}
           </span>
         );
+      case 'manager':
+        return (
+          <span className="border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-400">
+            {t('manager')}
+          </span>
+        );
       default:
         return (
           <span className="border border-border-default bg-bg-overlay px-1.5 py-0.5 text-[9px] font-medium text-text-muted">
@@ -345,23 +359,59 @@ function MembersTab() {
     }
   };
 
+  const canChangeRole = (targetRole: string) => {
+    if (!isAdmin) return false;
+    if (targetRole === 'owner') return false;
+    if (targetRole === 'admin' && !isOwner) return false;
+    return true;
+  };
+
+  const canRemove = (targetRole: string) => {
+    if (!isAdmin) return false;
+    if (targetRole === 'owner') return false;
+    if (targetRole === 'admin' && !isOwner) return false;
+    return true;
+  };
+
+  const handleRoleChange = (userId: string, newRole: string) => {
+    updateRoleMutation.mutate({
+      userId,
+      role: newRole as 'viewer' | 'manager' | 'admin' | 'owner',
+    });
+  };
+
+  const handleRemove = (userId: string) => {
+    removeMutation.mutate({ userId }, {
+      onSuccess: () => setConfirmRemoveId(null),
+    });
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-[11px] font-semibold text-text-primary">{t('members')}</h2>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setShowInvite(!showInvite)}
-        >
-          <Plus size={10} strokeWidth={1.5} className="mr-1" />
-          {t('inviteMember')}
-        </Button>
+        <h2 className="text-[11px] font-semibold text-text-primary">
+          {t('members')}
+          {membersQuery.data && (
+            <span className="ml-2 text-[9px] font-normal text-text-muted">
+              ({membersQuery.data.length})
+            </span>
+          )}
+        </h2>
+        {isAdmin && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowInvite(!showInvite)}
+          >
+            <Plus size={10} strokeWidth={1.5} className="mr-1" />
+            {t('inviteMember')}
+          </Button>
+        )}
       </div>
 
       {/* Invite form */}
-      {showInvite && (
+      {showInvite && isAdmin && (
         <div className="flex flex-col gap-3 border border-border-default p-3">
           <div>
             <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
@@ -380,11 +430,12 @@ function MembersTab() {
             </label>
             <select
               value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value as 'admin' | 'viewer')}
+              onChange={(e) => setInviteRole(e.target.value as 'admin' | 'manager' | 'viewer')}
               className="w-full border border-border-default bg-bg-base px-2.5 py-1.5 text-xs text-text-primary transition-colors focus:border-accent-cyan focus:outline-none [&>option]:bg-bg-base [&>option]:text-text-primary"
             >
-              <option value="admin">{t('admin')}</option>
               <option value="viewer">{t('viewer')}</option>
+              <option value="manager">{t('manager')}</option>
+              <option value="admin">{t('admin')}</option>
             </select>
           </div>
           <Button size="sm" disabled={!inviteEmail.trim()}>
@@ -394,21 +445,105 @@ function MembersTab() {
         </div>
       )}
 
+      {/* Error display */}
+      {(updateRoleMutation.error || removeMutation.error) && (
+        <div className="border border-red-500/30 bg-red-500/10 px-3 py-2 text-[10px] text-red-400">
+          {updateRoleMutation.error?.message || removeMutation.error?.message}
+        </div>
+      )}
+
       {/* Member list */}
       <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-3 border border-border-default p-3">
-          {/* Avatar */}
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-bg-overlay text-[10px] font-semibold text-text-primary">
-            {initials}
-          </div>
-          {/* Info */}
-          <div className="flex-1">
-            <div className="text-[11px] font-medium text-text-primary">{displayName}</div>
-            <div className="text-[10px] text-text-muted">{displayEmail}</div>
-          </div>
-          {/* Role */}
-          {roleBadge(userRole ?? 'owner')}
-        </div>
+        {membersQuery.isLoading && (
+          <div className="py-6 text-center text-[10px] text-text-muted">{t('loading')}</div>
+        )}
+        {membersQuery.data?.map((member) => {
+          const isMe = member.id === currentUser?.id;
+          const initials = (member.name || member.email || '?')
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+
+          return (
+            <div key={member.id} className="flex items-center gap-3 border border-border-default p-3">
+              {/* Avatar */}
+              {member.avatarUrl ? (
+                <img
+                  src={member.avatarUrl}
+                  alt=""
+                  className="h-8 w-8 shrink-0 object-cover"
+                />
+              ) : (
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-bg-overlay text-[10px] font-semibold text-text-primary">
+                  {initials}
+                </div>
+              )}
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="truncate text-[11px] font-medium text-text-primary">
+                    {member.name || member.email}
+                  </span>
+                  {isMe && (
+                    <span className="shrink-0 text-[8px] text-text-muted">({t('you')})</span>
+                  )}
+                </div>
+                <div className="truncate text-[10px] text-text-muted">{member.email}</div>
+              </div>
+              {/* Role badge or dropdown */}
+              {isAdmin && !isMe && canChangeRole(member.role) ? (
+                <select
+                  value={member.role}
+                  onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                  disabled={updateRoleMutation.isPending}
+                  className="border border-border-default bg-bg-base px-1.5 py-0.5 text-[9px] text-text-primary transition-colors focus:border-accent-cyan focus:outline-none [&>option]:bg-bg-base [&>option]:text-text-primary"
+                >
+                  <option value="viewer">{t('viewer')}</option>
+                  <option value="manager">{t('manager')}</option>
+                  <option value="admin">{t('admin')}</option>
+                  {isOwner && <option value="owner">{t('owner')}</option>}
+                </select>
+              ) : (
+                roleBadge(member.role)
+              )}
+              {/* Remove button */}
+              {isAdmin && !isMe && canRemove(member.role) && (
+                <>
+                  {confirmRemoveId === member.id ? (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleRemove(member.id)}
+                        disabled={removeMutation.isPending}
+                      >
+                        {t('confirmRemove')}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setConfirmRemoveId(null)}
+                      >
+                        {t('cancelAction')}
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmRemoveId(member.id)}
+                      className="text-text-muted transition-colors hover:text-red-400"
+                      title={t('removeMember')}
+                    >
+                      <Trash2 size={12} strokeWidth={1.5} />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
+import { createTRPCRouter, projectProcedure, managerProcedure, adminProcedure } from '../trpc.js';
 import { db, devopsRequests, humanTasks, agents, users, eq, and, desc, inArray } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 
@@ -50,7 +50,7 @@ export const devopsRouter = createTRPCRouter({
       return req;
     }),
 
-  createRequest: projectProcedure
+  createRequest: managerProcedure
     .input(
       z.object({
         agentId: z.string().uuid(),
@@ -216,7 +216,7 @@ export const devopsRouter = createTRPCRouter({
         .limit(input.limit);
     }),
 
-  createTask: projectProcedure
+  createTask: managerProcedure
     .input(
       z.object({
         agentId: z.string().uuid().optional(),
@@ -272,7 +272,7 @@ export const devopsRouter = createTRPCRouter({
       return created!;
     }),
 
-  updateTaskStatus: projectProcedure
+  updateTaskStatus: managerProcedure
     .input(
       z.object({
         id: z.string().uuid(),
@@ -297,7 +297,7 @@ export const devopsRouter = createTRPCRouter({
       return updated;
     }),
 
-  assignTask: projectProcedure
+  assignTask: managerProcedure
     .input(
       z.object({
         id: z.string().uuid(),
