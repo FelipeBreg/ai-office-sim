@@ -7,6 +7,35 @@
 
 
 ================================================================================
+COMMIT #114 — Phase 3: Agent Autonomy (Roadmap v2)
+Date: 2026-03-03
+Hash: 552b261
+────────────────────────────────────────────────────────────────────────────────
+
+Epic 3.1 — Heartbeat System:
+  • heartbeatInstructions, heartbeatIntervalMin, lastHeartbeatAt fields on agents table
+  • agent_heartbeat_history table (capped at 20 entries per agent)
+  • Orchestrator tick fires heartbeats for idle agents past their interval
+  • update_my_heartbeat tool: self-program future behavior (3/session rate limit)
+  • update_my_schedule tool: adjust own heartbeat interval (5-1440 min)
+
+Epic 3.2 — KPI Monitor & Trigger:
+  • Trigger fields on strategyKpis: triggerAgentId, triggerDirection, triggerThreshold, triggerCooldownMin, isMonitored
+  • kpiTriggerDirectionEnum: above, below, deviation
+  • checkKpiThreshold() shared function for event-driven + polling checks
+  • update_strategy_kpi tool: update KPI value with auto-trigger
+  • Orchestrator tick polls monitored KPIs as safety net
+
+Epic 3.3 — Heartbeat Instructions Injection:
+  • Context builder handles heartbeat/kpi triggers with specialized payloads
+  • Heartbeat: injects self-programmed instructions as trigger text
+  • KPI: injects alert data (value, threshold, direction)
+
+The system is now autonomous — agents wake up, check things, act, and trigger each other.
+
+Files changed: 13 (413 insertions, 2 deletions)
+
+================================================================================
 COMMIT #113 — Phase 2: Safety Infrastructure (Roadmap v2)
 Date: 2026-03-03
 Hash: 40ac688
