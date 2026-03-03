@@ -309,4 +309,62 @@ export const orchestratorRouter = createTRPCRouter({
 
       return { resumed: result.length };
     }),
+
+  /** Cost forecast: based on last 7 days, project next 30 days */
+  getCostForecast: projectProcedure.query(async ({ ctx }) => {
+    const projectId = ctx.project!.id;
+
+    // Get last 7 days of spend
+    const since7d = new Date(Date.now() - 7 * 86_400_000);
+    const [last7] = await db
+      .select({
+        totalCost: sql<number>`coalesce(sum(${actionLogs.costUsd}::numeric), 0)`,
+        totalTokens: sql<number>`coalesce(sum(${actionLogs.tokensUsed}), 0)`,
+      })
+      .from(actionLogs)
+      .where(and(eq(actionLogs.projectId, projectId), gte(actionLogs.createdAt, since7d)));
+
+    const last7Cost = Number(last7?.totalCost ?? 0);
+    const last7Tokens = Number(last7?.totalTokens ?? 0);
+
+    // Daily average
+    const dailyAvgCost = last7Cost / 7;
+    const dailyAvgTokens = last7Tokens / 7;
+
+    // Projected 30-day spend
+    const projected30dCost = dailyAvgCost * 30;
+    const projected30dTokens = dailyAvgTokens * 30;
+
+    // Get config limits for comparison
+    const [config] = await db
+      .select({
+        dailySpendLimitUsd: orchestratorConfig.dailySpendLimitUsd,
+        monthlySpendLimitUsd: orchestratorConfig.monthlySpendLimitUsd,
+      })
+      .from(orchestratorConfig)
+      .where(eq(orchestratorConfig.projectId, projectId))
+      .limit(1);
+
+    const dailyLimit = Number(config?.dailySpendLimitUsd ?? 0);
+    const monthlyLimit = Number(config?.monthlySpendLimitUsd ?? 0);
+
+    return {
+      last7Days: {
+        totalCostUsd: Math.round(last7Cost * 100) / 100,
+        totalTokens: last7Tokens,
+        dailyAvgCostUsd: Math.round(dailyAvgCost * 100) / 100,
+        dailyAvgTokens: Math.round(dailyAvgTokens),
+      },
+      projected30Days: {
+        costUsd: Math.round(projected30dCost * 100) / 100,
+        tokens: Math.round(projected30dTokens),
+      },
+      limits: {
+        dailyLimitUsd: dailyLimit,
+        monthlyLimitUsd: monthlyLimit,
+        projectedOverMonthlyLimit: monthlyLimit > 0 && projected30dCost > monthlyLimit,
+        projectedOverDailyLimit: dailyLimit > 0 && dailyAvgCost > dailyLimit,
+      },
+    };
+  }),
 });

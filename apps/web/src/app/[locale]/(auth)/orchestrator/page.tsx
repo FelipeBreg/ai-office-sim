@@ -223,6 +223,7 @@ function CostTab() {
   const t = useTranslations('orchestrator');
   const [days, setDays] = useState(7);
   const { data, isLoading } = trpc.orchestrator.getCostReport.useQuery({ days });
+  const { data: forecast } = trpc.orchestrator.getCostForecast.useQuery();
 
   if (isLoading || !data) {
     return (
@@ -237,6 +238,35 @@ function CostTab() {
   return (
     <div className="flex flex-col gap-6">
       <PeriodSelector days={days} onChange={setDays} />
+
+      {/* Cost forecast */}
+      {forecast && (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard label={t('last7Days')} value={`$${forecast.last7Days.totalCostUsd.toFixed(2)}`} />
+          <StatCard label={t('dailyAvg')} value={`$${forecast.last7Days.dailyAvgCostUsd.toFixed(2)}`} />
+          <StatCard label={t('projected30d')} value={`$${forecast.projected30Days.costUsd.toFixed(2)}`} />
+          <div className="border border-border-default bg-bg-base p-3">
+            <span className="block text-[9px] font-semibold uppercase tracking-wider text-text-muted">
+              Budget Status
+            </span>
+            <span
+              className={`text-sm font-medium ${
+                forecast.limits.projectedOverMonthlyLimit
+                  ? 'text-status-error'
+                  : forecast.limits.monthlyLimitUsd > 0
+                    ? 'text-status-success'
+                    : 'text-text-muted'
+              }`}
+            >
+              {forecast.limits.projectedOverMonthlyLimit
+                ? t('overBudget')
+                : forecast.limits.monthlyLimitUsd > 0
+                  ? t('withinBudget')
+                  : t('noLimit')}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Daily cost trend */}
       {data.daily.length > 0 ? (

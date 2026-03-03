@@ -1,4 +1,4 @@
-import { db, agents, approvals, actionLogs, eq, and, desc } from '@ai-office/db';
+import { db, agents, approvals, actionLogs, orchestratorConfig, eq, and, desc, sql, gte } from '@ai-office/db';
 import {
   executeAgent,
   resumeAgent,
@@ -55,6 +55,63 @@ export async function processAgentExecution(
   if (!agent.isActive) {
     console.log(`[agent-execution] Agent ${agentId} is inactive, skipping`);
     return;
+  }
+
+  // 1b. Check per-agent daily budget
+  const agentBudget = (agent.config as { budget?: number } | null)?.budget;
+  if (agentBudget && agentBudget > 0) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [spent] = await db
+      .select({ total: sql<number>`coalesce(sum(${actionLogs.costUsd}::numeric), 0)` })
+      .from(actionLogs)
+      .where(and(eq(actionLogs.agentId, agentId), gte(actionLogs.createdAt, today)));
+    const dailySpent = Number(spent?.total ?? 0);
+    if (dailySpent >= agentBudget) {
+      console.log(
+        `[agent-execution] Agent ${agentId} over daily budget ($${dailySpent.toFixed(2)} >= $${agentBudget}) — skipping`,
+      );
+      // Notify about budget exceeded
+      await getNotificationQueue().add(`budget-exceeded-${agentId}`, {
+        type: 'agent_error',
+        projectId,
+        agentId,
+        message: `Agent "${agent.name}" paused: daily budget $${agentBudget} exceeded ($${dailySpent.toFixed(2)} spent)`,
+      });
+      return;
+    }
+  }
+
+  // 1c. Check project daily spend limit
+  const [config] = await db
+    .select({ dailySpendLimitUsd: orchestratorConfig.dailySpendLimitUsd })
+    .from(orchestratorConfig)
+    .where(eq(orchestratorConfig.projectId, projectId))
+    .limit(1);
+  const projectDailyLimit = Number(config?.dailySpendLimitUsd ?? 0);
+  if (projectDailyLimit > 0) {
+    const today2 = new Date();
+    today2.setHours(0, 0, 0, 0);
+    const [projectSpent] = await db
+      .select({ total: sql<number>`coalesce(sum(${actionLogs.costUsd}::numeric), 0)` })
+      .from(actionLogs)
+      .where(and(eq(actionLogs.projectId, projectId), gte(actionLogs.createdAt, today2)));
+    const projectDailySpent = Number(projectSpent?.total ?? 0);
+    if (projectDailySpent >= projectDailyLimit) {
+      console.log(
+        `[agent-execution] Project ${projectId} over daily limit ($${projectDailySpent.toFixed(2)} >= $${projectDailyLimit}) — skipping agent ${agentId}`,
+      );
+      return;
+    }
+    // Alert at 80% threshold
+    if (projectDailySpent >= projectDailyLimit * 0.8) {
+      await getNotificationQueue().add(`budget-alert-${projectId}`, {
+        type: 'agent_error',
+        projectId,
+        agentId,
+        message: `Project daily spend at ${Math.round((projectDailySpent / projectDailyLimit) * 100)}% ($${projectDailySpent.toFixed(2)} / $${projectDailyLimit})`,
+      });
+    }
   }
 
   // 2. Claim agent — for new runs require idle; for resume allow awaiting_approval

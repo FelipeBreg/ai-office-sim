@@ -1597,6 +1597,13 @@
     "pauseTeam": "Pausar Equipe",
     "resumeTeam": "Retomar Equipe",
     "teamActions": "Ações por Equipe",
-    "noCostData": "Sem dados de custo para este período."
+    "noCostData": "Sem dados de custo para este período.",
+    "costForecast": "Previsão de Custos",
+    "last7Days": "Últimos 7 Dias",
+    "dailyAvg": "Média Diária",
+    "projected30d": "Projeção 30 Dias",
+    "overBudget": "Acima do Orçamento",
+    "withinBudget": "Dentro do Orçamento",
+    "noLimit": "Sem Limite Definido"
   }
 }

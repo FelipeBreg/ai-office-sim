@@ -1597,6 +1597,13 @@
     "pauseTeam": "Pause Team",
     "resumeTeam": "Resume Team",
     "teamActions": "Team Actions",
-    "noCostData": "No cost data for this period."
+    "noCostData": "No cost data for this period.",
+    "costForecast": "Cost Forecast",
+    "last7Days": "Last 7 Days",
+    "dailyAvg": "Daily Average",
+    "projected30d": "Projected 30 Days",
+    "overBudget": "Over Budget",
+    "withinBudget": "Within Budget",
+    "noLimit": "No Limit Set"
   }
 }
