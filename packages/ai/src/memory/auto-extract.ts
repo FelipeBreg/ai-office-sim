@@ -2,18 +2,21 @@
  * Post-session automatic memory extraction.
  * Analyzes agent conversation transcripts and extracts key information
  * worth remembering for future sessions.
+ *
+ * Uses Claude Haiku for extraction (no OpenAI dependency).
  */
 import { saveMemory } from './individual.js';
+import { createDirectClient } from '../client.js';
 
-const OPENAI_CHAT_URL = 'https://api.openai.com/v1/chat/completions';
-const EXTRACTION_MODEL = 'gpt-4o-mini';
-const FETCH_TIMEOUT_MS = 30_000;
+const EXTRACTION_MODEL = 'claude-haiku-4-5-20251001';
 
 const EXTRACTION_PROMPT = `You are a memory extraction assistant. Analyze the following agent conversation transcript and extract key information that would be useful for the agent to remember in future sessions.
 
 Return a JSON array of objects with "key" and "value" fields. Keys should be descriptive and snake_case (e.g., "client_preference_language", "last_order_issue"). Values should be concise but complete.
 
 Only extract genuinely useful, factual information. Skip greetings, pleasantries, and redundant data. Return an empty array if nothing is worth remembering.
+
+IMPORTANT: Return ONLY a valid JSON array, nothing else.
 
 Example output:
 [
@@ -31,46 +34,30 @@ export interface MemoryEntry {
  * Returns the extracted key-value pairs.
  */
 export async function extractMemories(transcript: string): Promise<MemoryEntry[]> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY required for memory extraction');
-  }
+  const client = createDirectClient();
 
-  const res = await fetch(OPENAI_CHAT_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: EXTRACTION_MODEL,
-      messages: [
-        { role: 'system', content: EXTRACTION_PROMPT },
-        { role: 'user', content: transcript },
-      ],
-      temperature: 0.1,
-      max_tokens: 1024,
-      response_format: { type: 'json_object' },
-    }),
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  const response = await client.messages.create({
+    model: EXTRACTION_MODEL,
+    system: EXTRACTION_PROMPT,
+    messages: [{ role: 'user', content: transcript.slice(0, 8000) }],
+    max_tokens: 1024,
+    temperature: 0.1,
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Memory extraction failed (${res.status}): ${text}`);
-  }
+  const content = response.content
+    .filter((b) => b.type === 'text')
+    .map((b) => (b as unknown as { text: string }).text)
+    .join('');
 
-  const data = (await res.json()) as {
-    choices: Array<{ message: { content: string } }>;
-  };
-
-  const content = data.choices[0]?.message?.content;
   if (!content) return [];
 
   try {
-    const parsed = JSON.parse(content);
-    // Handle both { memories: [...] } and direct array
-    const entries: unknown[] = Array.isArray(parsed) ? parsed : (parsed.memories ?? parsed.entries ?? []);
+    // Try to extract JSON from the response (handle markdown code blocks)
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) return [];
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    const entries: unknown[] = Array.isArray(parsed) ? parsed : [];
 
     return entries
       .filter((e): e is { key: string; value: string } =>

@@ -32,3 +32,5 @@ export * from './audit-logs.js';
 export * from './community.js';
 export * from './cascade-events.js';
 export * from './agent-heartbeat-history.js';
+export * from './agent-session-summaries.js';
+export * from './session-transcripts.js';

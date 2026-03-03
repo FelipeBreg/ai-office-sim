@@ -23,6 +23,8 @@ import { createHumanTaskTool } from './devops/create-human-task.js';
 import { scheduleEventTool } from './calendar/schedule-event.js';
 import { createDocumentTool } from './documents/create-document.js';
 import { generateDocumentTool } from './documents/generate-document.js';
+import { updateDocumentTool } from './documents/update-document.js';
+import { updateWikiArticleTool } from './documents/update-wiki-article.js';
 import { sendConversationMessageTool } from './messaging/send-conversation-message.js';
 import { syncGoogleCalendarTool } from './calendar/google-calendar.js';
 import { metaMarketingTool } from './ads/meta-marketing.js';
@@ -222,6 +224,8 @@ toolRegistry.register(scheduleEventTool);
 // ── Documents ──
 toolRegistry.register(createDocumentTool);
 toolRegistry.register(generateDocumentTool);
+toolRegistry.register(updateDocumentTool);
+toolRegistry.register(updateWikiArticleTool);
 
 // ── Messaging ──
 toolRegistry.register(sendConversationMessageTool);

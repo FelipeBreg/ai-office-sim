@@ -1,4 +1,19 @@
-import { db, agents, approvals, actionLogs, orchestratorConfig, eq, and, desc, sql, gte } from '@ai-office/db';
+import {
+  db,
+  agents,
+  approvals,
+  actionLogs,
+  orchestratorConfig,
+  agentSessionSummaries,
+  sessionTranscripts,
+  wikiArticles,
+  wikiCategories,
+  eq,
+  and,
+  desc,
+  sql,
+  gte,
+} from '@ai-office/db';
 import {
   executeAgent,
   resumeAgent,
@@ -6,6 +21,8 @@ import {
   autoExtractAndSave,
   toolRegistry,
   loadStrategyContext,
+  callLLM,
+  ingestDocument,
   DEFAULT_SAFETY_LIMITS,
 } from '@ai-office/ai';
 import type { AgentContext, AgentSession, SerializedSessionState } from '@ai-office/ai';
@@ -351,6 +368,111 @@ export async function processAgentExecution(
       }
     }
 
+    // ── Post-execution: generate session summary + wiki document + save transcript ──
+    if (result.status === 'completed' && result.actions.length > 0) {
+      try {
+        // Build transcript text for summarization
+        const transcriptText = result.actions
+          .map((a) => {
+            if (a.type === 'tool_call') {
+              return `[Tool: ${a.toolName}] ${JSON.stringify(a.input).slice(0, 300)} → ${JSON.stringify(a.output).slice(0, 300)}`;
+            }
+            return `[LLM]`;
+          })
+          .join('\n');
+
+        const fullText = result.finalResponse
+          ? `${transcriptText}\n[Final]: ${result.finalResponse.slice(0, 1000)}`
+          : transcriptText;
+
+        // 1. Generate summary via Claude Haiku
+        const summaryResult = await callLLM(
+          {
+            model: 'claude-haiku-4-5-20251001',
+            system: 'Summarize this agent session in 100-200 words: what the agent did, key decisions, outcomes.',
+            messages: [{ role: 'user', content: fullText.slice(0, 4000) }],
+            max_tokens: 512,
+            temperature: 0.3,
+          },
+          { projectId, agentId, sessionId, agentName: agent.name },
+        );
+
+        const summary = summaryResult.response.content
+          .filter((b) => b.type === 'text')
+          .map((b) => (b as unknown as { text: string }).text)
+          .join('');
+
+        // 2. Save to agent_session_summaries
+        await db.insert(agentSessionSummaries).values({
+          agentId,
+          projectId,
+          sessionId,
+          summary,
+          tokenCount: result.totalTokens,
+        });
+
+        // 3. Create wiki document
+        const date = new Date().toISOString().slice(0, 10);
+        const slug = `session-log-${agent.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${date}-${sessionId.slice(0, 8)}`;
+
+        // Find or create "Session Logs" category
+        let [sessionLogsCategory] = await db
+          .select({ id: wikiCategories.id })
+          .from(wikiCategories)
+          .where(and(eq(wikiCategories.projectId, projectId), eq(wikiCategories.slug, 'session-logs')))
+          .limit(1);
+
+        if (!sessionLogsCategory) {
+          [sessionLogsCategory] = await db.insert(wikiCategories).values({
+            projectId,
+            name: 'Session Logs',
+            slug: 'session-logs',
+            description: 'Auto-generated session logs from agent executions',
+          }).returning({ id: wikiCategories.id });
+        }
+
+        const wikiContent = `# ${agent.name} Session Log — ${date}\n\n**Session ID:** ${sessionId}\n**Trigger:** ${triggerType}\n**Actions:** ${result.actions.length}\n**Tokens:** ${result.totalTokens}\n**Cost:** $${result.totalCostUsd.toFixed(4)}\n\n## Summary\n\n${summary}`;
+
+        await db.insert(wikiArticles).values({
+          projectId,
+          categoryId: sessionLogsCategory?.id,
+          title: `${agent.name} Session Log — ${date}`,
+          slug,
+          summary,
+          content: wikiContent,
+          tags: ['session-log', 'auto-generated'],
+        });
+
+        // 4. Ingest wiki document for RAG search
+        try {
+          await ingestDocument({
+            projectId,
+            title: `${agent.name} Session Log — ${date}`,
+            content: wikiContent,
+            sourceType: 'agent',
+          });
+        } catch {
+          // Non-blocking
+        }
+
+        // 5. Save full transcript to session_transcripts
+        await db.insert(sessionTranscripts).values({
+          agentId,
+          projectId,
+          sessionId,
+          messages: result.actions as unknown as Record<string, unknown>,
+          triggerType,
+          tokenCount: result.totalTokens,
+          costUsd: String(result.totalCostUsd),
+        });
+
+        console.log(`[agent-execution] Session summary + wiki doc created for ${sessionId}`);
+      } catch (summaryErr) {
+        console.warn(`[agent-execution] Session summary generation failed for ${sessionId}:`, summaryErr);
+        // Non-blocking
+      }
+    }
+
     // ── Fire event-triggered workflows on completion ──
     const eventName = result.status === 'completed' ? 'agent.completed' : 'agent.failed';
     fireEventTriggers(projectId, eventName, {
@@ -468,43 +590,26 @@ async function buildAgentContext(
   const finalMemoryText = memory.map((m) => `${m.key}: ${JSON.stringify(m.value)}`).join('\n');
   tokenReport['dynamicMemory'] = { estimated: estimateTokens(finalMemoryText), budget: budgets.dynamicMemory };
 
-  // 5. Load session history — budget: sessionHistory
+  // 5. Load session history from session summaries — budget: sessionHistory
   let sessionHistory = '';
   try {
-    const recentSessions = await db
+    const recentSummaries = await db
       .select({
-        sessionId: actionLogs.sessionId,
-        actionType: actionLogs.actionType,
-        toolName: actionLogs.toolName,
-        status: actionLogs.status,
-        createdAt: actionLogs.createdAt,
+        sessionId: agentSessionSummaries.sessionId,
+        summary: agentSessionSummaries.summary,
+        createdAt: agentSessionSummaries.createdAt,
       })
-      .from(actionLogs)
-      .where(and(eq(actionLogs.agentId, agent.id), eq(actionLogs.projectId, projectId)))
-      .orderBy(desc(actionLogs.createdAt))
-      .limit(50);
+      .from(agentSessionSummaries)
+      .where(eq(agentSessionSummaries.agentId, agent.id))
+      .orderBy(desc(agentSessionSummaries.createdAt))
+      .limit(5);
 
-    const sessionsMap = new Map<string, typeof recentSessions>();
-    for (const log of recentSessions) {
-      if (!log.sessionId || log.sessionId === sessionId) continue;
-      const arr = sessionsMap.get(log.sessionId) ?? [];
-      arr.push(log);
-      sessionsMap.set(log.sessionId, arr);
-    }
-
-    const pastSessions = [...sessionsMap.entries()].slice(0, 5);
-    if (pastSessions.length > 0) {
-      const summaries = pastSessions.map(([sid, logs]) => {
-        const tools = logs
-          .filter((l) => l.toolName)
-          .map((l) => `${l.toolName}(${l.status})`)
-          .join(', ');
-        const date = logs[0]?.createdAt
-          ? new Date(logs[0].createdAt).toISOString().slice(0, 16)
-          : 'unknown';
-        return `- Session ${sid.slice(0, 8)} (${date}): ${logs.length} actions [${tools || 'no tools'}]`;
+    if (recentSummaries.length > 0) {
+      const lines = recentSummaries.map((s) => {
+        const date = new Date(s.createdAt).toISOString().slice(0, 16);
+        return `- Session ${s.sessionId.slice(0, 8)} (${date}): ${s.summary}`;
       });
-      const rawHistory = `\n\n[Previous Sessions]\n${summaries.join('\n')}`;
+      const rawHistory = `\n\n[Previous Sessions]\n${lines.join('\n')}`;
       sessionHistory = truncateToTokenBudget(rawHistory, budgets.sessionHistory);
     }
   } catch {
