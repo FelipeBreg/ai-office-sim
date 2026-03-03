@@ -7,6 +7,48 @@
 
 
 ================================================================================
+COMMIT #112 — Phase 1: Foundation Layer (Roadmap v2)
+================================================================================
+Date:     2026-03-03
+Scope:    packages/tokenizer (NEW), packages/ai, packages/shared, packages/queue,
+          packages/realtime, apps/worker
+Roadmap:  Phase 1 — 3 epics, 8 tasks — ALL COMPLETE
+
+NEW SOFTWARE_SPEC v4 + ROADMAP v1 included in this commit.
+
+EPIC 1.1 — Token Budget System & Tokenizer:
+  - Created @ai-office/tokenizer package (estimateTokens, countTokensExact,
+    truncateToTokenBudget) using Anthropic count_tokens API
+  - Added CONTEXT_TOKEN_BUDGETS to shared constants:
+    systemPrompt=800, strategyContext=400, heartbeat=300, memory=600,
+    history=1000, tools=800, trigger=500, totalOverhead=4400
+  - Refactored agent-execution.ts: extracted buildAgentContext() function
+    with per-layer token budgets, truncation, and logging
+  - Added pre-loop exact token validation in executor.ts with 80% compaction
+
+EPIC 1.2 — Scheduled Agent Worker:
+  - Verified full pipeline: cron-scheduler → agent-scheduled.worker →
+    agent-execution.worker → processAgentExecution() (already wired)
+  - Added triggerType enum to queue job schema: manual | scheduled | event |
+    agent_message | heartbeat | kpi | webhook | briefing
+  - Wired triggerType through AgentContext, socket events, all call sites
+    (resume.ts, workflow handler, trigger-agent tool, socket server)
+
+EPIC 1.3 — Strategy Context Injection:
+  - Created packages/ai/src/context/strategy-loader.ts
+  - Loads active strategies + KPIs, formats as compact text, 400-token budget
+  - Injected into every agent's system prompt via buildAgentContext()
+
+DECISIONS:
+  - Token budgets use fast chars/4 estimate for assembly, exact API count
+    before first LLM call
+  - Strategy context placed between soul prompt and session history
+  - triggerType defaults to 'manual' for backward compatibility
+
+FILES CHANGED: 21 (3 new + 18 modified)
+
+
+================================================================================
 COMMIT #111 — Full Codebase Audit & Security Fixes
 ================================================================================
 Date:     2026-03-03
