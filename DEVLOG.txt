@@ -7,6 +7,33 @@
 
 
 ================================================================================
+COMMIT #93 — Agent Session Persistence & Multi-Turn Memory (Phase 1.1)
+================================================================================
+Hash:     d0664f0
+Date:     2026-03-02
+Scope:    apps/worker, apps/web
+
+WHAT CHANGED:
+  • AGENT EXECUTION JOB: loads last 5 session summaries from action_logs and
+    appends them to the system prompt, giving agents multi-turn context across
+    sessions (who they talked to, what tools they used, outcomes)
+  • AGENT EXECUTION JOB: after successful completion, builds session transcript
+    and calls autoExtractAndSave() to persist key facts/decisions to agent_memory
+  • AGENT DETAIL PAGE: new "Sessions" tab showing grouped past sessions with
+    status indicators, tools used, token counts, and durations
+
+WHY:
+  Agents were amnesiac — each run started from scratch with no memory of previous
+  sessions. Now agents load recent session summaries into context before executing,
+  and automatically extract memories after completing. This is the foundation for
+  truly autonomous agents that learn and improve over time.
+
+FILES (2):
+  M apps/worker/src/jobs/agent-execution.ts
+  M apps/web/src/app/[locale]/(auth)/agents/[id]/page.tsx
+
+
+================================================================================
 COMMIT #92 — Wire Approval Notifications (Phase 0.4 / New Roadmap v2)
 ================================================================================
 Hash:     09343a5
