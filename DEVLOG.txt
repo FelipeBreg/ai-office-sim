@@ -7,6 +7,43 @@
 
 
 ================================================================================
+COMMIT #95 — Agent Health Monitoring (Phase 1.3)
+================================================================================
+Hash:     965c778
+Date:     2026-03-02
+Scope:    packages/api, packages/realtime, apps/worker, apps/web
+
+WHAT CHANGED:
+  • AGENTS ROUTER: new getMetrics query (per-agent: success rate, session count,
+    daily breakdown, tokens, cost, health score/label for last N days) and
+    getFleetHealth query (per-agent success rates for the fleet view)
+  • AGENT LIST PAGE: cards show health indicator (success %) with color coding
+    (green ≥90%, orange 70-89%, red <70%) using fleet health data
+  • AGENT DETAIL OVERVIEW: real stats replace mock placeholders — success rate,
+    total actions, tokens used, session count + mini daily activity bar chart
+    with color-coded bars (cyan = ok, red = has failures)
+  • AGENT EXECUTION JOB: auto-disable after 3 consecutive failed sessions —
+    checks last 3 unique session statuses, sets isActive=false, emits
+    agent:auto_disabled Socket.IO event
+  • REALTIME: added AgentAutoDisabledEvent type + agent:auto_disabled event
+
+WHY:
+  Agents running 24/7 need health visibility. Without monitoring, failures go
+  unnoticed until someone manually checks. Auto-disable prevents runaway costs
+  from repeatedly failing agents. Health indicators on the fleet view let
+  operators spot degraded agents at a glance.
+
+FILES (7):
+  M packages/api/src/routers/agents.ts
+  M packages/realtime/src/events.ts
+  M apps/worker/src/jobs/agent-execution.ts
+  M apps/web/src/app/[locale]/(auth)/agents/page.tsx
+  M apps/web/src/app/[locale]/(auth)/agents/[id]/page.tsx
+  M apps/web/messages/en-US.json
+  M apps/web/messages/pt-BR.json
+
+
+================================================================================
 COMMIT #94 — Per-Agent Knowledge Base with Document Ingestion (Phase 1.2)
 ================================================================================
 Hash:     d6d2504
