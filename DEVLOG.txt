@@ -7,6 +7,53 @@
 
 
 ================================================================================
+COMMIT #89 — Wire Socket.IO to Frontend (Phase 0.1 / New Roadmap v2)
+================================================================================
+Hash:     146c1ae
+Date:     2026-03-02
+Scope:    apps/web, packages/realtime
+
+WHAT CHANGED:
+  • NEW: SocketProvider component (apps/web/src/components/providers/)
+    – Mounts in AppShell, manages Socket.IO connection lifecycle
+    – Polls for socket availability, tracks connection status
+    – Hydrates pending approval count from DB on mount
+  • NEW: realtime-store (Zustand)
+    – Live agent statuses (Map<agentId, status>), overrides DB values
+    – Connection status (disconnected/connecting/connected/reconnecting)
+    – Pending approval count for notification badge
+  • NEW: Event hooks (apps/web/src/hooks/)
+    – useAgentEvents: agent:status_changed → Zustand + tRPC invalidation
+    – useWorkflowEvents: workflow:started/node_complete/complete → invalidation
+    – useApprovalEvents: approval:requested/resolved → badge count + invalidation
+    – useConversationEvents: conversation:* → messaging invalidation
+  • MODIFIED: AppShell — mounts <SocketProvider projectId={...} />
+  • MODIFIED: Header — connection status indicator + real pending approval count
+    – Bell badge now shows numeric count (not just a dot)
+  • MODIFIED: OfficeCanvas — merges live Socket.IO statuses over DB statuses
+    – 3D agent avatars now reflect real-time status changes instantly
+  • MODIFIED: @ai-office/realtime index.ts — exports conversation event types
+
+WHY:
+  Socket.IO server existed, events were defined, but nothing on the frontend
+  listened. This wires the entire real-time pipeline: worker emits → Socket.IO
+  → frontend hooks → Zustand store → UI updates. The 3D office, notification
+  badge, and all pages now react to server-side events instantly.
+
+FILES (10):
+  + apps/web/src/components/providers/socket-provider.tsx
+  + apps/web/src/hooks/use-agent-events.ts
+  + apps/web/src/hooks/use-approval-events.ts
+  + apps/web/src/hooks/use-conversation-events.ts
+  + apps/web/src/hooks/use-workflow-events.ts
+  + apps/web/src/stores/realtime-store.ts
+  M apps/web/src/components/layout/app-shell.tsx
+  M apps/web/src/components/layout/header.tsx
+  M apps/web/src/components/office/OfficeCanvas.tsx
+  M packages/realtime/src/index.ts
+
+
+================================================================================
 COMMIT #88 — Fix PT-BR Prompts + Add Missing Template Tools
 ================================================================================
 Hash:     868b919
