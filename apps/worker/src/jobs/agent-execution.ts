@@ -1,8 +1,9 @@
-import { db, agents, approvals, eq, and } from '@ai-office/db';
+import { db, agents, approvals, actionLogs, eq, and, desc } from '@ai-office/db';
 import {
   executeAgent,
   resumeAgent,
   loadMemory,
+  autoExtractAndSave,
   toolRegistry,
   DEFAULT_SAFETY_LIMITS,
 } from '@ai-office/ai';
@@ -92,8 +93,52 @@ export async function processAgentExecution(
         ? toolRegistry.getByNames(agent.tools)
         : toolRegistry.getAll();
 
-      const systemPrompt = agent.systemPromptEn ?? agent.systemPromptPtBr ??
+      // Load last 5 session summaries for multi-turn context
+      let sessionHistory = '';
+      try {
+        const recentSessions = await db
+          .select({
+            sessionId: actionLogs.sessionId,
+            actionType: actionLogs.actionType,
+            toolName: actionLogs.toolName,
+            status: actionLogs.status,
+            createdAt: actionLogs.createdAt,
+          })
+          .from(actionLogs)
+          .where(and(eq(actionLogs.agentId, agentId), eq(actionLogs.projectId, projectId)))
+          .orderBy(desc(actionLogs.createdAt))
+          .limit(50);
+
+        // Group by sessionId, take last 5 unique sessions
+        const sessionsMap = new Map<string, typeof recentSessions>();
+        for (const log of recentSessions) {
+          if (!log.sessionId || log.sessionId === sessionId) continue;
+          const arr = sessionsMap.get(log.sessionId) ?? [];
+          arr.push(log);
+          sessionsMap.set(log.sessionId, arr);
+        }
+
+        const pastSessions = [...sessionsMap.entries()].slice(0, 5);
+        if (pastSessions.length > 0) {
+          const summaries = pastSessions.map(([sid, logs]) => {
+            const tools = logs
+              .filter((l) => l.toolName)
+              .map((l) => `${l.toolName}(${l.status})`)
+              .join(', ');
+            const date = logs[0]?.createdAt
+              ? new Date(logs[0].createdAt).toISOString().slice(0, 16)
+              : 'unknown';
+            return `- Session ${sid.slice(0, 8)} (${date}): ${logs.length} actions [${tools || 'no tools'}]`;
+          });
+          sessionHistory = `\n\n[Previous Sessions]\n${summaries.join('\n')}`;
+        }
+      } catch {
+        // Non-blocking
+      }
+
+      const basePrompt = agent.systemPromptEn ?? agent.systemPromptPtBr ??
         `You are ${agent.name}, a ${agent.archetype} agent. Complete the assigned task using the available tools.`;
+      const systemPrompt = basePrompt + sessionHistory;
 
       const context: AgentContext = {
         agent: {
@@ -215,6 +260,31 @@ export async function processAgentExecution(
       .update(agents)
       .set({ status: finalStatus })
       .where(eq(agents.id, agentId));
+
+    // ── Post-execution: auto-extract memories from session transcript ──
+    if (result.status === 'completed' && result.actions.length > 0) {
+      try {
+        const transcript = result.actions
+          .map((a) => {
+            if (a.type === 'tool_call') {
+              return `[Tool: ${a.toolName}] Input: ${JSON.stringify(a.input).slice(0, 500)} → Output: ${JSON.stringify(a.output).slice(0, 500)}`;
+            }
+            return `[LLM Response]`;
+          })
+          .join('\n');
+
+        if (result.finalResponse) {
+          const fullTranscript = `${transcript}\n[Final Response]: ${result.finalResponse.slice(0, 2000)}`;
+          const { savedCount } = await autoExtractAndSave(agentId, projectId, fullTranscript);
+          if (savedCount > 0) {
+            console.log(`[agent-execution] Extracted ${savedCount} memories from session ${sessionId}`);
+          }
+        }
+      } catch (memErr) {
+        console.warn(`[agent-execution] Memory extraction failed for ${sessionId}:`, memErr);
+        // Non-blocking — don't fail the session for memory extraction issues
+      }
+    }
 
   } catch (err) {
     console.error(`[agent-execution] Session ${sessionId} failed:`, err);

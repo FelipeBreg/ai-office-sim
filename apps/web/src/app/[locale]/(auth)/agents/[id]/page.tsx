@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useCallback } from 'react';
+import { use, useState, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import {
@@ -32,7 +32,7 @@ import { Separator } from '@/components/ui/separator';
 /*  Types                                                                      */
 /* -------------------------------------------------------------------------- */
 
-type Tab = 'overview' | 'configuration' | 'activityLog' | 'memory';
+type Tab = 'overview' | 'configuration' | 'activityLog' | 'memory' | 'sessions';
 
 type AgentStatus = 'idle' | 'working' | 'awaiting_approval' | 'error' | 'offline';
 
@@ -136,6 +136,7 @@ const TABS: { id: Tab; labelKey: string; icon: typeof Eye }[] = [
   { id: 'overview', labelKey: 'tabOverview', icon: Eye },
   { id: 'configuration', labelKey: 'tabConfiguration', icon: Settings2 },
   { id: 'activityLog', labelKey: 'tabActivityLog', icon: ScrollText },
+  { id: 'sessions', labelKey: 'tabSessions', icon: Clock },
   { id: 'memory', labelKey: 'tabMemory', icon: Brain },
 ];
 
@@ -662,6 +663,123 @@ function ConfigurationTab({ agent, onSaved }: { agent: Agent; onSaved: () => voi
 /*  Tab: Activity Log                                                          */
 /* -------------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- */
+/*  Sessions Tab                                                               */
+/* -------------------------------------------------------------------------- */
+
+function SessionsTab({ agentId }: { agentId: string }) {
+  const t = useTranslations('agentDetail');
+  const logsQuery = trpc.actionLogs.list.useQuery({ agentId, limit: 100 });
+  const logs = ((logsQuery.data as { items: ActionLog[]; total: number } | undefined)?.items ?? []) as ActionLog[];
+
+  // Group logs by sessionId
+  const sessions = useMemo(() => {
+    const map = new Map<string, ActionLog[]>();
+    for (const log of logs) {
+      if (!log.sessionId) continue;
+      const arr = map.get(log.sessionId) ?? [];
+      arr.push(log);
+      map.set(log.sessionId, arr);
+    }
+
+    return [...map.entries()]
+      .map(([sid, sessionLogs]) => {
+        const firstLog = sessionLogs[sessionLogs.length - 1];
+        const lastLog = sessionLogs[0];
+        const toolCalls = sessionLogs.filter((l) => l.actionType === 'tool_call');
+        const failed = sessionLogs.filter((l) => l.status === 'failed');
+        const totalTokens = sessionLogs.reduce((sum, l) => sum + (l.tokensUsed ?? 0), 0);
+        const totalDuration = sessionLogs.reduce((sum, l) => sum + (l.durationMs ?? 0), 0);
+
+        return {
+          sessionId: sid,
+          startedAt: firstLog?.createdAt,
+          endedAt: lastLog?.createdAt,
+          actionCount: sessionLogs.length,
+          toolCallCount: toolCalls.length,
+          failedCount: failed.length,
+          totalTokens,
+          totalDuration,
+          tools: [...new Set(toolCalls.map((l) => l.toolName).filter(Boolean))],
+          status: failed.length > 0 ? 'error' : 'completed',
+        };
+      })
+      .sort((a, b) => {
+        const aTime = a.startedAt ? new Date(a.startedAt).getTime() : 0;
+        const bTime = b.startedAt ? new Date(b.startedAt).getTime() : 0;
+        return bTime - aTime;
+      });
+  }, [logs]);
+
+  if (logsQuery.isLoading) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full" />
+        ))}
+      </div>
+    );
+  }
+
+  if (sessions.length === 0) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <p className="text-[10px] text-text-muted">{t('noActivity')}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-2">
+      <div className="mb-2 text-[8px] uppercase tracking-[0.15em] text-text-muted">
+        {sessions.length} session{sessions.length !== 1 ? 's' : ''}
+      </div>
+      {sessions.map((session) => (
+        <div
+          key={session.sessionId}
+          className="border border-border-default bg-bg-base p-3"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className={`inline-block h-1.5 w-1.5 ${session.status === 'completed' ? 'bg-[#2EA043]' : 'bg-[#F85149]'}`} />
+              <span className="font-mono text-[10px] text-text-secondary">
+                {session.sessionId.slice(0, 8)}
+              </span>
+              {session.startedAt && (
+                <span className="text-[10px] text-text-muted">
+                  {formatDate(session.startedAt)}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-3 text-[10px] text-text-muted">
+              <span>{session.actionCount} actions</span>
+              <span>{session.toolCallCount} tools</span>
+              {session.totalTokens > 0 && <span>{session.totalTokens.toLocaleString()} tokens</span>}
+              {session.totalDuration > 0 && <span>{(session.totalDuration / 1000).toFixed(1)}s</span>}
+            </div>
+          </div>
+          {session.tools.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {session.tools.map((tool) => (
+                <span
+                  key={tool}
+                  className="border border-border-default bg-bg-deepest px-1.5 py-0.5 text-[9px] text-text-muted"
+                >
+                  {tool}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Activity Log Tab                                                           */
+/* -------------------------------------------------------------------------- */
+
 function ActivityLogTab({ agentId }: { agentId: string }) {
   const t = useTranslations('agentDetail');
   const [statusFilter, setStatusFilter] = useState<ActionStatus | ''>('');
@@ -1112,6 +1230,7 @@ export default function AgentDetailPage({
           />
         )}
         {activeTab === 'activityLog' && <ActivityLogTab agentId={id} />}
+        {activeTab === 'sessions' && <SessionsTab agentId={id} />}
         {activeTab === 'memory' && <MemoryTab agentId={id} />}
       </div>
     </div>
