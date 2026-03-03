@@ -7,6 +7,40 @@
 
 
 ================================================================================
+COMMIT #106 — Automatic Audit Logging (Phase 4.2)
+================================================================================
+Hash:     d8886b9
+Date:     2026-03-03
+Scope:    packages/db, packages/api, apps/web
+
+Database:
+  - Created audit_logs table (append-only): orgId, projectId, userId, resource,
+    action, resourceId, path, input, result, createdAt
+  - SQL migration: 0005_add_audit_logs_table.sql (indexes on org/project/user/resource)
+
+Backend:
+  - Global tRPC audit middleware: intercepts ALL mutations via getRawInput(),
+    fire-and-forget insert (never blocks or fails the mutation)
+  - Applied to both protectedProcedure and projectProcedure (cascades to manager/admin/owner)
+  - Skip list: atlas.chat, atlas.resolveToolCalls, users.updateLocale/Timezone
+  - Parses tRPC path into resource/action (e.g. "agents.create" → resource=agent, action=create)
+  - Extracts resourceId from input (id/userId/agentId/workflowId)
+  - Sanitizes payloads > 4KB to prevent table bloat
+  - Created audit-logs router: list (adminProcedure), export (ownerProcedure)
+  - list: filters by resource/action/userId/days with pagination
+  - export: returns up to 5000 entries for CSV/JSON download
+
+Frontend:
+  - New "Audit Log" tab in Settings (ScrollText icon)
+  - Admin/owner only — viewers/managers see access denied message
+  - Filters: time range (7/30/90 days), resource type
+  - Expandable rows: click to see full mutation input JSON
+  - Owner-only CSV/JSON export buttons (client-side blob download)
+  - 6 i18n keys (en-US + pt-BR)
+
+Typecheck: 13/13 pass
+
+================================================================================
 COMMIT #105 — RBAC: Role-Based Access Control (Phase 4.1)
 ================================================================================
 Hash:     48a8622
