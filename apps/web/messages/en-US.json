@@ -340,6 +340,7 @@
     "agentCount": "{count} agents",
     "runWorkflow": "Run Workflow",
     "runHistory": "Run History",
+    "allRuns": "Runs",
     "noRuns": "No runs yet.",
     "noVariables": "This workflow has no variables. It will run immediately.",
     "variables": "Variables",

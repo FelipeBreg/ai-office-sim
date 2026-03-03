@@ -340,6 +340,7 @@
     "agentCount": "{count} agentes",
     "runWorkflow": "Executar Workflow",
     "runHistory": "Histórico",
+    "allRuns": "Execuções",
     "noRuns": "Nenhuma execução ainda.",
     "noVariables": "Este workflow não tem variáveis. Será executado imediatamente.",
     "variables": "Variáveis",

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { createTRPCRouter, projectProcedure, adminProcedure, enforceResourceLimit } from '../trpc.js';
-import { db, workflows, workflowRuns, workflowNodeRuns, eq, and, desc } from '@ai-office/db';
+import { db, workflows, workflowRuns, workflowNodeRuns, eq, and, desc, sql, gte, count } from '@ai-office/db';
 import { getWorkflowExecutionQueue } from '@ai-office/queue';
 import { TRPCError } from '@trpc/server';
 import type { WorkflowDefinition, WorkflowVariable, TriggerNodeConfig } from '@ai-office/shared';
@@ -306,4 +306,142 @@ export const workflowsRouter = createTRPCRouter({
       }
       return updated;
     }),
+
+  /** List all workflow runs across all workflows in the project */
+  listAllRuns: projectProcedure
+    .input(z.object({
+      limit: z.number().int().min(1).max(100).default(50),
+      status: z.enum(['running', 'completed', 'failed', 'cancelled', 'waiting_approval']).optional(),
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      const limit = input?.limit ?? 50;
+      const conditions = [eq(workflowRuns.projectId, ctx.project!.id)];
+
+      if (input?.status) {
+        conditions.push(eq(workflowRuns.status, input.status));
+      }
+
+      const runs = await db
+        .select({
+          id: workflowRuns.id,
+          workflowId: workflowRuns.workflowId,
+          status: workflowRuns.status,
+          startedAt: workflowRuns.startedAt,
+          completedAt: workflowRuns.completedAt,
+          error: workflowRuns.error,
+          pausedAtNodeId: workflowRuns.pausedAtNodeId,
+        })
+        .from(workflowRuns)
+        .where(and(...conditions))
+        .orderBy(desc(workflowRuns.startedAt))
+        .limit(limit);
+
+      // Attach workflow names
+      const workflowIds = [...new Set(runs.map((r) => r.workflowId))];
+      const workflowList = workflowIds.length > 0
+        ? await db
+            .select({ id: workflows.id, name: workflows.name })
+            .from(workflows)
+            .where(sql`${workflows.id} = ANY(ARRAY[${sql.join(workflowIds.map((id) => sql`${id}::uuid`), sql`, `)}])`)
+        : [];
+
+      const nameMap = new Map(workflowList.map((w) => [w.id, w.name]));
+
+      return runs.map((run) => ({
+        ...run,
+        workflowName: nameMap.get(run.workflowId) ?? 'Unknown',
+      }));
+    }),
+
+  /** Re-run a failed workflow from the point of failure */
+  retryRun: adminProcedure
+    .input(z.object({ runId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [run] = await db
+        .select()
+        .from(workflowRuns)
+        .where(
+          and(
+            eq(workflowRuns.id, input.runId),
+            eq(workflowRuns.projectId, ctx.project!.id),
+            eq(workflowRuns.status, 'failed'),
+          ),
+        )
+        .limit(1);
+
+      if (!run) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No failed workflow run found',
+        });
+      }
+
+      // Find the last failed node to retry from
+      const failedNodes = await db
+        .select()
+        .from(workflowNodeRuns)
+        .where(
+          and(
+            eq(workflowNodeRuns.workflowRunId, run.id),
+            eq(workflowNodeRuns.status, 'failed'),
+          ),
+        )
+        .orderBy(workflowNodeRuns.startedAt)
+        .limit(1);
+
+      const retryFromNodeId = failedNodes[0]?.nodeId ?? undefined;
+      const completedOutputs = (run.completedOutputs as Record<string, unknown>) ?? {};
+      const variables = (run.variables as Record<string, string>) ?? {};
+
+      // Reset run status
+      await db
+        .update(workflowRuns)
+        .set({ status: 'running', error: null, completedAt: null })
+        .where(eq(workflowRuns.id, run.id));
+
+      // Re-enqueue
+      await getWorkflowExecutionQueue().add(
+        `workflow-retry-${run.id}`,
+        {
+          workflowId: run.workflowId,
+          workflowRunId: run.id,
+          projectId: ctx.project!.id,
+          variables,
+          resumeFromNodeId: retryFromNodeId,
+          completedOutputs,
+        },
+      );
+
+      return { status: 'retrying' as const, runId: run.id, retryFromNodeId };
+    }),
+
+  /** Aggregate stats for workflow runs dashboard */
+  getRunStats: projectProcedure.query(async ({ ctx }) => {
+    const since = new Date();
+    since.setDate(since.getDate() - 7);
+
+    const [stats] = await db
+      .select({
+        total: count(),
+        running: sql<number>`count(*) filter (where ${workflowRuns.status} = 'running')`,
+        completed: sql<number>`count(*) filter (where ${workflowRuns.status} = 'completed')`,
+        failed: sql<number>`count(*) filter (where ${workflowRuns.status} = 'failed')`,
+        waitingApproval: sql<number>`count(*) filter (where ${workflowRuns.status} = 'waiting_approval')`,
+      })
+      .from(workflowRuns)
+      .where(
+        and(
+          eq(workflowRuns.projectId, ctx.project!.id),
+          gte(workflowRuns.startedAt, since),
+        ),
+      );
+
+    return {
+      total: Number(stats?.total ?? 0),
+      running: Number(stats?.running ?? 0),
+      completed: Number(stats?.completed ?? 0),
+      failed: Number(stats?.failed ?? 0),
+      waitingApproval: Number(stats?.waitingApproval ?? 0),
+    };
+  }),
 });

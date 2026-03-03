@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, GitBranch, AlertTriangle, Trash2, LayoutGrid, Bot } from 'lucide-react';
+import {
+  Plus, GitBranch, AlertTriangle, Trash2, LayoutGrid, Bot,
+  Activity, Play, RefreshCw, CheckCircle, XCircle, Clock, Loader2,
+} from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -258,12 +261,176 @@ function WorkflowCard({
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Run status config                                                         */
+/* -------------------------------------------------------------------------- */
+
+const RUN_STATUS_CONFIG: Record<string, { color: string; icon: typeof CheckCircle; label: string }> = {
+  running: { color: 'text-accent-cyan', icon: Loader2, label: 'Running' },
+  completed: { color: 'text-status-success', icon: CheckCircle, label: 'Completed' },
+  failed: { color: 'text-status-error', icon: XCircle, label: 'Failed' },
+  cancelled: { color: 'text-text-muted', icon: XCircle, label: 'Cancelled' },
+  waiting_approval: { color: 'text-[#D29922]', icon: Clock, label: 'Awaiting Approval' },
+};
+
+/* -------------------------------------------------------------------------- */
+/*  Runs tab                                                                  */
+/* -------------------------------------------------------------------------- */
+
+function RunsTab({ t }: { t: ReturnType<typeof useTranslations<'workflows'>> }) {
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const utils = trpc.useUtils();
+
+  const { data: stats } = trpc.workflows.getRunStats.useQuery();
+  const { data: runs, isLoading } = trpc.workflows.listAllRuns.useQuery(
+    statusFilter ? { status: statusFilter as any } : undefined,
+  );
+  const retryMutation = trpc.workflows.retryRun.useMutation({
+    onSuccess: () => {
+      void utils.workflows.listAllRuns.invalidate();
+      void utils.workflows.getRunStats.invalidate();
+    },
+  });
+
+  const resumeMutation = trpc.workflows.resumeRun.useMutation({
+    onSuccess: () => {
+      void utils.workflows.listAllRuns.invalidate();
+      void utils.workflows.getRunStats.invalidate();
+    },
+  });
+
+  return (
+    <div className="space-y-4">
+      {/* Stats bar */}
+      {stats && (
+        <div className="flex items-center gap-4">
+          {[
+            { label: 'Total', value: stats.total, color: 'text-text-primary' },
+            { label: 'Running', value: stats.running, color: 'text-accent-cyan' },
+            { label: 'Completed', value: stats.completed, color: 'text-status-success' },
+            { label: 'Failed', value: stats.failed, color: 'text-status-error' },
+            { label: 'Approval', value: stats.waitingApproval, color: 'text-[#D29922]' },
+          ].map(({ label, value, color }) => (
+            <button
+              key={label}
+              onClick={() => setStatusFilter(
+                label === 'Total' ? undefined :
+                label === 'Approval' ? 'waiting_approval' :
+                label.toLowerCase()
+              )}
+              className={`border px-3 py-1.5 transition-colors ${
+                (statusFilter === label.toLowerCase() || (label === 'Total' && !statusFilter) || (label === 'Approval' && statusFilter === 'waiting_approval'))
+                  ? 'border-accent-cyan bg-accent-cyan/5'
+                  : 'border-border-default hover:border-border-hover'
+              }`}
+            >
+              <span className={`text-sm font-medium ${color}`}>{value}</span>
+              <p className="text-[8px] uppercase tracking-[0.15em] text-text-muted">{label}</p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Run list */}
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+      ) : !runs || runs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 gap-2">
+          <Activity size={20} className="text-text-muted" />
+          <p className="text-[10px] text-text-muted">{t('noRuns')}</p>
+        </div>
+      ) : (
+        <div className="divide-y divide-border-default border border-border-default">
+          {runs.map((run) => {
+            const cfg = RUN_STATUS_CONFIG[run.status] ?? RUN_STATUS_CONFIG.completed!;
+            const StatusIcon = cfg.icon;
+            const duration = run.completedAt
+              ? Math.round((new Date(run.completedAt).getTime() - new Date(run.startedAt).getTime()) / 1000)
+              : null;
+
+            return (
+              <div key={run.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-bg-base/50 transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <StatusIcon
+                    size={14}
+                    className={`shrink-0 ${cfg.color} ${run.status === 'running' ? 'animate-spin' : ''}`}
+                  />
+                  <div className="min-w-0">
+                    <Link href={`/workflows/${run.workflowId}`} className="text-[11px] text-text-primary hover:text-accent-cyan truncate block">
+                      {run.workflowName}
+                    </Link>
+                    <div className="flex items-center gap-2 text-[8px] text-text-muted">
+                      <span>{new Date(run.startedAt).toLocaleString()}</span>
+                      {duration !== null && <span>{duration}s</span>}
+                      {run.error && (
+                        <span className="text-status-error truncate max-w-48" title={run.error}>
+                          {run.error}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Badge variant={run.status === 'completed' ? 'success' : run.status === 'failed' ? 'error' : 'default'}>
+                    {cfg.label}
+                  </Badge>
+                  {run.status === 'failed' && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => retryMutation.mutate({ runId: run.id })}
+                      disabled={retryMutation.isPending}
+                      className="!text-[8px] !py-0.5 !px-1.5"
+                    >
+                      <RefreshCw size={8} className={`mr-0.5 ${retryMutation.isPending ? 'animate-spin' : ''}`} />
+                      Retry
+                    </Button>
+                  )}
+                  {run.status === 'waiting_approval' && (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => resumeMutation.mutate({ runId: run.id, approved: true })}
+                        disabled={resumeMutation.isPending}
+                        className="!text-[8px] !py-0.5 !px-1.5"
+                      >
+                        {t('approve')}
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => resumeMutation.mutate({ runId: run.id, approved: false })}
+                        disabled={resumeMutation.isPending}
+                        className="!text-[8px] !py-0.5 !px-1.5"
+                      >
+                        {t('reject')}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Page                                                                      */
 /* -------------------------------------------------------------------------- */
+
+type Tab = 'workflows' | 'runs';
 
 export default function WorkflowsPage() {
   const t = useTranslations('workflows');
   const utils = trpc.useUtils();
+  const [activeTab, setActiveTab] = useState<Tab>('workflows');
   const { data: workflows, isLoading, isError } = trpc.workflows.list.useQuery();
   const deleteMutation = trpc.workflows.delete.useMutation({
     onSuccess: () => {
@@ -279,11 +446,28 @@ export default function WorkflowsPage() {
     <div className="flex h-full flex-col">
       {/* Page header */}
       <div className="flex items-center justify-between border-b border-border-default px-4 py-3">
-        <div>
-          <h1 className="text-xs font-semibold uppercase tracking-[0.15em] text-text-primary">
-            {t('title')}
-          </h1>
-          <p className="mt-0.5 text-[10px] text-text-muted">{t('subtitle')}</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-xs font-semibold uppercase tracking-[0.15em] text-text-primary">
+              {t('title')}
+            </h1>
+            <p className="mt-0.5 text-[10px] text-text-muted">{t('subtitle')}</p>
+          </div>
+          <div className="flex items-center gap-1">
+            {(['workflows', 'runs'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-3 py-1 text-[10px] font-medium uppercase tracking-wider transition-colors ${
+                  activeTab === tab
+                    ? 'border border-accent-cyan bg-accent-cyan/10 text-accent-cyan'
+                    : 'border border-transparent text-text-muted hover:text-text-secondary'
+                }`}
+              >
+                {tab === 'workflows' ? t('title') : t('allRuns')}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/workflows/templates">
@@ -303,33 +487,39 @@ export default function WorkflowsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4">
-        {/* Loading */}
-        {isLoading && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <WorkflowCardSkeleton key={i} />
-            ))}
-          </div>
-        )}
+        {activeTab === 'runs' ? (
+          <RunsTab t={t} />
+        ) : (
+          <>
+            {/* Loading */}
+            {isLoading && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <WorkflowCardSkeleton key={i} />
+                ))}
+              </div>
+            )}
 
-        {/* Error */}
-        {isError && <ErrorState t={t} />}
+            {/* Error */}
+            {isError && <ErrorState t={t} />}
 
-        {/* Empty */}
-        {!isLoading && !isError && workflows && workflows.length === 0 && <EmptyState t={t} />}
+            {/* Empty */}
+            {!isLoading && !isError && workflows && workflows.length === 0 && <EmptyState t={t} />}
 
-        {/* Workflow grid */}
-        {!isLoading && !isError && workflows && workflows.length > 0 && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {workflows.map((workflow) => (
-              <WorkflowCard
-                key={workflow.id}
-                workflow={workflow as unknown as Workflow}
-                t={t}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
+            {/* Workflow grid */}
+            {!isLoading && !isError && workflows && workflows.length > 0 && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {workflows.map((workflow) => (
+                  <WorkflowCard
+                    key={workflow.id}
+                    workflow={workflow as unknown as Workflow}
+                    t={t}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
