@@ -7,6 +7,37 @@
 
 
 ================================================================================
+COMMIT #107 — Error Handling & Resilience (Phase 4.3)
+================================================================================
+Hash:     ffad8ab
+Date:     2026-03-03
+Scope:    apps/web, packages/ai
+
+Error Boundaries:
+  - global-error.tsx: root-level catch-all (inline styles, no CSS dependency)
+  - [locale]/error.tsx: locale-level with DOS-aesthetic styling
+  - [locale]/(auth)/error.tsx: auth-level with full design system
+  - All show error message, digest ID, and retry button
+
+tRPC Client Retry:
+  - Queries: retry up to 2x with exponential backoff (1s, 2s)
+  - Skip retry on UNAUTHORIZED, FORBIDDEN, NOT_FOUND errors
+  - Mutations: no retry (to avoid duplicates)
+
+Agent Tool Retry:
+  - Failed tool calls retry up to 2 additional attempts
+  - Exponential backoff: 1s, 2s between retries
+  - Error message includes attempt count on final failure
+  - Added `retries` field to ActionRecord type for observability
+
+Offline Banner:
+  - Connection status banner in AppShell (between header and content)
+  - Shows amber WifiOff banner when disconnected or reconnecting
+  - Auto-hides when connection is restored
+
+Typecheck: 13/13 pass
+
+================================================================================
 COMMIT #106 — Automatic Audit Logging (Phase 4.2)
 ================================================================================
 Hash:     d8886b9
