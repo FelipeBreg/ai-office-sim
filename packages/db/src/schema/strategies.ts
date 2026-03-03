@@ -13,6 +13,8 @@ import {
   strategyStatusEnum,
   kpiDirectionEnum,
   kpiTriggerDirectionEnum,
+  goalHorizonEnum,
+  goalStatusEnum,
 } from './enums.js';
 import { projects } from './projects.js';
 import { users } from './users.js';
@@ -79,6 +81,46 @@ export const strategyKpis = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [index('strategy_kpi_strategy_id_idx').on(table.strategyId)],
+);
+
+export const strategyGoals = pgTable(
+  'strategy_goals',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    strategyId: uuid('strategy_id')
+      .notNull()
+      .references(() => strategies.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    horizon: goalHorizonEnum('horizon').notNull(),
+    title: text('title').notNull(),
+    description: text('description'),
+    deadline: timestamp('deadline', { withTimezone: true }),
+    status: goalStatusEnum('status').notNull().default('planned'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('strategy_goal_strategy_id_idx').on(table.strategyId),
+    index('strategy_goal_project_id_idx').on(table.projectId),
+  ],
+);
+
+export const strategyGoalKpis = pgTable(
+  'strategy_goal_kpis',
+  {
+    goalId: uuid('goal_id')
+      .notNull()
+      .references(() => strategyGoals.id, { onDelete: 'cascade' }),
+    kpiId: uuid('kpi_id')
+      .notNull()
+      .references(() => strategyKpis.id, { onDelete: 'cascade' }),
+  },
+  (table) => [index('strategy_goal_kpi_idx').on(table.goalId, table.kpiId)],
 );
 
 export const strategyLearnings = pgTable(

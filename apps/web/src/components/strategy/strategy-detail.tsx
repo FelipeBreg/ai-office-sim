@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Pencil, Check } from 'lucide-react';
+import { X, Pencil, Check, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
@@ -331,6 +331,39 @@ export function StrategyDetail({ strategyId, onClose }: StrategyDetailProps) {
                           </div>
                         );
                       })}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── KPI Trigger Config ──────────────────────────────── */}
+                {isEditing && data.kpis && data.kpis.length > 0 && (
+                  <div className="border-b border-border-default px-4 py-4">
+                    <div className="mb-2 flex items-center gap-1.5">
+                      <Zap size={10} strokeWidth={1.5} className="text-accent-cyan" />
+                      <span className="text-[8px] uppercase tracking-[0.12em] text-accent-cyan">
+                        {t('kpiTriggers' as Parameters<typeof t>[0])}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {data.kpis.map((kpi) => (
+                        <div key={kpi.id} className="border border-border-default bg-bg-overlay p-2">
+                          <span className="text-[9px] text-text-primary">{kpi.name}</span>
+                          <div className="mt-1 flex items-center gap-1.5">
+                            <select
+                              defaultValue={kpi.triggerDirection ?? ''}
+                              className="w-20 appearance-none border border-border-default bg-bg-base px-1 py-0.5 text-[8px] text-text-primary focus:outline-none"
+                            >
+                              <option value="">—</option>
+                              <option value="above">{t('triggerAbove' as Parameters<typeof t>[0])}</option>
+                              <option value="below">{t('triggerBelow' as Parameters<typeof t>[0])}</option>
+                              <option value="deviation">{t('triggerDeviation' as Parameters<typeof t>[0])}</option>
+                            </select>
+                            <span className="text-[8px] text-text-muted">
+                              {kpi.isMonitored ? '● active' : '○ off'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

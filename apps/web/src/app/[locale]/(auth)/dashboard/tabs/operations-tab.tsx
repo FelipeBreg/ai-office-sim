@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Users, CheckSquare, ShieldCheck, Zap } from 'lucide-react';
+import { Users, CheckSquare, ShieldCheck, Zap, GitBranch, ChevronRight, ChevronDown, AlertTriangle as AlertTriangleIcon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
   AreaChart,
@@ -209,6 +209,9 @@ export function OperationsTab() {
         </div>
       )}
 
+      {/* Cascade Traces */}
+      <CascadeTraceSection t={t} />
+
       {/* Empty state */}
       {agentTotal === 0 && taskTotal === 0 && approvalTotal === 0 && actionTotal === 0 && (
         <p className="py-8 text-center text-[11px] text-text-muted">{t('noData')}</p>
@@ -226,6 +229,208 @@ interface BarItem {
   count: number;
   color: string;
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Cascade Trace Section                                                     */
+/* -------------------------------------------------------------------------- */
+
+const CASCADE_STATUS_COLOR: Record<string, string> = {
+  completed: 'text-status-success',
+  failed: 'text-status-error',
+  partial_failure: 'text-status-warning',
+  in_progress: 'text-accent-cyan',
+};
+
+function CascadeTraceSection({ t }: { t: ReturnType<typeof useTranslations<'dashboard'>> }) {
+  const { data: cascades, isLoading } = trpc.cascades.listRecent.useQuery({ limit: 20 });
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="border border-border-default bg-bg-base p-4">
+        <Skeleton className="mb-3 h-4 w-40" />
+        <Skeleton className="h-32" />
+      </div>
+    );
+  }
+
+  if (!cascades || cascades.length === 0) return null;
+
+  return (
+    <div className="border border-border-default bg-bg-base p-4">
+      <div className="mb-3 flex items-center gap-1.5">
+        <GitBranch size={12} strokeWidth={1.5} className="text-text-muted" />
+        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+          {t('cascadeTraces' as Parameters<typeof t>[0])}
+        </h3>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-[10px]">
+          <thead>
+            <tr className="border-b border-border-default text-left">
+              <th className="w-6 px-2 py-1.5" />
+              <th className="px-2 py-1.5 text-text-muted">{t('cascadeId' as Parameters<typeof t>[0])}</th>
+              <th className="px-2 py-1.5 text-text-muted">{t('status' as Parameters<typeof t>[0])}</th>
+              <th className="px-2 py-1.5 text-text-muted">{t('events' as Parameters<typeof t>[0])}</th>
+              <th className="px-2 py-1.5 text-text-muted">{t('depth' as Parameters<typeof t>[0])}</th>
+              <th className="px-2 py-1.5 text-text-muted">{t('totalCost' as Parameters<typeof t>[0])}</th>
+              <th className="px-2 py-1.5 text-text-muted">{t('duration' as Parameters<typeof t>[0])}</th>
+              <th className="px-2 py-1.5 text-text-muted">{t('trigger' as Parameters<typeof t>[0])}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cascades.map((c) => (
+              <CascadeRow
+                key={c.cascadeId}
+                cascade={c}
+                expanded={expandedId === c.cascadeId}
+                onToggle={() => setExpandedId(expandedId === c.cascadeId ? null : c.cascadeId)}
+                t={t}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function CascadeRow({
+  cascade,
+  expanded,
+  onToggle,
+  t,
+}: {
+  cascade: {
+    cascadeId: string;
+    status: string;
+    eventCount: number;
+    maxDepth: number;
+    totalCostUsd: string;
+    maxDurationMs: number;
+    rootTriggerType: string | null;
+    createdAt: string;
+  };
+  expanded: boolean;
+  onToggle: () => void;
+  t: ReturnType<typeof useTranslations<'dashboard'>>;
+}) {
+  return (
+    <>
+      <tr
+        className="cursor-pointer border-b border-border-default transition-colors hover:bg-bg-overlay"
+        onClick={onToggle}
+      >
+        <td className="px-2 py-1.5">
+          {expanded ? (
+            <ChevronDown size={10} strokeWidth={1.5} className="text-text-muted" />
+          ) : (
+            <ChevronRight size={10} strokeWidth={1.5} className="text-text-muted" />
+          )}
+        </td>
+        <td className="px-2 py-1.5 font-mono text-text-secondary">
+          {cascade.cascadeId.slice(0, 8)}...
+        </td>
+        <td className={`px-2 py-1.5 ${CASCADE_STATUS_COLOR[cascade.status] ?? 'text-text-muted'}`}>
+          {cascade.status.replace('_', ' ')}
+        </td>
+        <td className="px-2 py-1.5 tabular-nums text-text-primary">{cascade.eventCount}</td>
+        <td className="px-2 py-1.5 tabular-nums text-text-primary">{cascade.maxDepth}</td>
+        <td className="px-2 py-1.5 tabular-nums text-text-primary">
+          ${Number(cascade.totalCostUsd).toFixed(4)}
+        </td>
+        <td className="px-2 py-1.5 tabular-nums text-text-primary">
+          {cascade.maxDurationMs > 0 ? `${(cascade.maxDurationMs / 1000).toFixed(1)}s` : '—'}
+        </td>
+        <td className="px-2 py-1.5 text-text-secondary">
+          {cascade.rootTriggerType ?? '—'}
+        </td>
+      </tr>
+      {expanded && (
+        <tr>
+          <td colSpan={8} className="bg-bg-overlay px-4 py-3">
+            <CascadeTreeDetail cascadeId={cascade.cascadeId} t={t} />
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+function CascadeTreeDetail({
+  cascadeId,
+  t,
+}: {
+  cascadeId: string;
+  t: ReturnType<typeof useTranslations<'dashboard'>>;
+}) {
+  const { data: events, isLoading } = trpc.cascades.getCascadeTree.useQuery(
+    { cascadeId },
+    { enabled: true },
+  );
+
+  if (isLoading) return <Skeleton className="h-16" />;
+  if (!events || events.length === 0) {
+    return <p className="text-[9px] text-text-muted">{t('noData')}</p>;
+  }
+
+  type CascadeEvent = (typeof events)[number];
+
+  // Build tree structure from flat events using parentEventId
+  const roots = events.filter((e) => !e.parentEventId);
+  const childMap = new Map<string, CascadeEvent[]>();
+  for (const e of events) {
+    if (e.parentEventId) {
+      const arr = childMap.get(e.parentEventId) ?? [];
+      arr.push(e);
+      childMap.set(e.parentEventId, arr);
+    }
+  }
+
+  function renderNode(
+    node: CascadeEvent,
+    depth: number,
+  ): React.ReactNode {
+    const children = childMap.get(node.id) ?? [];
+    const statusColor = CASCADE_STATUS_COLOR[node.status] ?? 'text-text-muted';
+
+    return (
+      <div key={node.id} style={{ paddingLeft: depth * 16 }}>
+        <div className="flex items-center gap-2 py-0.5">
+          {depth > 0 && <span className="text-[8px] text-border-default">└</span>}
+          <span className={`text-[9px] font-medium ${statusColor}`}>
+            {node.status === 'failed' && <AlertTriangleIcon size={8} className="mr-0.5 inline" />}
+            {node.agentName ?? node.agentId?.slice(0, 8) ?? 'workflow'}
+          </span>
+          <span className="text-[8px] text-text-muted">
+            d{node.depth} · {node.triggerType ?? '—'}
+          </span>
+          <span className="text-[8px] tabular-nums text-text-secondary">
+            ${Number(node.costUsd ?? 0).toFixed(4)}
+          </span>
+          {node.durationMs != null && (
+            <span className="text-[8px] tabular-nums text-text-muted">
+              {(node.durationMs / 1000).toFixed(1)}s
+            </span>
+          )}
+          {node.error && (
+            <span className="text-[8px] text-status-error" title={node.error}>
+              err
+            </span>
+          )}
+        </div>
+        {children.map((child) => renderNode(child, depth + 1))}
+      </div>
+    );
+  }
+
+  return <div>{roots.map((r) => renderNode(r, 0))}</div>;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  MetricWidget                                                              */
+/* -------------------------------------------------------------------------- */
 
 function MetricWidget({
   icon: Icon,

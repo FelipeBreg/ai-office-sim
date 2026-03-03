@@ -108,8 +108,8 @@ export default function StrategyPage() {
               onSelectStrategy={setSelectedStrategyId}
             />
 
-            {/* P3-2.7: Goals Section */}
-            <GoalsSection />
+            {/* P3-2.7: Goals Section — linked to selected or first strategy */}
+            <GoalsSection strategyId={selectedStrategyId ?? strategies?.[0]?.id} />
           </div>
         )}
       </div>

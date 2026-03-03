@@ -91,6 +91,16 @@ export const kpiTriggerDirectionEnum = pgEnum('kpi_trigger_direction', [
   'deviation',
 ]);
 
+// Strategy Goals
+export const goalHorizonEnum = pgEnum('goal_horizon', ['1_year', '6_month', '1_month']);
+export const goalStatusEnum = pgEnum('goal_status', [
+  'planned',
+  'in_progress',
+  'on_track',
+  'at_risk',
+  'completed',
+]);
+
 // Strategies
 export const strategyTypeEnum = pgEnum('strategy_type', [
   'growth',

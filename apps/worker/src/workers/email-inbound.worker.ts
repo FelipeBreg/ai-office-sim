@@ -1,5 +1,6 @@
-import { QUEUE_NAMES, emailInboundJobSchema } from '@ai-office/queue';
+import { QUEUE_NAMES, emailInboundJobSchema, getAgentExecutionQueue } from '@ai-office/queue';
 import type { EmailInboundJob } from '@ai-office/queue';
+import { randomUUID } from 'node:crypto';
 import { createTypedWorker } from './create-worker.js';
 import {
   db,
@@ -203,6 +204,43 @@ export function createEmailInboundWorker() {
               contentType: 'text',
               timestamp: new Date().toISOString(),
             });
+
+            // 5. Auto-trigger handler agent if conversation has one assigned
+            const conv = existingConv ?? (await db
+              .select({ handlerAgentId: conversations.handlerAgentId })
+              .from(conversations)
+              .where(eq(conversations.id, conversationId))
+              .limit(1)
+              .then((r) => r[0]));
+
+            if (conv?.handlerAgentId) {
+              try {
+                await getAgentExecutionQueue().add(
+                  `inbound-msg-${convMsg!.id}`,
+                  {
+                    agentId: conv.handlerAgentId,
+                    projectId: conn.projectId,
+                    sessionId: randomUUID(),
+                    triggerType: 'agent_message' as const,
+                    triggerPayload: {
+                      conversationId,
+                      messageId: convMsg!.id,
+                      fromEmail,
+                      subject: email.subject,
+                      content: email.body,
+                    },
+                  },
+                );
+                console.log(
+                  `[email-inbound] Auto-triggered agent=${conv.handlerAgentId} for conversation=${conversationId}`,
+                );
+              } catch (triggerErr) {
+                console.error(
+                  `[email-inbound] Failed to trigger agent for conversation=${conversationId}:`,
+                  triggerErr instanceof Error ? triggerErr.message : triggerErr,
+                );
+              }
+            }
 
             totalNew++;
           }
