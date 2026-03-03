@@ -7,6 +7,48 @@
 
 
 ================================================================================
+COMMIT #94 — Per-Agent Knowledge Base with Document Ingestion (Phase 1.2)
+================================================================================
+Hash:     d6d2504
+Date:     2026-03-02
+Scope:    packages/db, packages/ai, packages/api, apps/web
+
+WHAT CHANGED:
+  • DB SCHEMA: added agentId optional FK to documents table (per-agent scoping)
+  • INGEST PIPELINE: ingestDocument() now accepts optional agentId parameter
+  • RAG SEARCH: ragSearch() accepts agentId, queries agent-scoped + project-wide
+    docs combined (WHERE agentId = X OR agentId IS NULL)
+  • SEARCH TOOL: search_company_memory passes context.agentId to ragSearch
+  • DOCUMENTS ROUTER: new listByAgent query, new ingest mutation for text content,
+    upload mutation accepts optional agentId
+  • AGENT DETAIL PAGE: new "Knowledge Base" tab with add document form (title +
+    paste content), document list with chunk counts, delete per-document
+  • I18N: en-US + pt-BR translations for all new keys
+
+WHY:
+  Agents need niched knowledge. Previously all documents were project-wide with
+  no way to scope specific docs to a specific agent. Now each agent has its own
+  knowledge base tab where users can add documents that only that agent sees
+  (plus project-wide docs). The search_company_memory tool automatically
+  prioritizes agent-specific docs in results.
+
+FILES (9):
+  M packages/db/src/schema/documents.ts
+  A packages/db/src/migrations/0002_add_agent_id_to_documents.sql
+  M packages/ai/src/memory/ingest.ts
+  M packages/ai/src/memory/rag-search.ts
+  M packages/ai/src/tools/registry.ts
+  M packages/api/src/routers/documents.ts
+  M apps/web/src/app/[locale]/(auth)/agents/[id]/page.tsx
+  M apps/web/messages/en-US.json
+  M apps/web/messages/pt-BR.json
+
+NOTE: Migration 0002 must be run manually against Neon:
+  ALTER TABLE documents ADD COLUMN IF NOT EXISTS agent_id uuid REFERENCES agents(id) ON DELETE SET NULL;
+  CREATE INDEX IF NOT EXISTS document_agent_id_idx ON documents(agent_id);
+
+
+================================================================================
 COMMIT #93 — Agent Session Persistence & Multi-Turn Memory (Phase 1.1)
 ================================================================================
 Hash:     d0664f0
