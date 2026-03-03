@@ -419,7 +419,16 @@
     "tplChurnPreventionDesc": "Analise dados de uso semanalmente e engaje proativamente clientes em risco.",
     "tplInvoiceProcessing": "Processamento de Faturas",
     "tplInvoiceProcessingDesc": "Extraia dados de faturas, valide com IA e envie para aprovação financeira.",
-    "agentCount": "{count} agentes"
+    "agentCount": "{count} agentes",
+    "deploy": "Implantar",
+    "deploying": "Implantando...",
+    "deployPreview": "Prévia da Implantação",
+    "confirmDeploy": "Implantar Agora",
+    "cancel": "Cancelar",
+    "workflowName": "Workflow",
+    "agentsToCreate": "Agentes a Criar",
+    "existingAgentsUsed": "Agentes Existentes (serão reutilizados)",
+    "noAgentsNeeded": "Nenhum agente necessário para este workflow."
   },
   "toolsPage": {
     "title": "Ferramentas",

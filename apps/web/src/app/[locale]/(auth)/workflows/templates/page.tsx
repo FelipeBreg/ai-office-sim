@@ -227,11 +227,13 @@ interface TemplateCardProps {
     definition: { nodes: Array<{ data?: { nodeType?: string } }>; edges: unknown[] } | null;
   };
   onUse: (id: string) => void;
+  onDeploy: (id: string) => void;
   isUsing: boolean;
+  isDeploying: boolean;
   t: ReturnType<typeof useTranslations<'workflowTemplates'>>;
 }
 
-function TemplateCard({ template, onUse, isUsing, t }: TemplateCardProps) {
+function TemplateCard({ template, onUse, onDeploy, isUsing, isDeploying, t }: TemplateCardProps) {
   const Icon: LucideIcon = ICON_MAP[template.icon] ?? LayoutGrid;
 
   // Collect unique node types for dot indicators + agent count
@@ -246,6 +248,7 @@ function TemplateCard({ template, onUse, isUsing, t }: TemplateCardProps) {
   }
 
   const categoryLabelKey = CATEGORY_LABEL_KEY[template.category as Category] ?? template.category;
+  const busy = isUsing || isDeploying;
 
   return (
     <div className="group flex flex-col border border-border-default bg-bg-raised transition-colors hover:border-accent-cyan/40">
@@ -289,20 +292,161 @@ function TemplateCard({ template, onUse, isUsing, t }: TemplateCardProps) {
             ))}
           </div>
         </div>
-        <Button
-          size="sm"
-          onClick={() => onUse(template.id)}
-          disabled={isUsing}
-        >
-          {isUsing ? (
-            <>
-              <Loader2 size={10} className="mr-1 animate-spin" />
-              {t('using')}
-            </>
-          ) : (
-            t('useTemplate')
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onUse(template.id)}
+            disabled={busy}
+          >
+            {isUsing ? (
+              <>
+                <Loader2 size={10} className="mr-1 animate-spin" />
+                {t('using')}
+              </>
+            ) : (
+              t('useTemplate')
+            )}
+          </Button>
+          {agentCount > 0 && (
+            <Button
+              size="sm"
+              onClick={() => onDeploy(template.id)}
+              disabled={busy}
+            >
+              {isDeploying ? (
+                <>
+                  <Loader2 size={10} className="mr-1 animate-spin" />
+                  {t('deploying')}
+                </>
+              ) : (
+                t('deploy')
+              )}
+            </Button>
           )}
-        </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Page                                                                      */
+/* -------------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------------- */
+/*  Deploy Preview Dialog                                                     */
+/* -------------------------------------------------------------------------- */
+
+function DeployPreviewDialog({
+  templateId,
+  onClose,
+  onConfirm,
+  isDeploying,
+  t,
+}: {
+  templateId: string;
+  onClose: () => void;
+  onConfirm: () => void;
+  isDeploying: boolean;
+  t: ReturnType<typeof useTranslations<'workflowTemplates'>>;
+}) {
+  const { data: preview, isLoading } = trpc.workflowTemplates.previewDeploy.useQuery(
+    { templateId },
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="w-full max-w-md border border-border-default bg-bg-raised">
+        <div className="flex items-center justify-between border-b border-border-default px-4 py-3">
+          <h2 className="text-[11px] font-medium uppercase tracking-[0.15em] text-text-primary">
+            {t('deployPreview')}
+          </h2>
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary text-xs">
+            &times;
+          </button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-48" />
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-3 w-40" />
+            </div>
+          ) : preview ? (
+            <>
+              <div>
+                <p className="text-[9px] uppercase tracking-[0.15em] text-text-muted mb-1">
+                  {t('workflowName')}
+                </p>
+                <p className="text-xs text-text-primary">{'name' in preview.workflow ? preview.workflow.name : preview.workflow.nameEn}</p>
+              </div>
+
+              {(preview.agentsToCreate ?? []).length > 0 && (
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.15em] text-text-muted mb-1.5">
+                    {t('agentsToCreate')}
+                  </p>
+                  <div className="space-y-1.5">
+                    {(preview.agentsToCreate ?? []).map((agent) => (
+                      <div key={agent.archetype} className="border border-border-default bg-bg-base p-2">
+                        <div className="flex items-center gap-2">
+                          <Bot size={10} className="text-accent-cyan" />
+                          <span className="text-[10px] text-text-primary">{agent.name}</span>
+                          <Badge variant="default" className="!text-[7px]">{agent.archetype}</Badge>
+                        </div>
+                        {agent.tools.length > 0 && (
+                          <p className="mt-1 text-[8px] text-text-muted">
+                            {agent.tools.length} tools: {agent.tools.slice(0, 4).join(', ')}
+                            {agent.tools.length > 4 && ` +${agent.tools.length - 4}`}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(preview.existingAgents ?? []).length > 0 && (
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.15em] text-text-muted mb-1.5">
+                    {t('existingAgentsUsed')}
+                  </p>
+                  <div className="space-y-1">
+                    {preview.existingAgents.map((agent) => (
+                      <div key={agent.archetype} className="flex items-center gap-2 text-[10px] text-text-secondary">
+                        <CheckCircle size={10} className="text-status-success" />
+                        <span>{agent.agentName}</span>
+                        <Badge variant="default" className="!text-[7px]">{agent.archetype}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(preview.agentsToCreate ?? []).length === 0 && (preview.existingAgents ?? []).length === 0 && (
+                <p className="text-[10px] text-text-muted">{t('noAgentsNeeded')}</p>
+              )}
+            </>
+          ) : null}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-border-default px-4 py-3">
+          <Button variant="secondary" size="sm" onClick={onClose} disabled={isDeploying}>
+            {t('cancel')}
+          </Button>
+          <Button size="sm" onClick={onConfirm} disabled={isDeploying || isLoading}>
+            {isDeploying ? (
+              <>
+                <Loader2 size={10} className="mr-1 animate-spin" />
+                {t('deploying')}
+              </>
+            ) : (
+              t('confirmDeploy')
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -317,6 +461,7 @@ export default function WorkflowTemplatesPage() {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<Category>('all');
   const [usingId, setUsingId] = useState<string | null>(null);
+  const [deployPreviewId, setDeployPreviewId] = useState<string | null>(null);
 
   const { data: templates, isLoading } = trpc.workflowTemplates.list.useQuery();
   const useMutation = trpc.workflowTemplates.use.useMutation({
@@ -328,9 +473,28 @@ export default function WorkflowTemplatesPage() {
     },
   });
 
+  const deployMutation = trpc.workflowTemplates.deploy.useMutation({
+    onSuccess: (result) => {
+      setDeployPreviewId(null);
+      router.push(`/workflows/${result.id}`);
+    },
+    onError: () => {
+      // Keep dialog open on error
+    },
+  });
+
   const handleUse = (templateId: string) => {
     setUsingId(templateId);
     useMutation.mutate({ templateId });
+  };
+
+  const handleDeploy = (templateId: string) => {
+    setDeployPreviewId(templateId);
+  };
+
+  const handleConfirmDeploy = () => {
+    if (!deployPreviewId) return;
+    deployMutation.mutate({ templateId: deployPreviewId });
   };
 
   // Filter by active category
@@ -403,13 +567,26 @@ export default function WorkflowTemplatesPage() {
                 key={template.id}
                 template={template as any}
                 onUse={handleUse}
+                onDeploy={handleDeploy}
                 isUsing={usingId === template.id}
+                isDeploying={deployPreviewId === template.id && deployMutation.isPending}
                 t={t}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Deploy Preview Dialog */}
+      {deployPreviewId && (
+        <DeployPreviewDialog
+          templateId={deployPreviewId}
+          onClose={() => setDeployPreviewId(null)}
+          onConfirm={handleConfirmDeploy}
+          isDeploying={deployMutation.isPending}
+          t={t}
+        />
+      )}
     </div>
   );
 }

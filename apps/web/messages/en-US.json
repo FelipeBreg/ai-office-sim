@@ -419,7 +419,16 @@
     "tplChurnPreventionDesc": "Analyze usage data weekly and proactively engage at-risk customers.",
     "tplInvoiceProcessing": "Invoice Processing",
     "tplInvoiceProcessingDesc": "Extract invoice data, validate with AI, and route for financial approval.",
-    "agentCount": "{count} agents"
+    "agentCount": "{count} agents",
+    "deploy": "Deploy",
+    "deploying": "Deploying...",
+    "deployPreview": "Deploy Preview",
+    "confirmDeploy": "Deploy Now",
+    "cancel": "Cancel",
+    "workflowName": "Workflow",
+    "agentsToCreate": "Agents to Create",
+    "existingAgentsUsed": "Existing Agents (will be reused)",
+    "noAgentsNeeded": "No agents required for this workflow."
   },
   "toolsPage": {
     "title": "Tools",
