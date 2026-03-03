@@ -308,6 +308,11 @@ function OverviewTab({ agent }: { agent: Agent }) {
               <Zap size={10} strokeWidth={1.5} className="text-text-muted" />
               {t(triggerKey as Parameters<typeof t>[0])}
             </div>
+            {agent.triggerType === 'scheduled' && agent.triggerConfig && (agent.triggerConfig as { cron?: string }).cron && (
+              <div className="mt-1 text-[10px] font-mono text-text-muted">
+                cron: {(agent.triggerConfig as { cron: string }).cron}
+              </div>
+            )}
           </div>
 
           {/* Memory Scope */}

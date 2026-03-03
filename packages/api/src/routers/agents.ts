@@ -54,6 +54,11 @@ export const agentsRouter = createTRPCRouter({
         systemPromptEn: z.string().optional(),
         systemPromptPtBr: z.string().optional(),
         triggerType: z.enum(['always_on', 'scheduled', 'event', 'manual', 'agent']).optional(),
+        triggerConfig: z.object({
+          cron: z.string().optional(),
+          eventName: z.string().optional(),
+          sourceAgentId: z.string().uuid().optional(),
+        }).optional(),
         tools: z.array(z.string().max(100)).max(50).optional(),
         team: z.enum(['development', 'research', 'marketing', 'sales', 'support', 'finance', 'operations']).optional(),
         config: z.object({
@@ -85,6 +90,11 @@ export const agentsRouter = createTRPCRouter({
         systemPromptEn: z.string().optional(),
         systemPromptPtBr: z.string().optional(),
         triggerType: z.enum(['always_on', 'scheduled', 'event', 'manual', 'agent']).optional(),
+        triggerConfig: z.object({
+          cron: z.string().optional(),
+          eventName: z.string().optional(),
+          sourceAgentId: z.string().uuid().optional(),
+        }).optional(),
         tools: z.array(z.string().max(100)).max(50).optional(),
         team: z.enum(['development', 'research', 'marketing', 'sales', 'support', 'finance', 'operations']).nullish(),
         isActive: z.boolean().optional(),
