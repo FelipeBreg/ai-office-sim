@@ -33,6 +33,13 @@ import { triggerAgentTool } from './agents/trigger-agent.js';
 import { updateMyHeartbeatTool } from './self-config/update-my-heartbeat.js';
 import { updateMyScheduleTool } from './self-config/update-my-schedule.js';
 import { updateStrategyKpiTool } from './strategy/update-strategy-kpi.js';
+import { getKpiTrendsTool } from './strategy/get-kpi-trends.js';
+import { updateAgentScheduleTool } from './fleet/update-agent-schedule.js';
+import { updateAgentHeartbeatTool } from './fleet/update-agent-heartbeat.js';
+import { getFleetStatusTool } from './fleet/get-fleet-status.js';
+import { getCostReportTool } from './fleet/get-cost-report.js';
+import { searchActionLogsTool } from './fleet/search-action-logs.js';
+import { pauseAgentsByTeamTool, resumeAgentsByTeamTool } from './fleet/pause-resume-team.js';
 
 // Convert Zod schema to JSON Schema for Anthropic tool format
 function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
@@ -246,3 +253,13 @@ toolRegistry.register(updateMyScheduleTool);
 
 // ── Strategy / KPI ──
 toolRegistry.register(updateStrategyKpiTool);
+toolRegistry.register(getKpiTrendsTool);
+
+// ── Fleet Management (CEO) ──
+toolRegistry.register(updateAgentScheduleTool);
+toolRegistry.register(updateAgentHeartbeatTool);
+toolRegistry.register(getFleetStatusTool);
+toolRegistry.register(getCostReportTool);
+toolRegistry.register(searchActionLogsTool);
+toolRegistry.register(pauseAgentsByTeamTool);
+toolRegistry.register(resumeAgentsByTeamTool);

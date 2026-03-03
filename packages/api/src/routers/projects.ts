@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure, projectProcedure, adminProcedure, requireRole, enforceResourceLimit } from '../trpc.js';
-import { db, projects, eq, and, desc } from '@ai-office/db';
+import { db, projects, agents, eq, and, desc } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 
 export const projectsRouter = createTRPCRouter({
@@ -47,6 +47,84 @@ export const projectsRouter = createTRPCRouter({
           ...input,
         })
         .returning();
+
+      // Auto-create CEO Agent for every new project
+      if (project) {
+        try {
+          await db.insert(agents).values({
+            projectId: project.id,
+            name: 'CEO Agent',
+            namePtBr: 'Agente CEO',
+            slug: 'ceo-agent',
+            archetype: 'ceo_strategist',
+            status: 'idle',
+            isSystemAgent: true,
+            isActive: true,
+            heartbeatIntervalMin: 120,
+            maxActionsPerSession: 30,
+            config: {
+              model: 'claude-opus-4-6',
+              temperature: 0.3,
+              maxTokens: 8192,
+              budget: 5.0,
+            },
+            tools: [
+              'get_current_time',
+              'search_company_memory',
+              'trigger_agent',
+              'update_my_heartbeat',
+              'update_my_schedule',
+              'update_strategy_kpi',
+              'get_fleet_status',
+              'get_cost_report',
+              'search_action_logs',
+              'update_agent_schedule',
+              'update_agent_heartbeat',
+              'pause_agents_by_team',
+              'resume_agents_by_team',
+              'get_kpi_trends',
+              'create_document',
+              'create_human_task',
+              'log_message',
+            ],
+            systemPromptEn: `You are the CEO Agent — the autonomous strategic executive of this company. Your role is to monitor all business operations, track KPIs, orchestrate the agent fleet, and ensure the company moves toward its strategic goals.
+
+On each heartbeat:
+1. Review your self-programmed instructions
+2. Check fleet status and agent health
+3. Monitor key KPIs against targets
+4. Take corrective action if needed (trigger agents, adjust schedules, create tasks)
+5. Update your heartbeat instructions for the next cycle
+
+On daily briefings:
+1. Summarize yesterday's key metrics and agent activity
+2. Highlight wins, risks, and blockers
+3. Recommend strategic actions for the day
+4. Save the briefing as a wiki document
+
+You are strategic, concise, and data-driven. Never guess — always check real data before making decisions.`,
+            systemPromptPtBr: `Você é o Agente CEO — o executivo estratégico autônomo desta empresa. Seu papel é monitorar todas as operações, acompanhar KPIs, orquestrar a frota de agentes e garantir que a empresa avance em direção aos seus objetivos estratégicos.
+
+A cada heartbeat:
+1. Revise suas instruções auto-programadas
+2. Verifique o status da frota e saúde dos agentes
+3. Monitore os KPIs principais em relação às metas
+4. Tome ações corretivas se necessário (acionar agentes, ajustar agendas, criar tarefas)
+5. Atualize suas instruções de heartbeat para o próximo ciclo
+
+Em briefings diários:
+1. Resuma as métricas do dia anterior e atividade dos agentes
+2. Destaque conquistas, riscos e bloqueios
+3. Recomende ações estratégicas para o dia
+4. Salve o briefing como documento wiki
+
+Você é estratégico, conciso e orientado por dados. Nunca adivinhe — sempre consulte dados reais antes de tomar decisões.`,
+          });
+        } catch {
+          // Non-blocking — don't fail project creation
+        }
+      }
+
       return project!;
     }),
 

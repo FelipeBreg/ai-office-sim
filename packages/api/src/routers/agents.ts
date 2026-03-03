@@ -123,14 +123,24 @@ export const agentsRouter = createTRPCRouter({
   delete: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const [deleted] = await db
-        .delete(agents)
+      // Prevent deletion of system agents (e.g., CEO Agent)
+      const [agent] = await db
+        .select({ isSystemAgent: agents.isSystemAgent })
+        .from(agents)
         .where(and(eq(agents.id, input.id), eq(agents.projectId, ctx.project!.id)))
-        .returning({ id: agents.id });
+        .limit(1);
 
-      if (!deleted) {
+      if (!agent) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Agent not found' });
       }
+      if (agent.isSystemAgent) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'System agents cannot be deleted' });
+      }
+
+      await db
+        .delete(agents)
+        .where(and(eq(agents.id, input.id), eq(agents.projectId, ctx.project!.id)));
+
       return { deleted: true };
     }),
 

@@ -200,6 +200,41 @@ export async function processAgentExecution(
         data.resumeApproved ?? false,
       );
     } else {
+      // ── CEO TRIAGE: cheap Haiku pre-check for ceo_strategist heartbeats ──
+      if (
+        agent.archetype === 'ceo_strategist' &&
+        triggerType === 'heartbeat' &&
+        triggerType !== ('briefing' as TriggerType)
+      ) {
+        try {
+          const triageResult = await callLLM(
+            {
+              model: 'claude-haiku-4-5-20251001',
+              system: 'You are a triage assistant. Review the snapshot and reply with exactly NEEDS_ACTION or ALL_CLEAR followed by a one-line reason.',
+              messages: [{ role: 'user', content: `CEO heartbeat triage. ${(triggerPayload as Record<string, unknown>)?.message ?? 'Routine check.'}` }],
+              max_tokens: 100,
+              temperature: 0,
+            },
+            { projectId, agentId, sessionId, agentName: agent.name },
+          );
+
+          const triageText = triageResult.response.content
+            .filter((b) => b.type === 'text')
+            .map((b) => (b as unknown as { text: string }).text)
+            .join('');
+
+          if (triageText.includes('ALL_CLEAR')) {
+            console.log(`[agent-execution] CEO triage: ALL_CLEAR — skipping full session. ${triageText}`);
+            await db.update(agents).set({ status: 'idle', lastHeartbeatAt: new Date() }).where(eq(agents.id, agentId));
+            emitToProject(projectId, 'agent:status_changed', { agentId, status: 'idle', timestamp: new Date().toISOString() });
+            return;
+          }
+          console.log(`[agent-execution] CEO triage: NEEDS_ACTION — proceeding with full session. ${triageText}`);
+        } catch (triageErr) {
+          console.warn(`[agent-execution] CEO triage failed, proceeding with full session:`, triageErr);
+        }
+      }
+
       // ── NEW execution ──
       const { context, config: agentConfig } = await buildAgentContext(agent, projectId, sessionId, triggerType, triggerPayload, data.cascade);
 

@@ -1,4 +1,4 @@
-import { pgTable, uuid, integer, numeric, jsonb, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, integer, numeric, jsonb, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 import { projects } from './projects.js';
 
 export const orchestratorConfig = pgTable(
@@ -22,6 +22,8 @@ export const orchestratorConfig = pgTable(
     approvalTimeoutHours: integer('approval_timeout_hours').notNull().default(48),
     /** Max cascade depth before rejecting (default 5) */
     maxCascadeDepth: integer('max_cascade_depth').notNull().default(5),
+    /** CEO daily briefing cron (default: 8am daily) */
+    ceoBriefingCron: text('ceo_briefing_cron').notNull().default('0 8 * * *'),
     /** Priority rules: JSON array of { team, priority, maxConcurrency } */
     priorityRules: jsonb('priority_rules').$type<{
       team: string;

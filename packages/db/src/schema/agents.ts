@@ -51,6 +51,8 @@ export const agents = pgTable(
     }>(),
     maxActionsPerSession: integer('max_actions_per_session').notNull().default(20),
     isActive: boolean('is_active').notNull().default(true),
+    /** System agents (e.g., CEO) cannot be deleted by users */
+    isSystemAgent: boolean('is_system_agent').notNull().default(false),
     /** Auto-recovery: when the agent can next be retried after an error */
     cooldownUntil: timestamp('cooldown_until', { withTimezone: true }),
     /** Auto-recovery: how many consecutive recovery attempts have been made */
