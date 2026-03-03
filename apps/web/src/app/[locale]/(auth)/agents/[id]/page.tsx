@@ -20,6 +20,9 @@ import {
   Pencil,
   ChevronDown,
   Trash2,
+  FileText,
+  Upload,
+  Plus,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
@@ -32,7 +35,7 @@ import { Separator } from '@/components/ui/separator';
 /*  Types                                                                      */
 /* -------------------------------------------------------------------------- */
 
-type Tab = 'overview' | 'configuration' | 'activityLog' | 'memory' | 'sessions';
+type Tab = 'overview' | 'configuration' | 'activityLog' | 'memory' | 'sessions' | 'knowledgeBase';
 
 type AgentStatus = 'idle' | 'working' | 'awaiting_approval' | 'error' | 'offline';
 
@@ -138,6 +141,7 @@ const TABS: { id: Tab; labelKey: string; icon: typeof Eye }[] = [
   { id: 'activityLog', labelKey: 'tabActivityLog', icon: ScrollText },
   { id: 'sessions', labelKey: 'tabSessions', icon: Clock },
   { id: 'memory', labelKey: 'tabMemory', icon: Brain },
+  { id: 'knowledgeBase', labelKey: 'tabKnowledgeBase', icon: FileText },
 ];
 
 const ALL_TOOLS = [
@@ -890,6 +894,177 @@ function ActivityLogTab({ agentId }: { agentId: string }) {
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Tab: Knowledge Base                                                        */
+/* -------------------------------------------------------------------------- */
+
+interface KnowledgeDoc {
+  id: string;
+  title: string;
+  sourceType: string;
+  agentId: string | null;
+  chunkCount: number;
+  createdAt: Date | string;
+}
+
+function KnowledgeBaseTab({ agentId }: { agentId: string }) {
+  const t = useTranslations('agentDetail');
+  const [showAdd, setShowAdd] = useState(false);
+  const [docTitle, setDocTitle] = useState('');
+  const [docContent, setDocContent] = useState('');
+
+  const docsQuery = trpc.documents.listByAgent.useQuery({ agentId, agentOnly: true });
+  const ingestMutation = trpc.documents.ingest.useMutation({
+    onSuccess: () => {
+      docsQuery.refetch();
+      setDocTitle('');
+      setDocContent('');
+      setShowAdd(false);
+    },
+  });
+  const deleteMutation = trpc.documents.delete.useMutation({
+    onSuccess: () => {
+      docsQuery.refetch();
+    },
+  });
+
+  const docs = (docsQuery.data ?? []) as KnowledgeDoc[];
+
+  const handleIngest = () => {
+    if (!docTitle.trim() || !docContent.trim()) return;
+    ingestMutation.mutate({
+      title: docTitle.trim(),
+      content: docContent.trim(),
+      agentId,
+    });
+  };
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
+          {t('knowledgeBase')} {docs.length > 0 && `(${docs.length})`}
+        </div>
+        <button
+          onClick={() => setShowAdd(!showAdd)}
+          className="flex items-center gap-1 border border-border-default px-2 py-1 text-[10px] text-text-muted transition-colors hover:border-accent-cyan hover:text-accent-cyan"
+        >
+          <Plus size={10} strokeWidth={2} />
+          {t('addDocument')}
+        </button>
+      </div>
+
+      {/* Add document form */}
+      {showAdd && (
+        <div className="space-y-3 border border-border-default bg-bg-base p-3">
+          <div className="text-[9px] font-medium uppercase tracking-wide text-accent-cyan">
+            {t('addDocument')}
+          </div>
+          <Input
+            value={docTitle}
+            onChange={(e) => setDocTitle(e.target.value)}
+            placeholder={t('documentTitlePlaceholder')}
+            className="text-[10px]"
+          />
+          <textarea
+            value={docContent}
+            onChange={(e) => setDocContent(e.target.value)}
+            placeholder={t('documentContentPlaceholder')}
+            rows={8}
+            className="w-full border border-border-default bg-bg-deepest px-2 py-1.5 font-mono text-[10px] text-text-primary placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
+          />
+          <div className="flex items-center justify-between">
+            <span className="text-[8px] text-text-muted">
+              {docContent.length > 0 && `${docContent.length.toLocaleString()} chars`}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAdd(false)}
+                className="px-2 py-1 text-[10px] text-text-muted hover:text-text-primary"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                onClick={handleIngest}
+                disabled={ingestMutation.isPending || !docTitle.trim() || !docContent.trim()}
+                className="flex items-center gap-1 border border-accent-cyan bg-accent-cyan/10 px-2.5 py-1 text-[10px] font-medium text-accent-cyan transition-colors hover:bg-accent-cyan/20 disabled:opacity-50"
+              >
+                <Upload size={10} strokeWidth={2} />
+                {ingestMutation.isPending ? t('ingesting') : t('ingestDocument')}
+              </button>
+            </div>
+          </div>
+          {ingestMutation.isError && (
+            <p className="text-[10px] text-status-error">{ingestMutation.error.message}</p>
+          )}
+          {ingestMutation.isSuccess && (
+            <p className="text-[10px] text-status-success">{t('documentIngested')}</p>
+          )}
+        </div>
+      )}
+
+      {/* Loading */}
+      {docsQuery.isLoading && (
+        <div className="space-y-2">
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
+        </div>
+      )}
+
+      {/* Error */}
+      {docsQuery.isError && (
+        <div className="flex items-center gap-2 text-[10px] text-status-error">
+          <AlertTriangle size={12} strokeWidth={1.5} />
+          {t('loadError')}
+        </div>
+      )}
+
+      {/* Empty */}
+      {!docsQuery.isLoading && !docsQuery.isError && docs.length === 0 && !showAdd && (
+        <div className="flex flex-col items-center gap-2 py-8 text-center">
+          <FileText size={20} strokeWidth={1} className="text-text-muted" />
+          <p className="text-[10px] text-text-muted">{t('noDocuments')}</p>
+          <p className="max-w-xs text-[9px] text-text-muted">{t('noDocumentsHint')}</p>
+        </div>
+      )}
+
+      {/* Document list */}
+      {docs.length > 0 && (
+        <div className="space-y-2">
+          {docs.map((doc) => (
+            <div
+              key={doc.id}
+              className="flex items-center justify-between border border-border-default bg-bg-base p-3"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <FileText size={12} strokeWidth={1.5} className="shrink-0 text-accent-cyan" />
+                  <span className="truncate text-[10px] font-medium text-text-primary">
+                    {doc.title}
+                  </span>
+                </div>
+                <div className="mt-1 flex items-center gap-3 text-[8px] text-text-muted">
+                  <span>{doc.chunkCount} chunks</span>
+                  <span>{doc.sourceType}</span>
+                  <span>{formatDate(doc.createdAt)}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => deleteMutation.mutate({ id: doc.id })}
+                disabled={deleteMutation.isPending}
+                className="ml-2 shrink-0 text-text-muted transition-colors hover:text-status-error"
+                title={t('deleteDocument')}
+              >
+                <Trash2 size={12} strokeWidth={1.5} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Tab: Memory                                                                */
 /* -------------------------------------------------------------------------- */
 
@@ -1232,6 +1407,7 @@ export default function AgentDetailPage({
         {activeTab === 'activityLog' && <ActivityLogTab agentId={id} />}
         {activeTab === 'sessions' && <SessionsTab agentId={id} />}
         {activeTab === 'memory' && <MemoryTab agentId={id} />}
+        {activeTab === 'knowledgeBase' && <KnowledgeBaseTab agentId={id} />}
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { documentSourceTypeEnum } from './enums.js';
 import { projects } from './projects.js';
+import { agents } from './agents.js';
 import { vector } from './custom-types.js';
 
 export const documents = pgTable(
@@ -18,6 +19,8 @@ export const documents = pgTable(
     projectId: uuid('project_id')
       .notNull()
       .references(() => projects.id, { onDelete: 'cascade' }),
+    agentId: uuid('agent_id')
+      .references(() => agents.id, { onDelete: 'set null' }),
     title: text('title').notNull(),
     sourceType: documentSourceTypeEnum('source_type').notNull(),
     sourceUrl: text('source_url'),
@@ -25,7 +28,10 @@ export const documents = pgTable(
     metadata: jsonb('metadata'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index('document_project_id_idx').on(table.projectId)],
+  (table) => [
+    index('document_project_id_idx').on(table.projectId),
+    index('document_agent_id_idx').on(table.agentId),
+  ],
 );
 
 export const documentChunks = pgTable(

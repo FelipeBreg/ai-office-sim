@@ -25,6 +25,7 @@ export interface IngestDocumentParams {
   sourceType: DocumentSourceType;
   sourceUrl?: string;
   metadata?: Record<string, unknown>;
+  agentId?: string;
 }
 
 export interface IngestResult {
@@ -131,7 +132,7 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
  * generate embeddings, and store chunks with embeddings.
  */
 export async function ingestDocument(params: IngestDocumentParams): Promise<IngestResult> {
-  const { projectId, title, content, sourceType, sourceUrl, metadata } = params;
+  const { projectId, title, content, sourceType, sourceUrl, metadata, agentId } = params;
 
   // 1. Store the document record
   const [doc] = await db
@@ -143,6 +144,7 @@ export async function ingestDocument(params: IngestDocumentParams): Promise<Inge
       sourceUrl,
       content,
       metadata,
+      ...(agentId ? { agentId } : {}),
     })
     .returning();
 

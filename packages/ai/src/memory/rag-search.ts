@@ -12,6 +12,7 @@ export interface RagSearchParams {
   projectId: string;
   query: string;
   topK?: number;
+  agentId?: string;
   filters?: {
     sourceType?: string;
     dateRange?: { from?: string; to?: string };
@@ -67,14 +68,34 @@ async function generateQueryEmbedding(query: string): Promise<number[]> {
  * Returns top-K results ranked by relevance.
  */
 export async function ragSearch(params: RagSearchParams): Promise<RagSearchResult[]> {
-  const { projectId, query, topK = 5, filters } = params;
+  const { projectId, query, topK = 5, agentId, filters } = params;
 
   // 1. Generate embedding for the query
   const queryEmbedding = await generateQueryEmbedding(query);
   const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
-  // 2. Build the SQL query with cosine similarity
-  // cosine_distance returns distance (0 = identical), we want similarity (1 - distance)
+  // 2. Build base conditions
+  const baseConditions = [
+    eq(documentChunks.projectId, projectId),
+    filters?.sourceType
+      ? eq(documents.sourceType, filters.sourceType as 'upload' | 'web' | 'api' | 'agent')
+      : undefined,
+    filters?.dateRange?.from
+      ? sql`${documents.createdAt} >= ${filters.dateRange.from}::timestamptz`
+      : undefined,
+    filters?.dateRange?.to
+      ? sql`${documents.createdAt} <= ${filters.dateRange.to}::timestamptz`
+      : undefined,
+  ];
+
+  // 3. If agentId provided, search agent-scoped docs first, then project-wide
+  // Agent-scoped = documents.agentId = agentId
+  // Project-wide = documents.agentId IS NULL
+  // Combined: (agentId = X OR agentId IS NULL)
+  const agentCondition = agentId
+    ? sql`(${documents.agentId} = ${agentId} OR ${documents.agentId} IS NULL)`
+    : undefined;
+
   const results = await db
     .select({
       content: documentChunks.content,
@@ -86,22 +107,7 @@ export async function ragSearch(params: RagSearchParams): Promise<RagSearchResul
     })
     .from(documentChunks)
     .innerJoin(documents, eq(documentChunks.documentId, documents.id))
-    .where(
-      and(
-        eq(documentChunks.projectId, projectId),
-        // Filter by source type if specified
-        filters?.sourceType
-          ? eq(documents.sourceType, filters.sourceType as 'upload' | 'web' | 'api' | 'agent')
-          : undefined,
-        // Filter by date range if specified
-        filters?.dateRange?.from
-          ? sql`${documents.createdAt} >= ${filters.dateRange.from}::timestamptz`
-          : undefined,
-        filters?.dateRange?.to
-          ? sql`${documents.createdAt} <= ${filters.dateRange.to}::timestamptz`
-          : undefined,
-      ),
-    )
+    .where(and(...baseConditions, agentCondition))
     .orderBy(sql`${documentChunks.embedding} <=> ${embeddingStr}::vector`)
     .limit(topK);
 

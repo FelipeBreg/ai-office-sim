@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
-import { db, documents, documentChunks, eq, and, desc, count } from '@ai-office/db';
+import { db, documents, documentChunks, eq, and, desc, count, isNull } from '@ai-office/db';
+import { ingestDocument } from '@ai-office/ai';
 import { TRPCError } from '@trpc/server';
 
 export const documentsRouter = createTRPCRouter({
@@ -11,6 +12,7 @@ export const documentsRouter = createTRPCRouter({
         title: documents.title,
         sourceType: documents.sourceType,
         sourceUrl: documents.sourceUrl,
+        agentId: documents.agentId,
         createdAt: documents.createdAt,
       })
       .from(documents)
@@ -34,6 +36,52 @@ export const documentsRouter = createTRPCRouter({
       chunkCount: countMap.get(doc.id) ?? 0,
     }));
   }),
+
+  /** List documents scoped to a specific agent (+ project-wide docs) */
+  listByAgent: projectProcedure
+    .input(z.object({
+      agentId: z.string().uuid(),
+      agentOnly: z.boolean().default(false),
+    }))
+    .query(async ({ ctx, input }) => {
+      const condition = input.agentOnly
+        ? and(eq(documents.projectId, ctx.project!.id), eq(documents.agentId, input.agentId))
+        : and(
+            eq(documents.projectId, ctx.project!.id),
+            // Agent-specific OR project-wide (agentId is null)
+            eq(documents.agentId, input.agentId),
+          );
+
+      const docs = await db
+        .select({
+          id: documents.id,
+          title: documents.title,
+          sourceType: documents.sourceType,
+          sourceUrl: documents.sourceUrl,
+          agentId: documents.agentId,
+          createdAt: documents.createdAt,
+        })
+        .from(documents)
+        .where(condition)
+        .orderBy(desc(documents.createdAt));
+
+      // Fetch chunk counts
+      const chunkCounts = await db
+        .select({
+          documentId: documentChunks.documentId,
+          count: count(),
+        })
+        .from(documentChunks)
+        .where(eq(documentChunks.projectId, ctx.project!.id))
+        .groupBy(documentChunks.documentId);
+
+      const countMap = new Map(chunkCounts.map((c) => [c.documentId, Number(c.count)]));
+
+      return docs.map((doc) => ({
+        ...doc,
+        chunkCount: countMap.get(doc.id) ?? 0,
+      }));
+    }),
 
   search: projectProcedure
     .input(z.object({ query: z.string().min(1).max(500) }))
@@ -78,6 +126,7 @@ export const documentsRouter = createTRPCRouter({
         fileName: z.string().min(1),
         fileSize: z.number().int().positive(),
         mimeType: z.string().min(1),
+        agentId: z.string().uuid().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -89,10 +138,39 @@ export const documentsRouter = createTRPCRouter({
           title: input.fileName,
           sourceType: 'upload',
           content: '', // Will be populated by the ingestion worker
+          ...(input.agentId ? { agentId: input.agentId } : {}),
         })
         .returning();
 
       return { id: doc!.id, status: 'queued' };
+    }),
+
+  /** Ingest text content directly (used by the Knowledge Base tab) */
+  ingest: adminProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(200),
+        content: z.string().min(1).max(500_000),
+        agentId: z.string().uuid().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = await ingestDocument({
+        projectId: ctx.project!.id,
+        title: input.title,
+        content: input.content,
+        sourceType: 'upload',
+        agentId: input.agentId,
+      });
+
+      if (result.error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: result.error,
+        });
+      }
+
+      return { documentId: result.documentId, chunkCount: result.chunkCount };
     }),
 
   delete: adminProcedure

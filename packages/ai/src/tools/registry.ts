@@ -133,6 +133,7 @@ toolRegistry.register({
         projectId: context.projectId,
         query,
         topK,
+        agentId: context.agentId,
         filters: sourceType ? { sourceType } : undefined,
       });
 
