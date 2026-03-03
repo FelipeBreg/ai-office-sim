@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 import {
   createTRPCRouter,
   publicProcedure,
@@ -25,6 +25,7 @@ import {
   sql,
   ilike,
   count,
+  inArray,
 } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 
@@ -137,7 +138,7 @@ export const communityRouter = createTRPCRouter({
         const agentRows = await db
           .select({ id: agents.id, archetype: agents.archetype })
           .from(agents)
-          .where(sql`${agents.id} = ANY(${agentIds})`);
+          .where(inArray(agents.id, agentIds));
         agentMap = new Map(agentRows.map((a) => [a.id, a.archetype]));
       }
 
@@ -244,10 +245,11 @@ export const communityRouter = createTRPCRouter({
         : undefined;
 
       if (input?.search) {
+        const escaped = input.search.replace(/[%_\\]/g, '\\$&');
         const searchCondition = or(
-          ilike(communityListings.nameEn, `%${input.search}%`),
-          ilike(communityListings.namePtBr, `%${input.search}%`),
-          ilike(communityListings.descriptionEn, `%${input.search}%`),
+          ilike(communityListings.nameEn, `%${escaped}%`),
+          ilike(communityListings.namePtBr, `%${escaped}%`),
+          ilike(communityListings.descriptionEn, `%${escaped}%`),
         );
         whereClause = whereClause ? and(whereClause, searchCondition) : searchCondition;
       }
@@ -375,7 +377,7 @@ export const communityRouter = createTRPCRouter({
         maxActionsPerSession: number;
       };
 
-      const slug = `${snap.archetype}-${Date.now()}`;
+      const slug = `${snap.archetype}-${randomUUID().slice(0, 8)}`;
 
       const [newAgent] = await db
         .insert(agents)
@@ -397,21 +399,23 @@ export const communityRouter = createTRPCRouter({
         })
         .returning();
 
-      // Record install
-      await db
+      // Record install — only increment counter if a new row was inserted
+      const inserted = await db
         .insert(communityInstalls)
         .values({
           listingId: input.listingId,
           userId: ctx.user!.id,
           projectId: ctx.project!.id,
         })
-        .onConflictDoNothing();
+        .onConflictDoNothing()
+        .returning();
 
-      // Increment install count
-      await db
-        .update(communityListings)
-        .set({ installCount: sql`${communityListings.installCount} + 1` })
-        .where(eq(communityListings.id, input.listingId));
+      if (inserted.length > 0) {
+        await db
+          .update(communityListings)
+          .set({ installCount: sql`${communityListings.installCount} + 1` })
+          .where(eq(communityListings.id, input.listingId));
+      }
 
       return newAgent!;
     }),
@@ -481,7 +485,7 @@ export const communityRouter = createTRPCRouter({
             };
           } else {
             const arch = archetypeMap.get(archetype);
-            const slug = `${archetype}-${Date.now()}`;
+            const slug = `${archetype}-${randomUUID().slice(0, 8)}`;
             const name = arch?.nameEn ?? archetype;
 
             const [newAgent] = await db
@@ -521,21 +525,23 @@ export const communityRouter = createTRPCRouter({
         })
         .returning();
 
-      // Record install
-      await db
+      // Record install — only increment counter if a new row was inserted
+      const inserted = await db
         .insert(communityInstalls)
         .values({
           listingId: input.listingId,
           userId: ctx.user!.id,
           projectId: ctx.project!.id,
         })
-        .onConflictDoNothing();
+        .onConflictDoNothing()
+        .returning();
 
-      // Increment install count
-      await db
-        .update(communityListings)
-        .set({ installCount: sql`${communityListings.installCount} + 1` })
-        .where(eq(communityListings.id, input.listingId));
+      if (inserted.length > 0) {
+        await db
+          .update(communityListings)
+          .set({ installCount: sql`${communityListings.installCount} + 1` })
+          .where(eq(communityListings.id, input.listingId));
+      }
 
       return { ...workflow!, agentsCreated };
     }),
@@ -757,8 +763,8 @@ export const communityRouter = createTRPCRouter({
       await db
         .update(communityListings)
         .set({
-          ratingSum: sql`${communityListings.ratingSum} - ${review.rating}`,
-          ratingCount: sql`${communityListings.ratingCount} - 1`,
+          ratingSum: sql`GREATEST(${communityListings.ratingSum} - ${review.rating}, 0)`,
+          ratingCount: sql`GREATEST(${communityListings.ratingCount} - 1, 0)`,
         })
         .where(eq(communityListings.id, review.listingId));
 

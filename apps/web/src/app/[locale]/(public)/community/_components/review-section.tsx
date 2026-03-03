@@ -13,8 +13,13 @@ interface ReviewSectionProps {
 
 export function ReviewSection({ listingId }: ReviewSectionProps) {
   const t = useTranslations('community');
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
   const utils = trpc.useUtils();
+
+  // Get internal DB user ID (maps Clerk → DB) — only when signed in
+  const { data: currentUser } = trpc.users.getCurrent.useQuery(undefined, {
+    enabled: !!isSignedIn,
+  });
 
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -130,7 +135,7 @@ export function ReviewSection({ listingId }: ReviewSectionProps) {
                 <span className="text-[8px] text-text-disabled">
                   {new Date(review.createdAt).toLocaleDateString()}
                 </span>
-                {isSignedIn && user?.id && review.userId === user.id && (
+                {currentUser && review.userId === currentUser.id && (
                   <button
                     onClick={() => deleteMutation.mutate({ reviewId: review.id })}
                     className="ml-auto text-text-muted transition-colors hover:text-status-error"

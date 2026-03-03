@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@/i18n/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Bot, GitBranch, Download, Star, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -26,7 +26,9 @@ export function ListingCard({
   slug,
   type,
   nameEn,
+  namePtBr,
   descriptionEn,
+  descriptionPtBr,
   category,
   installCount,
   ratingSum,
@@ -36,7 +38,10 @@ export function ListingCard({
   publishedById,
 }: ListingCardProps) {
   const t = useTranslations('community');
+  const locale = useLocale();
   const avgRating = ratingCount > 0 ? ratingSum / ratingCount : 0;
+  const name = locale === 'pt-BR' && namePtBr ? namePtBr : nameEn;
+  const description = locale === 'pt-BR' && descriptionPtBr ? descriptionPtBr : descriptionEn;
   const href = type === 'agent' ? `/community/agents/${slug}` : `/community/workflows/${slug}`;
 
   return (
@@ -52,7 +57,7 @@ export function ListingCard({
           <GitBranch size={16} strokeWidth={1.5} className="shrink-0 text-accent-cyan" />
         )}
         <span className="flex-1 truncate text-sm font-bold text-text-primary group-hover:text-accent-cyan">
-          {nameEn}
+          {name}
         </span>
         {isVerified && (
           <CheckCircle size={12} strokeWidth={2} className="shrink-0 text-status-success" />
@@ -61,7 +66,7 @@ export function ListingCard({
 
       {/* Description */}
       <p className="mb-3 line-clamp-2 flex-1 text-[10px] leading-relaxed text-text-secondary">
-        {descriptionEn}
+        {description}
       </p>
 
       {/* Category badge */}
