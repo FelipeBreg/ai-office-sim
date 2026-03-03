@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
 import { db, approvals, approvalRules, agents, eq, and, desc } from '@ai-office/db';
-import { getAgentExecutionQueue } from '@ai-office/queue';
+import { getAgentExecutionQueue, getNotificationQueue } from '@ai-office/queue';
 import { TRPCError } from '@trpc/server';
 
 export const approvalsRouter = createTRPCRouter({
@@ -61,6 +61,17 @@ export const approvalsRouter = createTRPCRouter({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Pending approval not found' });
       }
 
+      // Emit approval:resolved notification
+      await getNotificationQueue().add(`approval-resolved-${updated.id}`, {
+        type: 'approval_resolved',
+        projectId: updated.projectId,
+        agentId: updated.agentId,
+        approvalId: updated.id,
+        userId: ctx.user!.id,
+        message: `Approval approved for agent "${updated.agentId}"`,
+        resolvedStatus: 'approved',
+      });
+
       // If there's a saved session state, re-enqueue the agent to resume execution
       if (updated.sessionState) {
         const queue = getAgentExecutionQueue();
@@ -106,6 +117,17 @@ export const approvalsRouter = createTRPCRouter({
       if (!updated) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Pending approval not found' });
       }
+
+      // Emit approval:resolved notification (rejected)
+      await getNotificationQueue().add(`approval-rejected-${updated.id}`, {
+        type: 'approval_resolved',
+        projectId: updated.projectId,
+        agentId: updated.agentId,
+        approvalId: updated.id,
+        userId: ctx.user!.id,
+        message: `Approval rejected for agent "${updated.agentId}"`,
+        resolvedStatus: 'rejected',
+      });
 
       // If there's a saved session state, re-enqueue the agent to resume (with rejection)
       if (updated.sessionState) {

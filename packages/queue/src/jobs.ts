@@ -48,6 +48,8 @@ export const notificationJobSchema = z.object({
   approvalId: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
   message: z.string().optional(),
+  /** For approval_resolved: 'approved' or 'rejected' */
+  resolvedStatus: z.enum(['approved', 'rejected']).optional(),
 });
 export type NotificationJob = z.infer<typeof notificationJobSchema>;
 

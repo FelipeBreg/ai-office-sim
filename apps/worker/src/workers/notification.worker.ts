@@ -9,7 +9,7 @@ export function createNotificationWorker() {
     concurrency: 5,
     schema: notificationJobSchema,
     processor: async (job) => {
-      const { type, projectId, agentId, approvalId, userId, message } = job.data;
+      const { type, projectId, agentId, approvalId, userId, message, resolvedStatus } = job.data;
       console.log(`[notification] Processing: type=${type} project=${projectId}`);
 
       switch (type) {
@@ -28,7 +28,7 @@ export function createNotificationWorker() {
           if (approvalId) {
             emitToProject(projectId, 'approval:resolved', {
               approvalId,
-              status: 'approved',
+              status: resolvedStatus ?? 'approved',
               reviewedBy: userId ?? 'system',
             });
           }

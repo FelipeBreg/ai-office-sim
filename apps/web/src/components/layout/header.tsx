@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { usePathname } from '@/i18n/navigation';
+import { usePathname, Link } from '@/i18n/navigation';
 import { Search, Bell, ChevronDown, Sun, Moon } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 import { useProjectStore, useActiveProject, useProjects } from '@/stores/project-store';
@@ -127,8 +127,9 @@ export function Header() {
           <span className="text-[9px] text-text-muted">{connIndicator!.label}</span>
         </div>
 
-        {/* Notification bell */}
-        <button
+        {/* Notification bell — links to approvals */}
+        <Link
+          href="/approvals"
           className="relative text-text-muted transition-colors hover:text-text-primary"
           aria-label={t('notifications')}
         >
@@ -138,7 +139,7 @@ export function Header() {
               {pendingApprovalCount > 9 ? '9+' : pendingApprovalCount}
             </span>
           )}
-        </button>
+        </Link>
 
         {/* Theme toggle */}
         <button
