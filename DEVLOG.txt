@@ -7,6 +7,44 @@
 
 
 ================================================================================
+COMMIT #120 — Phase 9: Launch Readiness (Roadmap v2)
+Date: 2026-03-03
+Hash: 33e78bc
+────────────────────────────────────────────────────────────────────────────────
+
+Epic 9.1 — Stripe Billing:
+  - New tables: usage_records (daily aggregated token usage per project),
+    token_balances (org-level balance with auto-recharge settings)
+  - Billing endpoints: tokenBalance, usageHistory, currentPeriodUsage
+    (real-time from action_logs), updateTokenSettings (upsert with
+    auto-recharge threshold/amount)
+
+Epic 9.2 — LGPD Compliance:
+  - compliance.ts router: exportData (full project JSON export),
+    deleteProjectData (cascade delete with confirmation phrase),
+    previewPiiMasking (uses existing maskPII from @ai-office/shared)
+  - Privacy policy page at /privacy (7 sections, i18n en/pt-BR)
+  - Cookie consent banner component with accept/decline + localStorage
+
+Epic 9.3 — Guided Onboarding:
+  - Enhanced Step 5 (Done) with Atlas first-run prompt card
+  - Sets localStorage flag 'ai-office-first-run' for Atlas greeting
+  - Redirect target changed from /office to /atlas
+
+Epic 9.4 — Data Sync Agent Templates:
+  - 3 new company templates: DATA_SYNC_RDSTATION, DATA_SYNC_META_ADS,
+    DATA_SYNC_GOOGLE_ADS
+  - Each with agent specs (tools, system prompts en/pt-BR) and
+    scheduled cron workflows
+
+Files changed: 11 (+551 -14)
+Typecheck: 15/15 pass
+────────────────────────────────────────────────────────────────────────────────
+🏁 ROADMAP v2 COMPLETE — All 9 phases implemented (Phases 0-9)
+================================================================================
+
+
+================================================================================
 COMMIT #119 — Phase 8: Strategy UX (Roadmap v2)
 Date: 2026-03-03
 Hash: 9614304
