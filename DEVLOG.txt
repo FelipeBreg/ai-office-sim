@@ -7,6 +7,39 @@
 
 
 ================================================================================
+COMMIT #91 — Wire Cron-Based Agent Execution (Phase 0.3 / New Roadmap v2)
+================================================================================
+Hash:     d14b42a
+Date:     2026-03-02
+Scope:    apps/worker, packages/api, apps/web
+
+WHAT CHANGED:
+  • NEW: cron-scheduler module (apps/worker/src/scheduler/cron-scheduler.ts)
+    – registerAllScheduledAgents(): queries DB for triggerType='scheduled'
+      + isActive=true, registers BullMQ repeatable jobs per agent
+    – syncAgentSchedule(): sync a single agent's repeatable on CRUD
+    – removeAgentSchedule(): remove an agent's repeatable on deactivate/delete
+    – Cleans stale repeatables on startup before re-registering
+  • MODIFIED: Worker startup (apps/worker/src/index.ts)
+    – Calls registerAllScheduledAgents() after Socket.IO init
+  • MODIFIED: Agents router (packages/api/src/routers/agents.ts)
+    – Added triggerConfig input schema to create + update mutations
+    – Supports { cron, eventName, sourceAgentId } config persistence
+  • MODIFIED: Agent detail page — shows cron expression in overview card
+
+WHY:
+  The agent-scheduled worker existed but no cron jobs were ever registered.
+  Agents with triggerType='scheduled' now auto-register BullMQ repeatables
+  on worker startup, enabling true 24/7 autonomous execution.
+
+FILES (4):
+  + apps/worker/src/scheduler/cron-scheduler.ts
+  M apps/worker/src/index.ts
+  M packages/api/src/routers/agents.ts
+  M apps/web/src/app/[locale]/(auth)/agents/[id]/page.tsx
+
+
+================================================================================
 COMMIT #90 — Agent Approval Pause/Resume (Phase 0.2 / New Roadmap v2)
 ================================================================================
 Hash:     2515be3
