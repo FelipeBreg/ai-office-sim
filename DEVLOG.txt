@@ -7,6 +7,33 @@
 
 
 ================================================================================
+COMMIT #102 — Orchestrator Dashboard (Phase 3.2)
+================================================================================
+Hash:     932ae30
+Date:     2026-03-02
+Scope:    apps/web
+
+WHAT CHANGED:
+  • NEW PAGE: /orchestrator — 3-tab dashboard:
+    - Fleet Overview: agent status stacked bar (idle/working/approval/error/offline),
+      KPI cards (total agents, running workflows, pending approvals, today's spend),
+      cost summary (today/month spend + tokens), team actions (pause/resume per team)
+    - Cost Tracker: daily cost trend AreaChart, per-agent cost table, top-10 agents
+      horizontal BarChart, PeriodSelector (7D/30D/90D)
+    - Configuration: max concurrency input, daily/monthly spend limits, save button
+  • SIDEBAR: added /orchestrator to Monitoring group with Cpu icon
+  • i18n: 40 keys in both en-US and pt-BR (orchestrator.* namespace + nav.orchestrator)
+
+FILES:
+  + apps/web/src/app/[locale]/(auth)/orchestrator/page.tsx (NEW)
+  ~ apps/web/src/components/layout/sidebar.tsx (Cpu import + nav item)
+  ~ apps/web/messages/en-US.json (+orchestrator namespace, +nav.orchestrator)
+  ~ apps/web/messages/pt-BR.json (+orchestrator namespace, +nav.orchestrator)
+
+TYPECHECK: 13/13 pass
+
+
+================================================================================
 COMMIT #101 — Orchestrator Engine (Phase 3.1)
 ================================================================================
 Hash:     a26d47f
