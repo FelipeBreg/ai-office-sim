@@ -93,6 +93,7 @@ export interface ActionRecord {
   costUsd?: number;
   durationMs: number;
   error?: string;
+  retries?: number;
 }
 
 /** Safety limits for agent execution */

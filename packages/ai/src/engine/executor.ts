@@ -14,6 +14,8 @@ import { db, actionLogs } from '@ai-office/db';
 
 const TOOL_CALL_TIMEOUT_MS = 60_000; // 60s per tool call
 const MAX_TOOL_RESULT_LENGTH = 10_000; // Truncate large tool outputs
+const TOOL_RETRY_MAX = 2; // Retry failed tool calls up to 2 times
+const TOOL_RETRY_BASE_DELAY_MS = 1_000; // Base delay for exponential backoff
 
 function safeStringify(value: unknown): string {
   try {
@@ -301,7 +303,7 @@ export async function executeAgent(
         );
       }
 
-      // Execute tool with timeout (timer is properly cleared)
+      // Execute tool with timeout and retry (exponential backoff)
       const toolStart = performance.now();
       const toolContext: ToolExecutionContext = {
         agentId: session.agentId,
@@ -309,68 +311,89 @@ export async function executeAgent(
         sessionId: session.sessionId,
       };
 
-      try {
-        let timeoutId: ReturnType<typeof setTimeout>;
-        const result = await Promise.race([
-          toolDef.execute(parseResult.data, toolContext),
-          new Promise((_, reject) => {
-            timeoutId = setTimeout(
-              () => reject(new Error('Tool execution timeout')),
-              TOOL_CALL_TIMEOUT_MS,
-            );
-          }),
-        ]).finally(() => clearTimeout(timeoutId!));
+      let toolSucceeded = false;
+      let lastError: string | undefined;
 
-        const toolDuration = Math.round(performance.now() - toolStart);
-        lastToolCallTime = performance.now();
-
-        // Truncate large tool results to prevent context window bloat
-        const resultStr = safeStringify(result);
-        const truncatedResult = resultStr.length > MAX_TOOL_RESULT_LENGTH
-          ? resultStr.slice(0, MAX_TOOL_RESULT_LENGTH) + '... [truncated]'
-          : resultStr;
-
-        toolResults.push({
-          type: 'tool_result',
-          tool_use_id: toolBlock.id,
-          content: truncatedResult,
-        });
-
-        session.actionCount++;
-        actions.push({
-          type: 'tool_call',
-          toolName: toolBlock.name,
-          input: toolBlock.input,
-          output: result,
-          durationMs: toolDuration,
-        });
-
-        // Log tool execution to action_logs (non-blocking)
-        try {
-          await db.insert(actionLogs).values({
-            projectId: session.projectId,
-            agentId: session.agentId,
-            sessionId: session.sessionId,
-            actionType: 'tool_call',
-            toolName: toolBlock.name,
-            input: toolBlock.input as Record<string, unknown>,
-            output: result as Record<string, unknown>,
-            status: 'completed',
-            durationMs: toolDuration,
-          });
-        } catch {
-          // Non-blocking
+      for (let attempt = 0; attempt <= TOOL_RETRY_MAX; attempt++) {
+        // Exponential backoff between retries (skip on first attempt)
+        if (attempt > 0) {
+          const delay = TOOL_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
 
-        consecutiveErrors = 0;
-      } catch (err) {
+        try {
+          let timeoutId: ReturnType<typeof setTimeout>;
+          const result = await Promise.race([
+            toolDef.execute(parseResult.data, toolContext),
+            new Promise((_, reject) => {
+              timeoutId = setTimeout(
+                () => reject(new Error('Tool execution timeout')),
+                TOOL_CALL_TIMEOUT_MS,
+              );
+            }),
+          ]).finally(() => clearTimeout(timeoutId!));
+
+          const toolDuration = Math.round(performance.now() - toolStart);
+          lastToolCallTime = performance.now();
+
+          // Truncate large tool results to prevent context window bloat
+          const resultStr = safeStringify(result);
+          const truncatedResult = resultStr.length > MAX_TOOL_RESULT_LENGTH
+            ? resultStr.slice(0, MAX_TOOL_RESULT_LENGTH) + '... [truncated]'
+            : resultStr;
+
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: toolBlock.id,
+            content: truncatedResult,
+          });
+
+          session.actionCount++;
+          actions.push({
+            type: 'tool_call',
+            toolName: toolBlock.name,
+            input: toolBlock.input,
+            output: result,
+            durationMs: toolDuration,
+            ...(attempt > 0 ? { retries: attempt } : {}),
+          });
+
+          // Log tool execution to action_logs (non-blocking)
+          try {
+            await db.insert(actionLogs).values({
+              projectId: session.projectId,
+              agentId: session.agentId,
+              sessionId: session.sessionId,
+              actionType: 'tool_call',
+              toolName: toolBlock.name,
+              input: toolBlock.input as Record<string, unknown>,
+              output: result as Record<string, unknown>,
+              status: 'completed',
+              durationMs: toolDuration,
+            });
+          } catch {
+            // Non-blocking
+          }
+
+          consecutiveErrors = 0;
+          toolSucceeded = true;
+          break;
+        } catch (err) {
+          lastError = err instanceof Error ? err.message : String(err);
+          // If not the last attempt, log retry and continue
+          if (attempt < TOOL_RETRY_MAX) {
+            continue;
+          }
+        }
+      }
+
+      if (!toolSucceeded && lastError) {
         const toolDuration = Math.round(performance.now() - toolStart);
-        const errorMsg = err instanceof Error ? err.message : String(err);
 
         toolResults.push({
           type: 'tool_result',
           tool_use_id: toolBlock.id,
-          content: `Error: ${errorMsg}`,
+          content: `Error (after ${TOOL_RETRY_MAX + 1} attempts): ${lastError}`,
           is_error: true,
         });
 
@@ -378,8 +401,9 @@ export async function executeAgent(
           type: 'tool_call',
           toolName: toolBlock.name,
           input: toolBlock.input,
-          error: errorMsg,
+          error: lastError,
           durationMs: toolDuration,
+          retries: TOOL_RETRY_MAX,
         });
 
         consecutiveErrors++;
@@ -394,7 +418,7 @@ export async function executeAgent(
             toolName: toolBlock.name,
             input: toolBlock.input as Record<string, unknown>,
             status: 'failed',
-            error: errorMsg,
+            error: lastError,
             durationMs: toolDuration,
           });
         } catch {

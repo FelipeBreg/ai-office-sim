@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
+import { WifiOff } from 'lucide-react';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
 import { ThemeProvider } from './theme-provider';
 import { SocketProvider } from '@/components/providers/socket-provider';
 import { useProjectStore } from '@/stores/project-store';
 import { useUIStore } from '@/stores/ui-store';
+import { useConnectionStatus } from '@/stores/realtime-store';
 import { trpc } from '@/lib/trpc/client';
 
 interface AppShellProps {
@@ -48,6 +50,9 @@ export function AppShell({ children }: AppShellProps) {
     }
   }, [projectsQuery.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const connectionStatus = useConnectionStatus();
+  const showOfflineBanner = connectionStatus === 'disconnected' || connectionStatus === 'reconnecting';
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg-deepest">
       <ThemeProvider />
@@ -58,6 +63,16 @@ export function AppShell({ children }: AppShellProps) {
       {/* Main area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
+        {showOfflineBanner && (
+          <div className="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-1.5">
+            <WifiOff size={12} strokeWidth={1.5} className="text-amber-400" />
+            <span className="text-[9px] text-amber-400">
+              {connectionStatus === 'reconnecting'
+                ? 'Reconnecting to server...'
+                : 'Connection lost. Real-time updates paused.'}
+            </span>
+          </div>
+        )}
         <main className="flex-1 overflow-auto bg-bg-deepest">{children}</main>
       </div>
     </div>
