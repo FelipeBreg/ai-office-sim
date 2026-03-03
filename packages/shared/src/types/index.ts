@@ -84,3 +84,15 @@ export type DevopsPriority = 'low' | 'medium' | 'high' | 'critical';
 // Human Task types
 export type HumanTaskStatus = 'todo' | 'in_progress' | 'done';
 export type HumanTaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+// Cascade types
+export type CascadeStatus = 'in_progress' | 'completed' | 'partial_failure' | 'failed';
+
+export interface CascadeContext {
+  cascadeId: string;
+  cascadeDepth: number;
+  cascadeRootType: string;
+  cascadeRootAgentId?: string;
+  cascadePath: string[];
+  cascadeStatus: CascadeStatus;
+}

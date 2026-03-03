@@ -1,5 +1,16 @@
 import { z } from 'zod';
 
+// ── Cascade Context (shared across agent + workflow jobs) ──
+export const cascadeContextSchema = z.object({
+  cascadeId: z.string().uuid(),
+  cascadeDepth: z.number().int().min(0),
+  cascadeRootType: z.string(),
+  cascadeRootAgentId: z.string().uuid().optional(),
+  cascadePath: z.array(z.string()),
+  cascadeStatus: z.enum(['in_progress', 'completed', 'partial_failure', 'failed']),
+});
+export type CascadeContextJob = z.infer<typeof cascadeContextSchema>;
+
 // ── Agent Execution ──
 export const triggerTypeEnum = z.enum([
   'manual', 'scheduled', 'event', 'agent_message', 'heartbeat', 'kpi', 'webhook', 'briefing',
@@ -18,6 +29,8 @@ export const agentExecutionJobSchema = z.object({
   resumeApproved: z.boolean().optional(),
   /** When true, mutation tools are intercepted and return mock results */
   sandboxMode: z.boolean().optional(),
+  /** Cascade metadata for chained agent executions */
+  cascade: cascadeContextSchema.optional(),
 });
 export type AgentExecutionJob = z.infer<typeof agentExecutionJobSchema>;
 
@@ -79,6 +92,8 @@ export const workflowExecutionJobSchema = z.object({
   completedOutputs: z.record(z.unknown()).optional(),
   /** Set by cron scheduler — run is created at execution time */
   _scheduledTrigger: z.boolean().optional(),
+  /** Cascade metadata for chained workflow executions */
+  cascade: cascadeContextSchema.optional(),
 });
 export type WorkflowExecutionJob = z.infer<typeof workflowExecutionJobSchema>;
 

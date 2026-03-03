@@ -368,6 +368,7 @@ export async function POST(req: Request): Promise<Response> {
         agentId: connection.handlerAgentId,
         projectId: connection.projectId,
         sessionId,
+        triggerType: 'webhook' as const,
         triggerPayload: {
           trigger_type: 'event',
           event: 'whatsapp:message_received',

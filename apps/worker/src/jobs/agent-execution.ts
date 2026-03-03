@@ -18,6 +18,7 @@ import { randomUUID } from 'crypto';
 import { emitToProject } from '../socket/server.js';
 
 import type { TriggerType } from '@ai-office/ai';
+import type { CascadeContext } from '@ai-office/shared';
 
 interface AgentExecutionJobData {
   agentId: string;
@@ -30,6 +31,8 @@ interface AgentExecutionJobData {
   resumeApproved?: boolean;
   /** When true, mutation tools are intercepted and return mock results */
   sandboxMode?: boolean;
+  /** Cascade metadata for chained executions */
+  cascade?: CascadeContext;
 }
 
 /**
@@ -121,6 +124,34 @@ export async function processAgentExecution(
     }
   }
 
+  // 1d. Cascade safety checks
+  if (data.cascade) {
+    const maxDepth = 5; // TODO: read from orchestrator_config
+    if (data.cascade.cascadeDepth > maxDepth) {
+      console.warn(
+        `[agent-execution] Cascade depth exceeded (${data.cascade.cascadeDepth}/${maxDepth}) — rejecting agent ${agentId}`,
+      );
+      emitToProject(projectId, 'cascade:depth_exceeded' as any, {
+        cascadeId: data.cascade.cascadeId,
+        agentId,
+        depth: data.cascade.cascadeDepth,
+        maxDepth,
+      });
+      return;
+    }
+    if (data.cascade.cascadePath.includes(agentId)) {
+      console.warn(
+        `[agent-execution] Cascade loop detected for agent ${agentId} — path: ${data.cascade.cascadePath.join(' → ')}`,
+      );
+      emitToProject(projectId, 'cascade:loop_detected' as any, {
+        cascadeId: data.cascade.cascadeId,
+        agentId,
+        path: data.cascade.cascadePath,
+      });
+      return;
+    }
+  }
+
   // 2. Claim agent — for new runs require idle; for resume allow awaiting_approval
   const allowedStatus = isResume ? 'awaiting_approval' : 'idle';
   const [claimed] = await db
@@ -153,7 +184,7 @@ export async function processAgentExecution(
       );
     } else {
       // ── NEW execution ──
-      const { context, config: agentConfig } = await buildAgentContext(agent, projectId, sessionId, triggerType, triggerPayload);
+      const { context, config: agentConfig } = await buildAgentContext(agent, projectId, sessionId, triggerType, triggerPayload, data.cascade);
 
       const session: AgentSession = {
         sessionId,
@@ -381,6 +412,7 @@ async function buildAgentContext(
   sessionId: string,
   triggerType: TriggerType,
   triggerPayload: unknown,
+  cascade?: CascadeContext,
 ): Promise<{ context: AgentContext; config: AgentConfig }> {
   const budgets = CONTEXT_TOKEN_BUDGETS;
   const tokenReport: Record<string, { estimated: number; budget: number }> = {};
@@ -522,6 +554,11 @@ async function buildAgentContext(
     conversationHistory: [],
     triggerType,
     triggerPayload,
+    cascade: cascade ? {
+      cascadeId: cascade.cascadeId,
+      cascadeDepth: cascade.cascadeDepth,
+      cascadePath: cascade.cascadePath,
+    } : undefined,
   };
 
   return { context, config };

@@ -64,9 +64,30 @@ export const triggerAgentTool: ToolDefinition = {
         };
       }
 
+      // Rate limit: max 5 trigger_agent calls per session (tracked externally)
+
       // Enqueue the target agent's execution with the message as trigger payload
       const sessionId = randomUUID();
       const queue = getAgentExecutionQueue();
+
+      // Propagate cascade context if present, otherwise start a new cascade
+      const cascade = context.cascade
+        ? {
+            cascadeId: context.cascade.cascadeId,
+            cascadeDepth: context.cascade.cascadeDepth + 1,
+            cascadeRootType: 'agent_message',
+            cascadePath: [...context.cascade.cascadePath, context.agentId],
+            cascadeStatus: 'in_progress' as const,
+          }
+        : {
+            cascadeId: randomUUID(),
+            cascadeDepth: 1,
+            cascadeRootType: 'agent_message',
+            cascadeRootAgentId: context.agentId,
+            cascadePath: [context.agentId],
+            cascadeStatus: 'in_progress' as const,
+          };
+
       await queue.add(
         `agent-comm-${targetAgent.id}-${sessionId}`,
         {
@@ -82,6 +103,7 @@ export const triggerAgentTool: ToolDefinition = {
             priority,
             timestamp: new Date().toISOString(),
           },
+          cascade,
         },
         priority === 'high' ? { priority: 1 } : undefined,
       );

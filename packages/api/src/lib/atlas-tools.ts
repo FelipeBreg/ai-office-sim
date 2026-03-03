@@ -520,7 +520,7 @@ registerTool({
     const queue = getAgentExecutionQueue();
     await queue.add(
       'agent-execution',
-      { agentId, projectId, sessionId },
+      { agentId, projectId, sessionId, triggerType: 'manual' as const },
       { priority: toBullMQPriority(priority) },
     );
 

@@ -10,11 +10,15 @@ import {
   approvals,
   eq,
   and,
+  or,
   sql,
   gte,
+  lte,
   count,
+  isNull,
 } from '@ai-office/db';
 import { randomUUID } from 'crypto';
+import { emitToProject } from '../socket/server.js';
 
 /**
  * Orchestrator Worker — runs on a 1-minute repeatable interval.
@@ -126,6 +130,98 @@ async function processOrchestratorTick() {
         .update(agents)
         .set({ status: 'error' })
         .where(eq(agents.id, stalled.id));
+    }
+
+    // 5. Check expired approvals
+    const expiredApprovals = await db
+      .select({ id: approvals.id, agentId: approvals.agentId, sessionState: approvals.sessionState })
+      .from(approvals)
+      .where(
+        and(
+          eq(approvals.projectId, projectId),
+          eq(approvals.status, 'pending'),
+          sql`${approvals.expiresAt} IS NOT NULL AND ${approvals.expiresAt} < now()`,
+        ),
+      );
+
+    for (const approval of expiredApprovals) {
+      console.log(`[orchestrator] Approval ${approval.id} expired — auto-expiring`);
+      await db
+        .update(approvals)
+        .set({ status: 'rejected' as any, expiredAt: new Date() })
+        .where(eq(approvals.id, approval.id));
+
+      // Resume agent with "expired" injected message if session state exists
+      if (approval.sessionState && approval.agentId) {
+        const queue = getAgentExecutionQueue();
+        await queue.add(`approval-expired-${approval.id}`, {
+          agentId: approval.agentId,
+          projectId,
+          sessionId: randomUUID(),
+          triggerType: 'event' as const,
+          resumeState: approval.sessionState as Record<string, unknown>,
+          resumeApproved: false,
+        });
+      }
+
+      emitToProject(projectId, 'approval:resolved', {
+        approvalId: approval.id,
+        status: 'rejected',
+        reviewedBy: 'system:expired',
+      });
+    }
+
+    // 6. Auto-recovery: check errored agents whose cooldown has expired
+    const now = new Date();
+    const recoverableAgents = await db
+      .select({
+        id: agents.id,
+        name: agents.name,
+        recoveryAttempts: agents.recoveryAttempts,
+      })
+      .from(agents)
+      .where(
+        and(
+          eq(agents.projectId, projectId),
+          eq(agents.status, 'error'),
+          eq(agents.isActive, true),
+          or(isNull(agents.cooldownUntil), lte(agents.cooldownUntil, now)),
+        ),
+      );
+
+    const BACKOFF_HOURS = [1, 4, 24]; // exponential backoff schedule
+    const MAX_RECOVERY_ATTEMPTS = 3;
+
+    for (const agent of recoverableAgents) {
+      const attempts = agent.recoveryAttempts;
+
+      if (attempts >= MAX_RECOVERY_ATTEMPTS) {
+        console.log(
+          `[orchestrator] Agent ${agent.name} (${agent.id}) exceeded ${MAX_RECOVERY_ATTEMPTS} recovery attempts — disabling`,
+        );
+        await db
+          .update(agents)
+          .set({ isActive: false })
+          .where(eq(agents.id, agent.id));
+        continue;
+      }
+
+      // Set cooldown with exponential backoff and attempt recovery
+      const backoffHours = BACKOFF_HOURS[Math.min(attempts, BACKOFF_HOURS.length - 1)]!;
+      const cooldownUntil = new Date(Date.now() + backoffHours * 60 * 60 * 1000);
+
+      console.log(
+        `[orchestrator] Agent ${agent.name} (${agent.id}) — recovery attempt ${attempts + 1}/${MAX_RECOVERY_ATTEMPTS}, cooldown until ${cooldownUntil.toISOString()}`,
+      );
+
+      await db
+        .update(agents)
+        .set({
+          status: 'idle',
+          recoveryAttempts: attempts + 1,
+          cooldownUntil,
+        })
+        .where(eq(agents.id, agent.id));
     }
   }
 

@@ -75,6 +75,14 @@ export const documentSourceTypeEnum = pgEnum('document_source_type', [
   'agent',
 ]);
 
+// Cascade
+export const cascadeStatusEnum = pgEnum('cascade_status', [
+  'in_progress',
+  'completed',
+  'partial_failure',
+  'failed',
+]);
+
 // Strategies
 export const strategyTypeEnum = pgEnum('strategy_type', [
   'growth',

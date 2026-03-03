@@ -28,6 +28,10 @@ export const approvals = pgTable(
     sessionState: jsonb('session_state'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    /** When this approval expires (default: createdAt + project approvalTimeoutHours) */
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    /** When this approval was auto-expired */
+    expiredAt: timestamp('expired_at', { withTimezone: true }),
   },
   (table) => [
     index('approval_project_id_idx').on(table.projectId),

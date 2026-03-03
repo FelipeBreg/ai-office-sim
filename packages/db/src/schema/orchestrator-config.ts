@@ -18,6 +18,10 @@ export const orchestratorConfig = pgTable(
     dailySpendLimitUsd: numeric('daily_spend_limit_usd', { precision: 10, scale: 2 }).notNull().default('0'),
     /** Monthly USD spend limit (0 = unlimited) */
     monthlySpendLimitUsd: numeric('monthly_spend_limit_usd', { precision: 10, scale: 2 }).notNull().default('0'),
+    /** Hours before pending approvals auto-expire (default 48) */
+    approvalTimeoutHours: integer('approval_timeout_hours').notNull().default(48),
+    /** Max cascade depth before rejecting (default 5) */
+    maxCascadeDepth: integer('max_cascade_depth').notNull().default(5),
     /** Priority rules: JSON array of { team, priority, maxConcurrency } */
     priorityRules: jsonb('priority_rules').$type<{
       team: string;

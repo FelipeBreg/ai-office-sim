@@ -35,6 +35,11 @@ export interface AgentContext {
   conversationHistory: Anthropic.MessageParam[];
   triggerType: TriggerType;
   triggerPayload?: unknown;
+  cascade?: {
+    cascadeId: string;
+    cascadeDepth: number;
+    cascadePath: string[];
+  };
 }
 
 /** Registered tool that an agent can invoke */
@@ -53,6 +58,11 @@ export interface ToolExecutionContext {
   agentId: string;
   projectId: string;
   sessionId: string;
+  cascade?: {
+    cascadeId: string;
+    cascadeDepth: number;
+    cascadePath: string[];
+  };
 }
 
 /** Serialized session state for pause/resume (stored in approvals.session_state) */

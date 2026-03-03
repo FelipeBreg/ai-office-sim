@@ -84,6 +84,36 @@ export interface LearningNewEvent {
   insight: string;
 }
 
+// ── Cascade Events ──
+
+export interface CascadeStartedEvent {
+  cascadeId: string;
+  rootAgentId: string;
+  rootTriggerType: string;
+}
+
+export interface CascadeBranchFailedEvent {
+  cascadeId: string;
+  agentId: string;
+  depth: number;
+  error: string;
+}
+
+export interface CascadeDepthExceededEvent {
+  cascadeId: string;
+  agentId: string;
+  depth: number;
+  maxDepth: number;
+}
+
+export interface CascadeCompletedEvent {
+  cascadeId: string;
+  status: 'completed' | 'partial_failure';
+  totalAgents: number;
+  totalCostUsd: number;
+  durationMs: number;
+}
+
 // ── Conversation Events ──
 
 export interface ConversationNewMessageEvent {
@@ -125,6 +155,10 @@ export interface ServerToClientEvents {
   'workflow:complete': (data: WorkflowCompleteEvent) => void;
   'kpi:updated': (data: KpiUpdatedEvent) => void;
   'learning:new': (data: LearningNewEvent) => void;
+  'cascade:started': (data: CascadeStartedEvent) => void;
+  'cascade:branch_failed': (data: CascadeBranchFailedEvent) => void;
+  'cascade:depth_exceeded': (data: CascadeDepthExceededEvent) => void;
+  'cascade:completed': (data: CascadeCompletedEvent) => void;
   'conversation:new_message': (data: ConversationNewMessageEvent) => void;
   'conversation:status_changed': (data: ConversationStatusChangedEvent) => void;
   'conversation:assigned': (data: ConversationAssignedEvent) => void;

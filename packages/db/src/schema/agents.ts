@@ -51,6 +51,10 @@ export const agents = pgTable(
     }>(),
     maxActionsPerSession: integer('max_actions_per_session').notNull().default(20),
     isActive: boolean('is_active').notNull().default(true),
+    /** Auto-recovery: when the agent can next be retried after an error */
+    cooldownUntil: timestamp('cooldown_until', { withTimezone: true }),
+    /** Auto-recovery: how many consecutive recovery attempts have been made */
+    recoveryAttempts: integer('recovery_attempts').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()

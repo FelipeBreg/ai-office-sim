@@ -349,6 +349,7 @@ export async function executeAgent(
         agentId: session.agentId,
         projectId: session.projectId,
         sessionId: session.sessionId,
+        cascade: context.cascade,
       };
 
       let toolSucceeded = false;
