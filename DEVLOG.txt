@@ -7,6 +7,27 @@
 
 
 ================================================================================
+COMMIT #115 — Phase 4: Visibility (Roadmap v2)
+Date: 2026-03-03
+Hash: f14a379
+────────────────────────────────────────────────────────────────────────────────
+
+Epic 4.1 — Session Logs & Wiki:
+  • agent_session_summaries table for AI-generated post-execution summaries
+  • session_transcripts table for permanent transcript storage (PostgreSQL backup)
+  • Post-execution pipeline: Claude Haiku summary → wiki document → RAG ingest → transcript save
+  • Session history context builder now reads from summaries table (richer, more compact)
+  • Swapped auto-extract memory from OpenAI GPT-4o-mini to Claude Haiku (no more OpenAI dep)
+
+Epic 4.2 — Document Edit Tools:
+  • update_document tool: updates content + re-chunks/re-embeds for RAG (requires approval)
+  • update_wiki_article tool: updates wiki article content/summary (requires approval)
+
+Decision: Used TextBlock workaround `(b as unknown as { text: string }).text` for Anthropic SDK type predicate issue.
+
+Files changed: 8 (326 insertions, 70 deletions)
+
+================================================================================
 COMMIT #114 — Phase 3: Agent Autonomy (Roadmap v2)
 Date: 2026-03-03
 Hash: 552b261
