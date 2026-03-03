@@ -13,7 +13,9 @@ import { registerAllScheduledWorkflows } from './scheduler/workflow-cron-schedul
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
-import { getAllQueues, getOrchestratorQueue } from '@ai-office/queue';
+import { getAllQueues, getOrchestratorQueue, getRedisClient } from '@ai-office/queue';
+import { hostname } from 'os';
+import { createHmac, timingSafeEqual } from 'crypto';
 import {
   createAgentExecutionWorker,
   createAgentScheduledWorker,
@@ -68,8 +70,27 @@ const app = express();
 
 app.use(express.json({ limit: '1mb' }));
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', workers: workers.length, timestamp: new Date().toISOString() });
+const startedAt = new Date();
+const workerId = `worker:${hostname()}:${process.pid}`;
+
+app.get('/health', async (_req, res) => {
+  let isLeader = false;
+  try {
+    const redis = getRedisClient();
+    const holder = await redis.get('orchestrator:leader');
+    isLeader = holder === workerId;
+  } catch {
+    // Ignore redis errors in health check
+  }
+
+  res.json({
+    status: 'ok',
+    workerId,
+    workers: workers.length,
+    isLeader,
+    uptime: Math.round((Date.now() - startedAt.getTime()) / 1000),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // ── Webhook route for workflow triggers ──
@@ -93,6 +114,44 @@ app.post('/webhooks/workflow/:token', async (req, res) => {
     if (!workflow.isActive) {
       res.status(400).json({ error: 'Workflow is inactive' });
       return;
+    }
+
+    // Verify webhook signature if secret is configured
+    if (workflow.webhookSecret) {
+      const signature = req.headers['x-signature-256'] as string | undefined;
+      const timestamp = req.headers['x-timestamp'] as string | undefined;
+
+      if (!signature) {
+        res.status(401).json({ error: 'Missing X-Signature-256 header' });
+        return;
+      }
+
+      // Replay protection: reject if timestamp > 5 min old
+      if (timestamp) {
+        const ts = parseInt(timestamp, 10);
+        if (isNaN(ts) || Math.abs(Date.now() / 1000 - ts) > 300) {
+          res.status(401).json({ error: 'Timestamp too old or invalid' });
+          return;
+        }
+      }
+
+      const body = JSON.stringify(req.body);
+      const expected = createHmac('sha256', workflow.webhookSecret)
+        .update(timestamp ? `${timestamp}.${body}` : body)
+        .digest('hex');
+
+      const sig = signature.startsWith('sha256=') ? signature.slice(7) : signature;
+      try {
+        const sigBuf = Buffer.from(sig, 'hex');
+        const expBuf = Buffer.from(expected, 'hex');
+        if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) {
+          res.status(401).json({ error: 'Invalid signature' });
+          return;
+        }
+      } catch {
+        res.status(401).json({ error: 'Invalid signature format' });
+        return;
+      }
     }
 
     // Build variables from request body + defaults

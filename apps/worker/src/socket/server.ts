@@ -2,7 +2,7 @@ import { Server } from 'socket.io';
 import type { Server as HttpServer } from 'http';
 import { verifyToken } from '@clerk/backend';
 import { db, users, projects, eq, and } from '@ai-office/db';
-import { getAgentExecutionQueue } from '@ai-office/queue';
+import { getAgentExecutionQueue, getRedisClient } from '@ai-office/queue';
 import { randomUUID } from 'crypto';
 import type {
   ServerToClientEvents,
@@ -110,6 +110,9 @@ export function createSocketServer(httpServer: HttpServer): TypedSocketServer {
         const room = `project:${projectId}`;
         void socket.join(room);
         console.log(`[socket] ${socket.id} joined room ${room}`);
+
+        // Drain queued offline events
+        drainPendingEvents(projectId, socket).catch(() => {});
       } catch (err) {
         console.error(`[socket] Error joining project room:`, err);
       }
@@ -153,6 +156,8 @@ export function createSocketServer(httpServer: HttpServer): TypedSocketServer {
 /**
  * Emit an event to all clients in a project room.
  */
+const PENDING_EVENTS_TTL = 7 * 24 * 60 * 60; // 7 days
+
 export function emitToProject<E extends keyof ServerToClientEvents>(
   projectId: string,
   event: E,
@@ -162,8 +167,49 @@ export function emitToProject<E extends keyof ServerToClientEvents>(
     console.warn('[socket] Cannot emit: Socket.IO server not initialized');
     return;
   }
+
+  const room = `project:${projectId}`;
+  const roomSockets = io.sockets.adapter.rooms.get(room);
+
+  if (!roomSockets || roomSockets.size === 0) {
+    // No clients connected — queue event for later delivery
+    try {
+      const redis = getRedisClient();
+      const eventData = JSON.stringify({ event, args, timestamp: Date.now() });
+      const key = `pending_events:${projectId}`;
+      redis.rpush(key, eventData).catch(() => {});
+      redis.expire(key, PENDING_EVENTS_TTL).catch(() => {});
+    } catch {
+      // Non-blocking
+    }
+    return;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (io.to(`project:${projectId}`) as any).emit(event, ...args);
+  (io.to(room) as any).emit(event, ...args);
+}
+
+/** Drain queued offline events for a project and emit them to the socket */
+export async function drainPendingEvents(projectId: string, socket: any): Promise<void> {
+  try {
+    const redis = getRedisClient();
+    const key = `pending_events:${projectId}`;
+    const events = await redis.lrange(key, 0, -1);
+    if (events.length > 0) {
+      await redis.del(key);
+      for (const raw of events) {
+        try {
+          const { event, args } = JSON.parse(raw);
+          socket.emit(event, ...args);
+        } catch {
+          // Skip malformed events
+        }
+      }
+      console.log(`[socket] Drained ${events.length} pending events for project ${projectId}`);
+    }
+  } catch {
+    // Non-blocking
+  }
 }
 
 /**

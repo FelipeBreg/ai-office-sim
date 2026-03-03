@@ -16,6 +16,7 @@ export const workflows = pgTable(
     definition: jsonb('definition'), // React Flow serialized graph
     isActive: boolean('is_active').notNull().default(true),
     webhookToken: text('webhook_token'), // unique token for webhook triggers
+    webhookSecret: text('webhook_secret'), // HMAC signing secret for webhook verification
     createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })

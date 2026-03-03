@@ -1,4 +1,4 @@
-import { QUEUE_NAMES, orchestratorJobSchema, getAgentExecutionQueue } from '@ai-office/queue';
+import { QUEUE_NAMES, orchestratorJobSchema, getAgentExecutionQueue, getRedisClient } from '@ai-office/queue';
 import type { OrchestratorJob } from '@ai-office/queue';
 import { createTypedWorker } from './create-worker.js';
 import {
@@ -20,7 +20,12 @@ import {
 } from '@ai-office/db';
 import { checkKpiThreshold } from '@ai-office/ai';
 import { randomUUID } from 'crypto';
+import { hostname } from 'os';
 import { emitToProject } from '../socket/server.js';
+
+const WORKER_ID = `worker:${hostname()}:${process.pid}`;
+const LOCK_KEY = 'orchestrator:leader';
+const LOCK_TTL_SECONDS = 90;
 
 /**
  * Orchestrator Worker — runs on a 1-minute repeatable interval.
@@ -51,8 +56,30 @@ export function createOrchestratorWorker() {
   });
 }
 
+/** Acquire leader lock. Returns true if this worker is the leader. */
+async function acquireLeaderLock(): Promise<boolean> {
+  const redis = getRedisClient();
+  const result = await redis.set(LOCK_KEY, WORKER_ID, 'EX', LOCK_TTL_SECONDS, 'NX');
+  if (result === 'OK') return true;
+
+  // Check if we already hold the lock and refresh TTL
+  const holder = await redis.get(LOCK_KEY);
+  if (holder === WORKER_ID) {
+    await redis.expire(LOCK_KEY, LOCK_TTL_SECONDS);
+    return true;
+  }
+  return false;
+}
+
 /** Main tick: checks fleet health across all projects with orchestrator configs */
 async function processOrchestratorTick() {
+  // Leader election: only one worker runs the tick
+  const isLeader = await acquireLeaderLock();
+  if (!isLeader) {
+    console.log(`[orchestrator] Not leader (${WORKER_ID}), skipping tick`);
+    return { skipped: true, reason: 'not_leader' };
+  }
+
   const configs = await db.select().from(orchestratorConfig);
 
   let totalProjects = 0;
