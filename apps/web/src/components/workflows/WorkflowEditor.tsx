@@ -36,6 +36,8 @@ interface WorkflowEditorProps {
   initialEdges?: Edge[];
   initialVariables?: WorkflowVariable[];
   onSave?: (nodes: Node[], edges: Edge[], variables: WorkflowVariable[]) => void;
+  workflowId?: string;
+  webhookToken?: string | null;
 }
 
 const NODE_TEMPLATES: Record<
@@ -103,6 +105,8 @@ export function WorkflowEditor({
   initialEdges = [],
   initialVariables = [],
   onSave,
+  workflowId,
+  webhookToken,
 }: WorkflowEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -268,6 +272,8 @@ export function WorkflowEditor({
           node={selectedNode}
           onUpdate={handleNodeDataUpdate}
           onClose={handleCloseConfig}
+          workflowId={workflowId}
+          webhookToken={webhookToken}
         />
       )}
     </div>

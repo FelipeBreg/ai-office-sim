@@ -3,6 +3,7 @@ import { executeWorkflow } from '@ai-office/ai';
 import type { WorkflowRunContext } from '@ai-office/ai';
 import type { WorkflowDefinition, NodeOutput } from '@ai-office/shared';
 import { getWorkflowExecutionQueue } from '@ai-office/queue';
+import { fireEventTriggers } from '../scheduler/workflow-event-triggers.js';
 import * as Sentry from '@sentry/node';
 
 interface WorkflowExecutionJobData {
@@ -12,6 +13,8 @@ interface WorkflowExecutionJobData {
   variables?: Record<string, string>;
   resumeFromNodeId?: string;
   completedOutputs?: Record<string, unknown>;
+  /** Set by cron scheduler — means we need to create a run first */
+  _scheduledTrigger?: boolean;
 }
 
 /**
@@ -24,7 +27,26 @@ interface WorkflowExecutionJobData {
 export async function processWorkflowExecution(
   data: WorkflowExecutionJobData,
 ): Promise<void> {
-  const { workflowId, workflowRunId, projectId, variables = {}, resumeFromNodeId, completedOutputs } = data;
+  let { workflowId, workflowRunId, projectId, variables = {}, resumeFromNodeId, completedOutputs } = data;
+
+  // Handle scheduled triggers: create a workflow run on-the-fly
+  if (data._scheduledTrigger && !workflowRunId) {
+    const [run] = await db
+      .insert(workflowRuns)
+      .values({
+        workflowId,
+        projectId,
+        variables,
+      })
+      .returning();
+
+    if (!run) {
+      console.error(`[workflow-execution] Failed to create run for scheduled workflow ${workflowId}`);
+      return;
+    }
+    workflowRunId = run.id;
+    console.log(`[workflow-execution] Created run ${workflowRunId} for scheduled workflow ${workflowId}`);
+  }
 
   // 1. Load workflow
   const [workflow] = await db
@@ -83,6 +105,12 @@ export async function processWorkflowExecution(
             completedAt: new Date(),
           })
           .where(eq(workflowRuns.id, workflowRunId));
+
+        // Fire event-triggered workflows
+        fireEventTriggers(projectId, 'workflow.completed', {
+          _sourceWorkflowId: workflowId,
+          _sourceRunId: workflowRunId,
+        }).catch((err) => console.error('[workflow-execution] Event trigger error:', err));
         break;
       }
 
@@ -96,6 +124,12 @@ export async function processWorkflowExecution(
             completedAt: new Date(),
           })
           .where(eq(workflowRuns.id, workflowRunId));
+
+        // Fire event-triggered workflows
+        fireEventTriggers(projectId, 'workflow.failed', {
+          _sourceWorkflowId: workflowId,
+          _sourceRunId: workflowRunId,
+        }).catch((err) => console.error('[workflow-execution] Event trigger error:', err));
         break;
       }
 

@@ -66,11 +66,13 @@ export type AnalyticsJob = z.infer<typeof analyticsJobSchema>;
 // ── Workflow Execution ──
 export const workflowExecutionJobSchema = z.object({
   workflowId: z.string().uuid(),
-  workflowRunId: z.string().uuid(),
+  workflowRunId: z.string(), // empty string for scheduled triggers (created at execution time)
   projectId: z.string().uuid(),
   variables: z.record(z.string()).default({}),
   resumeFromNodeId: z.string().optional(),
   completedOutputs: z.record(z.unknown()).optional(),
+  /** Set by cron scheduler — run is created at execution time */
+  _scheduledTrigger: z.boolean().optional(),
 });
 export type WorkflowExecutionJob = z.infer<typeof workflowExecutionJobSchema>;
 

@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { type Node } from '@xyflow/react';
-import { X } from 'lucide-react';
+import { X, Copy, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { trpc } from '@/lib/trpc/client';
@@ -10,6 +11,8 @@ interface ConfigPanelProps {
   node: Node;
   onUpdate: (nodeId: string, data: Record<string, unknown>) => void;
   onClose: () => void;
+  workflowId?: string;
+  webhookToken?: string | null;
 }
 
 const TRIGGER_TYPES = ['scheduled', 'event', 'manual', 'webhook'] as const;
@@ -22,8 +25,48 @@ const CONDITION_TYPE_LABELS: Record<string, string> = {
   json_path: 'JSON Path',
 };
 
-function TriggerConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelProps['onUpdate'] }) {
+const EVENT_NAME_SUGGESTIONS = [
+  'agent.completed',
+  'agent.failed',
+  'workflow.completed',
+  'workflow.failed',
+] as const;
+
+const CRON_PRESETS: Record<string, string> = {
+  'Every hour': '0 * * * *',
+  'Every day 9am': '0 9 * * *',
+  'Weekdays 9am': '0 9 * * 1-5',
+  'Every Monday': '0 9 * * 1',
+};
+
+function TriggerConfig({
+  node,
+  onUpdate,
+  workflowId,
+  webhookToken,
+}: {
+  node: Node;
+  onUpdate: ConfigPanelProps['onUpdate'];
+  workflowId?: string;
+  webhookToken?: string | null;
+}) {
   const data = node.data as { triggerType?: string; cronExpression?: string; eventName?: string };
+  const [copied, setCopied] = useState(false);
+  const utils = trpc.useUtils();
+  const regenerateToken = trpc.workflows.regenerateWebhookToken.useMutation({
+    onSuccess: () => utils.workflows.getById.invalidate(),
+  });
+
+  const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL ?? 'http://localhost:4000';
+  const webhookUrl = webhookToken ? `${workerUrl}/webhooks/workflow/${webhookToken}` : null;
+
+  const copyWebhookUrl = () => {
+    if (!webhookUrl) return;
+    navigator.clipboard.writeText(webhookUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="space-y-3">
       <div>
@@ -58,6 +101,17 @@ function TriggerConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelPr
             }
             placeholder="0 * * * *"
           />
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {Object.entries(CRON_PRESETS).map(([label, cron]) => (
+              <button
+                key={cron}
+                onClick={() => onUpdate(node.id, { ...node.data, cronExpression: cron })}
+                className="border border-border-default px-1.5 py-0.5 text-[8px] text-text-muted hover:border-[#2EA043] hover:text-[#2EA043] transition-colors"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
       {data.triggerType === 'event' && (
@@ -70,8 +124,60 @@ function TriggerConfig({ node, onUpdate }: { node: Node; onUpdate: ConfigPanelPr
             onChange={(e) =>
               onUpdate(node.id, { ...node.data, eventName: e.target.value })
             }
-            placeholder="order.created"
+            placeholder="agent.completed"
           />
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {EVENT_NAME_SUGGESTIONS.map((name) => (
+              <button
+                key={name}
+                onClick={() => onUpdate(node.id, { ...node.data, eventName: name })}
+                className="border border-border-default px-1.5 py-0.5 text-[8px] text-text-muted hover:border-[#2EA043] hover:text-[#2EA043] transition-colors"
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {data.triggerType === 'webhook' && (
+        <div>
+          <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+            Webhook URL
+          </label>
+          {webhookUrl ? (
+            <>
+              <div className="flex items-center gap-1">
+                <div className="flex-1 overflow-hidden border border-border-default bg-bg-base px-2 py-1.5 text-[9px] text-text-secondary font-mono truncate">
+                  {webhookUrl}
+                </div>
+                <button
+                  onClick={copyWebhookUrl}
+                  className="border border-border-default p-1.5 text-text-muted hover:text-accent-cyan transition-colors"
+                  title="Copy URL"
+                >
+                  <Copy size={12} />
+                </button>
+              </div>
+              {copied && (
+                <p className="mt-1 text-[8px] text-[#2EA043]">Copied!</p>
+              )}
+              <button
+                onClick={() => workflowId && regenerateToken.mutate({ id: workflowId })}
+                disabled={regenerateToken.isPending}
+                className="mt-1.5 flex items-center gap-1 text-[8px] text-text-muted hover:text-accent-cyan transition-colors"
+              >
+                <RefreshCw size={10} className={regenerateToken.isPending ? 'animate-spin' : ''} />
+                Regenerate token
+              </button>
+            </>
+          ) : (
+            <p className="text-[9px] text-text-muted">
+              Save the workflow to generate a webhook URL.
+            </p>
+          )}
+          <p className="mt-2 text-[8px] text-text-muted">
+            Send a POST request with JSON body. Keys will be mapped to workflow variables.
+          </p>
         </div>
       )}
     </div>
@@ -385,7 +491,7 @@ const NODE_COLORS: Record<string, string> = {
   output: '#8B5CF6',
 };
 
-export function ConfigPanel({ node, onUpdate, onClose }: ConfigPanelProps) {
+export function ConfigPanel({ node, onUpdate, onClose, workflowId, webhookToken }: ConfigPanelProps) {
   const nodeType = node.type ?? 'unknown';
   const color = NODE_COLORS[nodeType] ?? '#484F58';
 
@@ -406,7 +512,7 @@ export function ConfigPanel({ node, onUpdate, onClose }: ConfigPanelProps) {
         </Button>
       </div>
       <div className="p-3">
-        {nodeType === 'trigger' && <TriggerConfig node={node} onUpdate={onUpdate} />}
+        {nodeType === 'trigger' && <TriggerConfig node={node} onUpdate={onUpdate} workflowId={workflowId} webhookToken={webhookToken} />}
         {nodeType === 'agent' && <AgentConfig node={node} onUpdate={onUpdate} />}
         {nodeType === 'condition' && <ConditionConfig node={node} onUpdate={onUpdate} />}
         {nodeType === 'approval' && <ApprovalConfig node={node} onUpdate={onUpdate} />}

@@ -9,6 +9,7 @@ import {
 } from '@ai-office/ai';
 import type { AgentContext, AgentSession, SerializedSessionState } from '@ai-office/ai';
 import { getNotificationQueue } from '@ai-office/queue';
+import { fireEventTriggers } from '../scheduler/workflow-event-triggers.js';
 import * as Sentry from '@sentry/node';
 import { randomUUID } from 'crypto';
 import { emitToProject } from '../socket/server.js';
@@ -340,6 +341,14 @@ export async function processAgentExecution(
         // Non-blocking — don't fail the session for memory extraction issues
       }
     }
+
+    // ── Fire event-triggered workflows on completion ──
+    const eventName = result.status === 'completed' ? 'agent.completed' : 'agent.failed';
+    fireEventTriggers(projectId, eventName, {
+      _sourceAgentId: agentId,
+      _sourceSessionId: sessionId,
+      _agentName: agent.name,
+    }).catch((err) => console.error('[agent-execution] Event trigger error:', err));
 
   } catch (err) {
     console.error(`[agent-execution] Session ${sessionId} failed:`, err);

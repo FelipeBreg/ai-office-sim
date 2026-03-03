@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 import { createTRPCRouter, projectProcedure, adminProcedure, enforceResourceLimit } from '../trpc.js';
 import { db, workflows, workflowRuns, workflowNodeRuns, eq, and, desc } from '@ai-office/db';
 import { getWorkflowExecutionQueue } from '@ai-office/queue';
 import { TRPCError } from '@trpc/server';
-import type { WorkflowDefinition, WorkflowVariable } from '@ai-office/shared';
+import type { WorkflowDefinition, WorkflowVariable, TriggerNodeConfig } from '@ai-office/shared';
 
 export const workflowsRouter = createTRPCRouter({
   list: projectProcedure.query(async ({ ctx }) => {
@@ -40,11 +41,25 @@ export const workflowsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await enforceResourceLimit(ctx.org!.id, ctx.org!.plan, 'maxWorkflows');
 
+      // Auto-generate webhook token if trigger node is webhook type
+      let webhookToken: string | undefined;
+      const definition = input.definition as WorkflowDefinition | null | undefined;
+      if (definition?.nodes) {
+        const triggerNode = definition.nodes.find(
+          (n: { data?: { nodeType?: string } }) => n.data?.nodeType === 'trigger',
+        );
+        const triggerConfig = triggerNode?.data as TriggerNodeConfig | undefined;
+        if (triggerConfig?.triggerType === 'webhook') {
+          webhookToken = randomUUID();
+        }
+      }
+
       const [workflow] = await db
         .insert(workflows)
         .values({
           projectId: ctx.project!.id,
           createdBy: ctx.user!.id,
+          ...(webhookToken ? { webhookToken } : {}),
           ...input,
         })
         .returning();
@@ -63,6 +78,27 @@ export const workflowsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
+
+      // Auto-generate webhook token if trigger node becomes webhook type and no token exists
+      const definition = data.definition as WorkflowDefinition | null | undefined;
+      if (definition?.nodes) {
+        const triggerNode = definition.nodes.find(
+          (n: { data?: { nodeType?: string } }) => n.data?.nodeType === 'trigger',
+        );
+        const triggerConfig = triggerNode?.data as TriggerNodeConfig | undefined;
+        if (triggerConfig?.triggerType === 'webhook') {
+          // Check if token already exists
+          const [existing] = await db
+            .select({ webhookToken: workflows.webhookToken })
+            .from(workflows)
+            .where(eq(workflows.id, id))
+            .limit(1);
+          if (!existing?.webhookToken) {
+            (data as Record<string, unknown>).webhookToken = randomUUID();
+          }
+        }
+      }
+
       const [updated] = await db
         .update(workflows)
         .set(data)
@@ -253,5 +289,21 @@ export const workflowsRouter = createTRPCRouter({
       );
 
       return { status: 'resumed' as const };
+    }),
+
+  regenerateWebhookToken: adminProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const newToken = randomUUID();
+      const [updated] = await db
+        .update(workflows)
+        .set({ webhookToken: newToken })
+        .where(and(eq(workflows.id, input.id), eq(workflows.projectId, ctx.project!.id)))
+        .returning({ id: workflows.id, webhookToken: workflows.webhookToken });
+
+      if (!updated) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Workflow not found' });
+      }
+      return updated;
     }),
 });

@@ -9,6 +9,7 @@ Sentry.init({
 });
 import { createSocketServer } from './socket/server.js';
 import { registerAllScheduledAgents } from './scheduler/cron-scheduler.js';
+import { registerAllScheduledWorkflows } from './scheduler/workflow-cron-scheduler.js';
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
@@ -63,8 +64,84 @@ console.log(`[worker] Started ${workers.length} queue workers`);
 // ── Express server for health + bull board ──
 const app = express();
 
+app.use(express.json({ limit: '1mb' }));
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', workers: workers.length, timestamp: new Date().toISOString() });
+});
+
+// ── Webhook route for workflow triggers ──
+app.post('/webhooks/workflow/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { db, workflows, workflowRuns, eq } = await import('@ai-office/db');
+    const { getWorkflowExecutionQueue } = await import('@ai-office/queue');
+
+    const [workflow] = await db
+      .select()
+      .from(workflows)
+      .where(eq(workflows.webhookToken, token))
+      .limit(1);
+
+    if (!workflow) {
+      res.status(404).json({ error: 'Workflow not found' });
+      return;
+    }
+
+    if (!workflow.isActive) {
+      res.status(400).json({ error: 'Workflow is inactive' });
+      return;
+    }
+
+    // Build variables from request body + defaults
+    const definition = workflow.definition as { variables?: { key: string; defaultValue?: string }[] } | null;
+    const definedVars = definition?.variables ?? [];
+    const bodyVars = (req.body as Record<string, unknown>) ?? {};
+
+    const variables: Record<string, string> = {};
+    for (const v of definedVars) {
+      variables[v.key] = String(bodyVars[v.key] ?? v.defaultValue ?? '');
+    }
+    // Pass through extra body keys as variables
+    for (const [k, v] of Object.entries(bodyVars)) {
+      if (!(k in variables)) {
+        variables[k] = String(v);
+      }
+    }
+
+    const [run] = await db
+      .insert(workflowRuns)
+      .values({
+        workflowId: workflow.id,
+        projectId: workflow.projectId,
+        variables,
+      })
+      .returning();
+
+    if (!run) {
+      res.status(500).json({ error: 'Failed to create workflow run' });
+      return;
+    }
+
+    await getWorkflowExecutionQueue().add(
+      `workflow-webhook-${workflow.id}-${run.id}`,
+      {
+        workflowId: workflow.id,
+        workflowRunId: run.id,
+        projectId: workflow.projectId,
+        variables,
+      },
+    );
+
+    res.status(200).json({
+      triggered: true,
+      workflowId: workflow.id,
+      runId: run.id,
+    });
+  } catch (err) {
+    console.error('[webhook] Error processing workflow webhook:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 if (isDev) {
@@ -92,6 +169,11 @@ console.log(`[worker] Socket.IO server attached`);
 // ── Cron Scheduler: register repeatable jobs for scheduled agents ──
 registerAllScheduledAgents().catch((err) => {
   console.error('[worker] Failed to register scheduled agents:', err);
+});
+
+// ── Cron Scheduler: register repeatable jobs for scheduled workflows ──
+registerAllScheduledWorkflows().catch((err) => {
+  console.error('[worker] Failed to register scheduled workflows:', err);
 });
 
 // ── Graceful shutdown with timeout ──

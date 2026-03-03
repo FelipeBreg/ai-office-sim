@@ -167,6 +167,8 @@ export default function WorkflowEditorPage({ params }: PageProps) {
             initialEdges={initialEdges}
             initialVariables={workflowVariables}
             onSave={handleSave}
+            workflowId={id}
+            webhookToken={workflow.webhookToken}
           />
         </div>
 

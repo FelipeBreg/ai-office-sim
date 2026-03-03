@@ -15,6 +15,7 @@ export const workflows = pgTable(
     description: text('description'),
     definition: jsonb('definition'), // React Flow serialized graph
     isActive: boolean('is_active').notNull().default(true),
+    webhookToken: text('webhook_token'), // unique token for webhook triggers
     createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
@@ -22,7 +23,10 @@ export const workflows = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (table) => [index('workflow_project_id_idx').on(table.projectId)],
+  (table) => [
+    index('workflow_project_id_idx').on(table.projectId),
+    index('workflow_webhook_token_idx').on(table.webhookToken),
+  ],
 );
 
 export const workflowRuns = pgTable(
