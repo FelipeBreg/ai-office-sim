@@ -7,6 +7,33 @@
 
 
 ================================================================================
+COMMIT #105 — RBAC: Role-Based Access Control (Phase 4.1)
+================================================================================
+Hash:     48a8622
+Date:     2026-03-03
+Scope:    packages/api, apps/web
+
+Backend:
+  - Added managerProcedure to tRPC middleware (role >= manager)
+  - Created members router: list (projectProcedure), updateRole (adminProcedure),
+    remove (adminProcedure) with full role hierarchy enforcement
+  - Registered membersRouter in root.ts
+  - Upgraded deals.ts: create/update/updateStage → managerProcedure
+  - Upgraded devops.ts: createRequest/createTask/updateTaskStatus/assignTask → managerProcedure
+  - Full audit confirmed 29 routers properly secured
+
+Frontend:
+  - Created useRole() hook (apps/web/src/hooks/use-role.ts) for UI gating
+  - Upgraded MembersTab in settings: real tRPC members.list query, role change
+    dropdown per member, remove button with confirmation, avatar display
+  - Agents page: "New Agent" button hidden for viewers (requires manager+)
+  - Workflows page: "New Workflow" hidden for viewers, delete hidden for non-admins
+  - Approvals page: approve/reject buttons hidden for non-admins
+  - Added 7 i18n keys for member management (en-US + pt-BR)
+
+Typecheck: 13/13 pass
+
+================================================================================
 COMMIT #104 — Cost Controls & Budget Guardrails (Phase 3.4)
 ================================================================================
 Hash:     4f5f6f5
