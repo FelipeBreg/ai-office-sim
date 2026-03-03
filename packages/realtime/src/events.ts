@@ -35,6 +35,12 @@ export interface AgentErrorEvent {
   timestamp: string;
 }
 
+export interface AgentAutoDisabledEvent {
+  agentId: string;
+  reason: string;
+  timestamp: string;
+}
+
 export interface ApprovalRequestedEvent {
   approvalId: string;
   agentId: string;
@@ -111,6 +117,7 @@ export interface ServerToClientEvents {
   'agent:session_started': (data: AgentSessionStartedEvent) => void;
   'agent:session_complete': (data: AgentSessionCompleteEvent) => void;
   'agent:error': (data: AgentErrorEvent) => void;
+  'agent:auto_disabled': (data: AgentAutoDisabledEvent) => void;
   'approval:requested': (data: ApprovalRequestedEvent) => void;
   'approval:resolved': (data: ApprovalResolvedEvent) => void;
   'workflow:started': (data: WorkflowStartedEvent) => void;
@@ -138,6 +145,7 @@ export const SERVER_EVENTS = {
   AGENT_SESSION_STARTED: 'agent:session_started',
   AGENT_SESSION_COMPLETE: 'agent:session_complete',
   AGENT_ERROR: 'agent:error',
+  AGENT_AUTO_DISABLED: 'agent:auto_disabled',
   APPROVAL_REQUESTED: 'approval:requested',
   APPROVAL_RESOLVED: 'approval:resolved',
   WORKFLOW_STARTED: 'workflow:started',

@@ -1,7 +1,8 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, Bot, AlertTriangle, Wrench } from 'lucide-react';
+import { Plus, Bot, AlertTriangle, Wrench, Activity } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
 import { useRouter, Link } from '@/i18n/navigation';
@@ -183,17 +184,28 @@ interface Agent {
   updatedAt: Date | string;
 }
 
+const HEALTH_CONFIG = {
+  healthy: { color: 'bg-[#2EA043]', textColor: 'text-[#2EA043]', label: 'healthy' },
+  degraded: { color: 'bg-[#D29922]', textColor: 'text-[#D29922]', label: 'degraded' },
+  failing: { color: 'bg-[#F85149]', textColor: 'text-[#F85149]', label: 'failing' },
+} as const;
+
 function AgentCard({
   agent,
+  health,
   t,
 }: {
   agent: Agent;
+  health?: { successRate: number; healthLabel: string };
   t: ReturnType<typeof useTranslations<'agents'>>;
 }) {
   const status = STATUS_CONFIG[agent.status] ?? STATUS_CONFIG.offline;
   const archetypeKey = ARCHETYPE_KEY[agent.archetype] ?? 'archetypeCustom';
   const teamKey = agent.team ? TEAM_KEY[agent.team] : null;
   const toolCount = agent.tools?.length ?? 0;
+  const healthCfg = health
+    ? HEALTH_CONFIG[health.healthLabel as keyof typeof HEALTH_CONFIG] ?? HEALTH_CONFIG.healthy
+    : null;
 
   return (
     <div className="group border border-border-default bg-bg-raised transition-colors hover:border-accent-cyan/40 hover:bg-bg-raised/80">
@@ -242,9 +254,18 @@ function AgentCard({
         <span className="text-[10px] text-text-muted">
           {t('lastActive')}: {timeAgo(agent.updatedAt)}
         </span>
-        <span className="text-[10px] text-text-muted opacity-0 transition-opacity group-hover:opacity-100">
-          {agent.slug}
-        </span>
+        {healthCfg && health ? (
+          <div className="flex items-center gap-1">
+            <Activity size={9} strokeWidth={1.5} className={healthCfg.textColor} />
+            <span className={`text-[9px] font-medium ${healthCfg.textColor}`}>
+              {health.successRate}%
+            </span>
+          </div>
+        ) : (
+          <span className="text-[10px] text-text-muted opacity-0 transition-opacity group-hover:opacity-100">
+            {agent.slug}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -258,6 +279,7 @@ export default function AgentsPage() {
   const t = useTranslations('agents');
   const router = useRouter();
   const { data: agents, isLoading, isError } = trpc.agents.list.useQuery();
+  const { data: fleetHealth } = trpc.agents.getFleetHealth.useQuery();
 
   const handleCreateAgent = () => router.push('/agents/new');
 
@@ -301,6 +323,7 @@ export default function AgentsPage() {
               <Link key={agent.id} href={`/agents/${agent.id}`} className="block">
                 <AgentCard
                   agent={agent as unknown as Agent}
+                  health={fleetHealth?.[agent.id]}
                   t={t}
                 />
               </Link>

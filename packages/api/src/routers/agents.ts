@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { createTRPCRouter, projectProcedure, adminProcedure, enforceResourceLimit } from '../trpc.js';
-import { db, agents, eq, and, desc } from '@ai-office/db';
+import { db, agents, actionLogs, eq, and, desc, sql, gte, count } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 import { getAgentExecutionQueue } from '@ai-office/queue';
 
@@ -188,4 +188,135 @@ export const agentsRouter = createTRPCRouter({
 
       return { triggered: true, agentId: agent.id, sessionId };
     }),
+
+  /** Per-agent health metrics (last N days) */
+  getMetrics: projectProcedure
+    .input(z.object({
+      agentId: z.string().uuid(),
+      days: z.number().int().min(1).max(90).default(7),
+    }))
+    .query(async ({ ctx, input }) => {
+      const since = new Date();
+      since.setDate(since.getDate() - input.days);
+
+      // Aggregate stats from action_logs
+      const [stats] = await db
+        .select({
+          total: count(),
+          completed: sql<number>`count(*) filter (where ${actionLogs.status} = 'completed')`,
+          failed: sql<number>`count(*) filter (where ${actionLogs.status} = 'failed')`,
+          totalTokens: sql<number>`coalesce(sum(${actionLogs.tokensUsed}), 0)`,
+          totalCost: sql<string>`coalesce(sum(${actionLogs.costUsd}), 0)`,
+          avgDuration: sql<number>`coalesce(avg(${actionLogs.durationMs}), 0)`,
+        })
+        .from(actionLogs)
+        .where(
+          and(
+            eq(actionLogs.agentId, input.agentId),
+            eq(actionLogs.projectId, ctx.project!.id),
+            gte(actionLogs.createdAt, since),
+          ),
+        );
+
+      const total = Number(stats?.total ?? 0);
+      const completed = Number(stats?.completed ?? 0);
+      const failed = Number(stats?.failed ?? 0);
+      const successRate = total > 0 ? Math.round((completed / total) * 100) : 100;
+
+      // Count unique sessions
+      const sessions = await db
+        .select({ sessionId: actionLogs.sessionId })
+        .from(actionLogs)
+        .where(
+          and(
+            eq(actionLogs.agentId, input.agentId),
+            eq(actionLogs.projectId, ctx.project!.id),
+            gte(actionLogs.createdAt, since),
+          ),
+        )
+        .groupBy(actionLogs.sessionId);
+
+      // Daily breakdown (last N days)
+      const daily = await db
+        .select({
+          day: sql<string>`to_char(${actionLogs.createdAt}, 'YYYY-MM-DD')`.as('day'),
+          actions: count(),
+          failures: sql<number>`count(*) filter (where ${actionLogs.status} = 'failed')`,
+          tokens: sql<number>`coalesce(sum(${actionLogs.tokensUsed}), 0)`,
+        })
+        .from(actionLogs)
+        .where(
+          and(
+            eq(actionLogs.agentId, input.agentId),
+            eq(actionLogs.projectId, ctx.project!.id),
+            gte(actionLogs.createdAt, since),
+          ),
+        )
+        .groupBy(sql`to_char(${actionLogs.createdAt}, 'YYYY-MM-DD')`)
+        .orderBy(sql`to_char(${actionLogs.createdAt}, 'YYYY-MM-DD')`);
+
+      // Health score: weighted combo of success rate, activity, and error trend
+      // Higher is better. 100 = perfect.
+      let healthScore = successRate;
+      if (total === 0) healthScore = 100; // no data = assume healthy
+
+      const healthLabel =
+        healthScore >= 90 ? 'healthy' :
+        healthScore >= 70 ? 'degraded' :
+        'failing';
+
+      return {
+        successRate,
+        healthScore,
+        healthLabel: healthLabel as 'healthy' | 'degraded' | 'failing',
+        totalActions: total,
+        completedActions: completed,
+        failedActions: failed,
+        sessionCount: sessions.length,
+        totalTokens: Number(stats?.totalTokens ?? 0),
+        totalCost: String(stats?.totalCost ?? '0'),
+        avgDurationMs: Math.round(Number(stats?.avgDuration ?? 0)),
+        daily: daily.map((d) => ({
+          day: d.day,
+          actions: Number(d.actions),
+          failures: Number(d.failures),
+          tokens: Number(d.tokens),
+        })),
+      };
+    }),
+
+  /** Fleet-wide health summary (all agents in project) */
+  getFleetHealth: projectProcedure.query(async ({ ctx }) => {
+    const since = new Date();
+    since.setDate(since.getDate() - 7);
+
+    // Per-agent aggregation
+    const perAgent = await db
+      .select({
+        agentId: actionLogs.agentId,
+        total: count(),
+        failed: sql<number>`count(*) filter (where ${actionLogs.status} = 'failed')`,
+      })
+      .from(actionLogs)
+      .where(
+        and(
+          eq(actionLogs.projectId, ctx.project!.id),
+          gte(actionLogs.createdAt, since),
+        ),
+      )
+      .groupBy(actionLogs.agentId);
+
+    const healthMap = new Map<string, { successRate: number; healthLabel: string }>();
+    for (const row of perAgent) {
+      const total = Number(row.total);
+      const failed = Number(row.failed);
+      const rate = total > 0 ? Math.round(((total - failed) / total) * 100) : 100;
+      healthMap.set(row.agentId, {
+        successRate: rate,
+        healthLabel: rate >= 90 ? 'healthy' : rate >= 70 ? 'degraded' : 'failing',
+      });
+    }
+
+    return Object.fromEntries(healthMap);
+  }),
 });

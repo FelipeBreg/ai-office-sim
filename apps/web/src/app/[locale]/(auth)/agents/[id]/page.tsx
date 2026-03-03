@@ -256,6 +256,8 @@ function DetailSkeleton() {
 function OverviewTab({ agent }: { agent: Agent }) {
   const t = useTranslations('agentDetail');
   const tAgents = useTranslations('agents');
+  const metricsQuery = trpc.agents.getMetrics.useQuery({ agentId: agent.id, days: 7 });
+  const metrics = metricsQuery.data;
 
   const statusCfg = STATUS_CONFIG[agent.status] ?? STATUS_CONFIG.offline;
   const archetypeKey = ARCHETYPE_KEY[agent.archetype] ?? 'archetypeCustom';
@@ -332,29 +334,75 @@ function OverviewTab({ agent }: { agent: Agent }) {
 
       <Separator />
 
-      {/* Stats */}
+      {/* Health & Stats (7-day window) */}
       <div>
         <div className="mb-2 text-[8px] uppercase tracking-[0.15em] text-text-muted">
-          {t('stats')}
+          {t('stats')} (7d)
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="border border-border-default bg-bg-base p-3">
+            <div className="text-[8px] uppercase tracking-[0.15em] text-text-muted">{t('successRate')}</div>
+            <div className={`mt-1.5 text-sm font-medium ${
+              metrics ? (
+                metrics.healthLabel === 'healthy' ? 'text-status-success' :
+                metrics.healthLabel === 'degraded' ? 'text-[#D29922]' :
+                'text-status-error'
+              ) : 'text-accent-cyan'
+            }`}>
+              {metrics ? `${metrics.successRate}%` : t('placeholder')}
+            </div>
+          </div>
+          <div className="border border-border-default bg-bg-base p-3">
             <div className="text-[8px] uppercase tracking-[0.15em] text-text-muted">{t('totalActions')}</div>
-            <div className="mt-1.5 text-sm font-medium text-accent-cyan">{t('placeholder')}</div>
+            <div className="mt-1.5 text-sm font-medium text-accent-cyan">
+              {metrics ? metrics.totalActions.toLocaleString() : t('placeholder')}
+            </div>
           </div>
           <div className="border border-border-default bg-bg-base p-3">
             <div className="text-[8px] uppercase tracking-[0.15em] text-text-muted">{t('tokensUsed')}</div>
-            <div className="mt-1.5 text-sm font-medium text-accent-cyan">{t('placeholder')}</div>
+            <div className="mt-1.5 text-sm font-medium text-accent-cyan">
+              {metrics ? metrics.totalTokens.toLocaleString() : t('placeholder')}
+            </div>
           </div>
           <div className="border border-border-default bg-bg-base p-3">
-            <div className="text-[8px] uppercase tracking-[0.15em] text-text-muted">{t('maxActions')}</div>
-            <div className="mt-1.5 text-sm font-medium text-text-primary">{agent.maxActionsPerSession}</div>
-          </div>
-          <div className="border border-border-default bg-bg-base p-3">
-            <div className="text-[8px] uppercase tracking-[0.15em] text-text-muted">{t('slug')}</div>
-            <div className="mt-1.5 truncate text-xs font-mono text-text-secondary">{agent.slug}</div>
+            <div className="text-[8px] uppercase tracking-[0.15em] text-text-muted">{t('sessions')}</div>
+            <div className="mt-1.5 text-sm font-medium text-accent-cyan">
+              {metrics ? metrics.sessionCount : t('placeholder')}
+            </div>
           </div>
         </div>
+
+        {/* Mini activity chart (daily bars) */}
+        {metrics && metrics.daily.length > 0 && (
+          <div className="mt-3 border border-border-default bg-bg-base p-3">
+            <div className="mb-2 text-[8px] uppercase tracking-[0.15em] text-text-muted">
+              {t('activityChart')}
+            </div>
+            <div className="flex items-end gap-1" style={{ height: 40 }}>
+              {metrics.daily.map((d) => {
+                const maxActions = Math.max(...metrics.daily.map((x) => x.actions), 1);
+                const barH = Math.max((d.actions / maxActions) * 36, 2);
+                const hasFailures = d.failures > 0;
+                return (
+                  <div
+                    key={d.day}
+                    className="flex-1"
+                    title={`${d.day}: ${d.actions} actions, ${d.failures} failures`}
+                  >
+                    <div
+                      className={`w-full ${hasFailures ? 'bg-status-error/60' : 'bg-accent-cyan/40'}`}
+                      style={{ height: barH }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-1 flex justify-between text-[7px] text-text-muted">
+              <span>{metrics.daily[0]?.day.slice(5)}</span>
+              <span>{metrics.daily[metrics.daily.length - 1]?.day.slice(5)}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <Separator />

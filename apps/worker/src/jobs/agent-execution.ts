@@ -261,6 +261,40 @@ export async function processAgentExecution(
       .set({ status: finalStatus })
       .where(eq(agents.id, agentId));
 
+    // ── Auto-disable after 3 consecutive failures ──
+    if (finalStatus === 'error') {
+      try {
+        const recentSessions = await db
+          .select({ sessionId: actionLogs.sessionId, status: actionLogs.status })
+          .from(actionLogs)
+          .where(and(eq(actionLogs.agentId, agentId), eq(actionLogs.projectId, projectId)))
+          .orderBy(desc(actionLogs.createdAt))
+          .limit(30);
+
+        // Group by session, check last 3 unique sessions
+        const sessionStatuses = new Map<string, boolean>();
+        for (const log of recentSessions) {
+          if (!sessionStatuses.has(log.sessionId)) {
+            sessionStatuses.set(log.sessionId, log.status === 'failed');
+          } else if (log.status === 'failed') {
+            sessionStatuses.set(log.sessionId, true);
+          }
+        }
+        const lastThree = [...sessionStatuses.values()].slice(0, 3);
+        if (lastThree.length >= 3 && lastThree.every(Boolean)) {
+          console.warn(`[agent-execution] Agent ${agentId} failed 3 consecutive sessions — auto-disabling`);
+          await db.update(agents).set({ isActive: false }).where(eq(agents.id, agentId));
+          emitToProject(projectId, 'agent:auto_disabled', {
+            agentId,
+            reason: 'consecutive_failures',
+            timestamp: new Date().toISOString(),
+          });
+        }
+      } catch {
+        // Non-blocking
+      }
+    }
+
     // ── Post-execution: auto-extract memories from session transcript ──
     if (result.status === 'completed' && result.actions.length > 0) {
       try {
