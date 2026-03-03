@@ -6,6 +6,10 @@ export const agentExecutionJobSchema = z.object({
   projectId: z.string().uuid(),
   sessionId: z.string().uuid(),
   triggerPayload: z.record(z.unknown()).optional(),
+  /** Serialized session state for resuming after approval */
+  resumeState: z.record(z.unknown()).optional(),
+  /** Whether the pending tool call was approved (true) or rejected (false) */
+  resumeApproved: z.boolean().optional(),
 });
 export type AgentExecutionJob = z.infer<typeof agentExecutionJobSchema>;
 

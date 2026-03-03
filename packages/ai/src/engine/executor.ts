@@ -7,6 +7,7 @@ import type {
   ActionRecord,
   SafetyLimits,
   ToolExecutionContext,
+  SerializedSessionState,
 } from './types.js';
 import { DEFAULT_SAFETY_LIMITS } from './types.js';
 import { db, actionLogs } from '@ai-office/db';
@@ -211,18 +212,45 @@ export async function executeAgent(
         continue;
       }
 
-      // Check approval requirement — abort session for human review
+      // Check approval requirement — pause session for human review (not abort)
       if (toolDef.requiresApproval) {
         needsApproval = true;
-        toolResults.push({
-          type: 'tool_result',
-          tool_use_id: toolBlock.id,
-          content: 'This action requires human approval. Session paused for review.',
-          is_error: false,
-        });
-        session.status = 'aborted';
+        session.status = 'paused_for_approval';
         session.abortReason = `Awaiting approval for tool "${toolBlock.name}"`;
-        break;
+
+        // Serialize full session state so agent can resume from this exact point
+        const pausedState: SerializedSessionState = {
+          messages: messages as unknown[],
+          session: {
+            ...session,
+            startedAt: session.startedAt.toISOString(),
+          },
+          context: {
+            agent: context.agent,
+            systemPrompt: context.systemPrompt,
+            toolNames: context.tools.map((t) => t.name),
+            memory: context.memory,
+          },
+          pendingToolCall: {
+            toolName: toolBlock.name,
+            toolInput: toolBlock.input,
+            toolUseId: toolBlock.id,
+          },
+          limits,
+        };
+
+        const durationMs = Math.round(performance.now() - startTime);
+        return {
+          sessionId: session.sessionId,
+          status: 'paused_for_approval',
+          actions,
+          finalResponse: null,
+          totalTokens: session.totalTokens,
+          totalCostUsd: session.totalCostUsd,
+          durationMs,
+          abortReason: session.abortReason,
+          pausedState,
+        };
       }
 
       // Validate input with Zod
@@ -365,7 +393,7 @@ export async function executeAgent(
 
   return {
     sessionId: session.sessionId,
-    status: session.status as 'completed' | 'error' | 'aborted',
+    status: session.status as 'completed' | 'error' | 'aborted' | 'paused_for_approval',
     actions,
     finalResponse,
     totalTokens: session.totalTokens,

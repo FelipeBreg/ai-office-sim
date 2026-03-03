@@ -1,11 +1,13 @@
-import { db, agents, eq, and } from '@ai-office/db';
+import { db, agents, approvals, eq, and } from '@ai-office/db';
 import {
   executeAgent,
+  resumeAgent,
   loadMemory,
   toolRegistry,
   DEFAULT_SAFETY_LIMITS,
 } from '@ai-office/ai';
-import type { AgentContext, AgentSession } from '@ai-office/ai';
+import type { AgentContext, AgentSession, SerializedSessionState } from '@ai-office/ai';
+import { getNotificationQueue } from '@ai-office/queue';
 import * as Sentry from '@sentry/node';
 import { randomUUID } from 'crypto';
 import { emitToProject } from '../socket/server.js';
@@ -15,6 +17,9 @@ interface AgentExecutionJobData {
   projectId: string;
   sessionId?: string;
   triggerPayload?: unknown;
+  /** When resuming from an approved/rejected approval (serialized as Record) */
+  resumeState?: Record<string, unknown>;
+  resumeApproved?: boolean;
 }
 
 /**
@@ -30,6 +35,7 @@ export async function processAgentExecution(
 ): Promise<void> {
   const { agentId, projectId, triggerPayload } = data;
   const sessionId = data.sessionId ?? randomUUID();
+  const isResume = !!data.resumeState;
 
   // 1. Load agent config
   const [agent] = await db
@@ -47,81 +53,90 @@ export async function processAgentExecution(
     return;
   }
 
-  // 2. Claim agent with CAS (compare-and-swap) to prevent concurrent execution
+  // 2. Claim agent — for new runs require idle; for resume allow awaiting_approval
+  const allowedStatus = isResume ? 'awaiting_approval' : 'idle';
   const [claimed] = await db
     .update(agents)
     .set({ status: 'working' })
-    .where(and(eq(agents.id, agentId), eq(agents.status, 'idle')))
+    .where(and(eq(agents.id, agentId), eq(agents.status, allowedStatus)))
     .returning();
 
   if (!claimed) {
-    console.log(`[agent-execution] Agent ${agentId} is already working or not idle, skipping`);
+    console.log(`[agent-execution] Agent ${agentId} is not in ${allowedStatus} status, skipping`);
     return;
   }
 
   try {
-    // 3. Load agent memory
-    const memory = await loadMemory(agentId, projectId);
-
-    // 4. Build AgentContext
-    const config = agent.config ?? { model: 'claude-sonnet-4-6', temperature: 0.7, maxTokens: 4096, budget: 1.0 };
-    const agentTools = agent.tools
-      ? toolRegistry.getByNames(agent.tools)
-      : toolRegistry.getAll();
-
-    const systemPrompt = agent.systemPromptEn ?? agent.systemPromptPtBr ??
-      `You are ${agent.name}, a ${agent.archetype} agent. Complete the assigned task using the available tools.`;
-
-    const context: AgentContext = {
-      agent: {
-        id: agent.id,
-        name: agent.name,
-        archetype: agent.archetype,
-        model: config.model,
-        temperature: config.temperature,
-        maxTokens: config.maxTokens,
-      },
-      systemPrompt,
-      tools: agentTools,
-      memory,
-      conversationHistory: [],
-      triggerPayload,
-    };
-
-    // 5. Create session
-    const session: AgentSession = {
-      sessionId,
-      agentId,
-      projectId,
-      startedAt: new Date(),
-      actionCount: 0,
-      totalTokens: 0,
-      totalCostUsd: 0,
-      status: 'running',
-    };
-
-    // 6. Emit session started
-    emitToProject(projectId, 'agent:session_started', {
-      agentId,
-      sessionId,
-      triggerType: 'manual',
-    });
-
+    // Emit session started / status working
     emitToProject(projectId, 'agent:status_changed', {
       agentId,
       status: 'working',
       timestamp: new Date().toISOString(),
     });
 
-    // 7. Execute
-    const result = await executeAgent(context, session, {
-      ...DEFAULT_SAFETY_LIMITS,
-      maxActionsPerSession: agent.maxActionsPerSession,
-      maxTokensPerSession: config.budget ? config.budget * 100_000 : 100_000,
-    });
+    let result;
+
+    if (isResume && data.resumeState) {
+      // ── RESUME from approval ──
+      console.log(`[agent-execution] Resuming session ${sessionId} (approved=${data.resumeApproved})`);
+      result = await resumeAgent(
+        data.resumeState as unknown as SerializedSessionState,
+        data.resumeApproved ?? false,
+      );
+    } else {
+      // ── NEW execution ──
+      const memory = await loadMemory(agentId, projectId);
+
+      const config = agent.config ?? { model: 'claude-sonnet-4-6', temperature: 0.7, maxTokens: 4096, budget: 1.0 };
+      const agentTools = agent.tools
+        ? toolRegistry.getByNames(agent.tools)
+        : toolRegistry.getAll();
+
+      const systemPrompt = agent.systemPromptEn ?? agent.systemPromptPtBr ??
+        `You are ${agent.name}, a ${agent.archetype} agent. Complete the assigned task using the available tools.`;
+
+      const context: AgentContext = {
+        agent: {
+          id: agent.id,
+          name: agent.name,
+          archetype: agent.archetype,
+          model: config.model,
+          temperature: config.temperature,
+          maxTokens: config.maxTokens,
+        },
+        systemPrompt,
+        tools: agentTools,
+        memory,
+        conversationHistory: [],
+        triggerPayload,
+      };
+
+      const session: AgentSession = {
+        sessionId,
+        agentId,
+        projectId,
+        startedAt: new Date(),
+        actionCount: 0,
+        totalTokens: 0,
+        totalCostUsd: 0,
+        status: 'running',
+      };
+
+      emitToProject(projectId, 'agent:session_started', {
+        agentId,
+        sessionId,
+        triggerType: 'manual',
+      });
+
+      result = await executeAgent(context, session, {
+        ...DEFAULT_SAFETY_LIMITS,
+        maxActionsPerSession: agent.maxActionsPerSession,
+        maxTokensPerSession: config.budget ? config.budget * 100_000 : 100_000,
+      });
+    }
 
     console.log(
-      `[agent-execution] Session ${sessionId} completed:`,
+      `[agent-execution] Session ${sessionId}:`,
       `status=${result.status}`,
       `actions=${result.actions.length}`,
       `tokens=${result.totalTokens}`,
@@ -129,7 +144,58 @@ export async function processAgentExecution(
       `duration=${result.durationMs}ms`,
     );
 
-    // 8. Emit session complete
+    // ── Handle paused_for_approval: save state, create approval record ──
+    if (result.status === 'paused_for_approval' && result.pausedState) {
+      const toolName = result.pausedState.pendingToolCall.toolName;
+
+      // Create approval record with session state for resume
+      const [approval] = await db.insert(approvals).values({
+        projectId,
+        agentId,
+        actionType: `tool_call:${toolName}`,
+        actionPayload: result.pausedState.pendingToolCall.toolInput as Record<string, unknown>,
+        reason: `Agent "${agent.name}" wants to execute "${toolName}" which requires human approval.`,
+        riskLevel: 'medium',
+        status: 'pending',
+        sessionState: result.pausedState as unknown as Record<string, unknown>,
+      }).returning();
+
+      // Set agent to awaiting_approval
+      await db
+        .update(agents)
+        .set({ status: 'awaiting_approval' })
+        .where(eq(agents.id, agentId));
+
+      emitToProject(projectId, 'agent:status_changed', {
+        agentId,
+        status: 'awaiting_approval',
+        timestamp: new Date().toISOString(),
+      });
+
+      // Emit approval:requested event
+      if (approval) {
+        emitToProject(projectId, 'approval:requested', {
+          approvalId: approval.id,
+          agentId,
+          actionType: `tool_call:${toolName}`,
+          riskLevel: 'medium',
+        });
+
+        // Enqueue notification job
+        const notificationQueue = getNotificationQueue();
+        await notificationQueue.add(`approval-${approval.id}`, {
+          type: 'approval_requested',
+          projectId,
+          agentId,
+          approvalId: approval.id,
+          message: `Agent "${agent.name}" needs approval to execute "${toolName}"`,
+        });
+      }
+
+      return; // Session paused — don't mark as idle
+    }
+
+    // ── Normal completion / error / abort ──
     emitToProject(projectId, 'agent:session_complete', {
       agentId,
       sessionId,
@@ -137,16 +203,17 @@ export async function processAgentExecution(
       tokensUsed: result.totalTokens,
     });
 
+    const finalStatus = result.status === 'completed' ? 'idle' : 'error';
+
     emitToProject(projectId, 'agent:status_changed', {
       agentId,
-      status: result.status === 'completed' ? 'idle' : 'error',
+      status: finalStatus,
       timestamp: new Date().toISOString(),
     });
 
-    // 9. Update agent status
     await db
       .update(agents)
-      .set({ status: result.status === 'completed' ? 'idle' : 'error' })
+      .set({ status: finalStatus })
       .where(eq(agents.id, agentId));
 
   } catch (err) {
@@ -155,7 +222,6 @@ export async function processAgentExecution(
       tags: { agentId, projectId, sessionId },
     });
 
-    // Emit error event
     emitToProject(projectId, 'agent:error', {
       agentId,
       sessionId,
@@ -169,7 +235,6 @@ export async function processAgentExecution(
       timestamp: new Date().toISOString(),
     });
 
-    // Update agent status to error
     await db.update(agents).set({ status: 'error' }).where(eq(agents.id, agentId));
 
     throw err;

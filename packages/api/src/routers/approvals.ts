@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
-import { db, approvals, approvalRules, eq, and, desc } from '@ai-office/db';
+import { db, approvals, approvalRules, agents, eq, and, desc } from '@ai-office/db';
+import { getAgentExecutionQueue } from '@ai-office/queue';
 import { TRPCError } from '@trpc/server';
 
 export const approvalsRouter = createTRPCRouter({
@@ -59,6 +60,21 @@ export const approvalsRouter = createTRPCRouter({
       if (!updated) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Pending approval not found' });
       }
+
+      // If there's a saved session state, re-enqueue the agent to resume execution
+      if (updated.sessionState) {
+        const queue = getAgentExecutionQueue();
+        const sessionState = updated.sessionState as Record<string, unknown>;
+        const sessionId = (sessionState.session as Record<string, unknown>)?.sessionId as string;
+        await queue.add(`resume-${updated.agentId}-${sessionId}`, {
+          agentId: updated.agentId,
+          projectId: updated.projectId,
+          sessionId,
+          resumeState: sessionState,
+          resumeApproved: true,
+        });
+      }
+
       return updated;
     }),
 
@@ -90,6 +106,27 @@ export const approvalsRouter = createTRPCRouter({
       if (!updated) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Pending approval not found' });
       }
+
+      // If there's a saved session state, re-enqueue the agent to resume (with rejection)
+      if (updated.sessionState) {
+        const queue = getAgentExecutionQueue();
+        const sessionState = updated.sessionState as Record<string, unknown>;
+        const sessionId = (sessionState.session as Record<string, unknown>)?.sessionId as string;
+        await queue.add(`resume-rejected-${updated.agentId}-${sessionId}`, {
+          agentId: updated.agentId,
+          projectId: updated.projectId,
+          sessionId,
+          resumeState: sessionState,
+          resumeApproved: false,
+        });
+      } else {
+        // No session state — just set agent back to idle
+        await db
+          .update(agents)
+          .set({ status: 'idle' })
+          .where(eq(agents.id, updated.agentId));
+      }
+
       return updated;
     }),
 

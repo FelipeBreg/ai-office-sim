@@ -6,6 +6,7 @@ export type { HeliconeProperties } from './client.js';
 export { callLLM } from './engine/llm.js';
 export type { LLMCallContext, LLMCallResult } from './engine/llm.js';
 export { executeAgent } from './engine/executor.js';
+export { resumeAgent } from './engine/resume.js';
 export type {
   AgentSession,
   AgentContext,
@@ -14,6 +15,7 @@ export type {
   ExecutionResult,
   ActionRecord,
   SafetyLimits,
+  SerializedSessionState,
 } from './engine/types.js';
 export { DEFAULT_SAFETY_LIMITS } from './engine/types.js';
 export { checkApprovalRule } from './engine/approval-check.js';

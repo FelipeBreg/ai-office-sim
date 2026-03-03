@@ -16,7 +16,6 @@ export const approvals = pgTable(
       .notNull()
       .references(() => agents.id, { onDelete: 'cascade' }),
     actionLogId: uuid('action_log_id')
-      .notNull()
       .references(() => actionLogs.id, { onDelete: 'cascade' }),
     actionType: text('action_type').notNull(),
     actionPayload: jsonb('action_payload'),
@@ -25,6 +24,8 @@ export const approvals = pgTable(
     status: approvalStatusEnum('status').notNull().default('pending'),
     reviewedBy: uuid('reviewed_by').references(() => users.id, { onDelete: 'set null' }),
     reviewComment: text('review_comment'),
+    /** Serialized agent session state for pause/resume (messages, session, context) */
+    sessionState: jsonb('session_state'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
   },

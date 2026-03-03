@@ -10,7 +10,7 @@ export interface AgentSession {
   actionCount: number;
   totalTokens: number;
   totalCostUsd: number;
-  status: 'running' | 'completed' | 'error' | 'aborted';
+  status: 'running' | 'completed' | 'error' | 'aborted' | 'paused_for_approval';
   abortReason?: string;
 }
 
@@ -47,16 +47,36 @@ export interface ToolExecutionContext {
   sessionId: string;
 }
 
+/** Serialized session state for pause/resume (stored in approvals.session_state) */
+export interface SerializedSessionState {
+  messages: unknown[]; // Anthropic.MessageParam[]
+  session: Omit<AgentSession, 'startedAt'> & { startedAt: string };
+  context: {
+    agent: AgentContext['agent'];
+    systemPrompt: string;
+    toolNames: string[];
+    memory: AgentContext['memory'];
+  };
+  pendingToolCall: {
+    toolName: string;
+    toolInput: unknown;
+    toolUseId: string;
+  };
+  limits: SafetyLimits;
+}
+
 /** Result of a complete agent execution session */
 export interface ExecutionResult {
   sessionId: string;
-  status: 'completed' | 'error' | 'aborted';
+  status: 'completed' | 'error' | 'aborted' | 'paused_for_approval';
   actions: ActionRecord[];
   finalResponse: string | null;
   totalTokens: number;
   totalCostUsd: number;
   durationMs: number;
   abortReason?: string;
+  /** Present only when status === 'paused_for_approval' */
+  pausedState?: SerializedSessionState;
 }
 
 /** Individual action recorded during execution */
