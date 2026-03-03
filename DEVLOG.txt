@@ -7,6 +7,37 @@
 
 
 ================================================================================
+COMMIT #96 — Agent-to-Agent Communication (Phase 1.4)
+================================================================================
+Hash:     09a5eee
+Date:     2026-03-02
+Scope:    packages/ai, apps/worker
+
+WHAT CHANGED:
+  • NEW TOOL: trigger_agent — agents can trigger other agents by slug with a
+    message payload and optional priority level. Looks up target agent in same
+    project, validates it's active, enqueues execution with the message as
+    triggerPayload of type 'agent_message'
+  • AGENT EXECUTION: when triggerPayload.type === 'agent_message', appends
+    incoming message context to system prompt with source agent name and
+    priority indicator
+  • TOOL REGISTRY: trigger_agent registered globally, available to all agents
+  • EXPORTS: triggerAgentTool exported from @ai-office/ai
+
+WHY:
+  A sales agent discovers a legal issue and needs to notify the legal agent.
+  An operations agent needs data from the finance agent. Previously impossible
+  — agents were isolated. Now agents can trigger each other with context,
+  enabling collaborative workflows without manual intervention.
+
+FILES (4):
+  A packages/ai/src/tools/agents/trigger-agent.ts
+  M packages/ai/src/tools/registry.ts
+  M packages/ai/src/index.ts
+  M apps/worker/src/jobs/agent-execution.ts
+
+
+================================================================================
 COMMIT #95 — Agent Health Monitoring (Phase 1.3)
 ================================================================================
 Hash:     965c778
