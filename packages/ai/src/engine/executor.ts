@@ -11,6 +11,7 @@ import type {
 } from './types.js';
 import { DEFAULT_SAFETY_LIMITS } from './types.js';
 import { db, actionLogs } from '@ai-office/db';
+import { maskPII } from '@ai-office/shared';
 
 const TOOL_CALL_TIMEOUT_MS = 60_000; // 60s per tool call
 const MAX_TOOL_RESULT_LENGTH = 10_000; // Truncate large tool outputs
@@ -56,14 +57,17 @@ export async function executeAgent(
 
   // Ensure we don't append a user message after an existing user message
   const lastMsg = messages[messages.length - 1];
-  const triggerContent = context.triggerPayload
+  const rawTrigger = context.triggerPayload
     ? String(typeof context.triggerPayload === 'string' ? context.triggerPayload : safeStringify(context.triggerPayload)).slice(0, 10_000)
     : 'Start your work.';
+
+  // Mask PII in trigger payload and memory before sending to LLM
+  const triggerContent = maskPII(rawTrigger);
 
   let userMessage: string;
   if (context.memory.length > 0) {
     const memoryText = context.memory
-      .map((m) => `[${m.key}]: ${safeStringify(m.value)}`)
+      .map((m) => `[${m.key}]: ${maskPII(safeStringify(m.value))}`)
       .join('\n');
     userMessage = `[System: Agent Memory]\n${memoryText}\n\n[User Trigger] ${triggerContent}`;
   } else {

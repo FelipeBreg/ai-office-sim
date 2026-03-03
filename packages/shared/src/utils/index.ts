@@ -11,6 +11,7 @@ export function slugify(text: string): string {
 }
 
 export { encryptCredentials, decryptCredentials } from './crypto.js';
+export { maskPII, countPII } from './pii.js';
 export {
   getAuthorizationUrl,
   exchangeCodeForTokens,
