@@ -7,6 +7,74 @@
 
 
 ================================================================================
+COMMIT #110 — Community & Marketplace Review Fixes
+================================================================================
+Hash:     70eecdf
+Date:     2026-03-03
+Scope:    packages/api, apps/web
+
+Fixes from code review:
+  - Slug collisions: replaced Date.now() with randomUUID() for agent slugs on install
+  - Install count inflation: only increment when a new community_installs row is actually inserted
+  - Negative rating guards: GREATEST(..., 0) in deleteReview counter update
+  - Clerk/DB user ID mismatch: use trpc.users.getCurrent instead of Clerk's useUser().id
+    for review delete button (Clerk ID ≠ internal DB UUID)
+  - ILIKE wildcard escaping: escape %, _, \ in search input before wrapping with %...%
+  - Locale-aware display: use useLocale() to show pt-BR names/descriptions when available
+  - Install error feedback: show error state on InstallButton (was silently reverting)
+  - Sidebar layout conflict: removed community link from auth sidebar (public-only route)
+  - Raw SQL → Drizzle: use inArray() instead of = ANY() for publishWorkflow agent lookup
+
+
+================================================================================
+COMMIT #109 — Community & Marketplace (Phase 5)
+================================================================================
+Hash:     7b38a8e
+Date:     2026-03-03
+Scope:    packages/db, packages/api, apps/web
+
+Database (3 tables):
+  - community_listings: type, slug (unique), name (en/pt-BR), description,
+    category, icon, snapshot (jsonb), publishedById, orgId, installCount,
+    ratingSum, ratingCount, isVerified, timestamps
+    Indexes: slug unique, type+category, published_by, install_count DESC, created_at DESC
+  - community_installs: listingId, userId, projectId, installedAt
+    Unique: (listingId, projectId) — one install per project
+  - community_reviews: listingId, userId, rating (1-5), comment (max 1000), timestamps
+    Unique: (listingId, userId) — one review per user
+
+tRPC Router (15 procedures):
+  Publish:   publishAgent, publishWorkflow, unpublish (adminProcedure)
+  Browse:    list (search/filter/sort/paginate), getBySlug (publicProcedure)
+  Install:   installAgent, installWorkflow, isInstalled (projectProcedure)
+  Reviews:   submitReview, listReviews, deleteReview (protected/public)
+  Profiles:  myPublished, getPublisherProfile, getPublisherListings (protected/public)
+
+Agent snapshot: archetype, tools, systemPrompt (en/pt-BR), config, trigger, team, memoryScope
+Workflow snapshot: name, description, definition (agentIds → archetypes), requiredArchetypes, nodeCount
+
+Public Pages (under /community):
+  - Browse page: tabs (agents/workflows), search, sort (newest/popular/rating), pagination
+  - Agent detail: SSR with generateMetadata (OG tags), snapshot viewer, install button
+  - Workflow detail: SSR with generateMetadata, required archetypes, install button
+  - Publisher profile: stats (listings, installs, avg rating), published listings grid
+  - Review section: star picker (1-5), comment form, review list with delete-own
+
+Components:
+  - ListingCard: icon, name, description, category badge, install count, star rating
+  - InstallButton: auth-aware (sign-in redirect), install/installed/error states
+  - ReviewSection: star rating picker, review list, submit/delete mutations
+
+Integration:
+  - Publish buttons on agent + workflow detail pages (confirmation dialog with preview)
+  - Middleware: /community(..) added to public routes
+  - publicServerTRPC(): unauthenticated server-side caller for SSR pages
+  - i18n: ~50 keys in en-US + pt-BR for all community strings
+
+Migration: community-marketplace.sql run against Neon (3 tables, 8 indexes)
+
+
+================================================================================
 COMMIT #108 — Security Hardening (Phase 4.4)
 ================================================================================
 Hash:     73d554c
