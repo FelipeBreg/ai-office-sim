@@ -1,5 +1,6 @@
 export { getConnectionOptions } from './connection.js';
 export { getRedisClient } from './redis.js';
+export { toBullMQPriority, type AgentPriority } from './priority.js';
 export {
   QUEUE_NAMES,
   type QueueName,

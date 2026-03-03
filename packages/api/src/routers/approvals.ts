@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
 import { db, approvals, approvalRules, agents, eq, and, desc } from '@ai-office/db';
-import { getAgentExecutionQueue, getNotificationQueue } from '@ai-office/queue';
+import { getAgentExecutionQueue, getNotificationQueue, toBullMQPriority } from '@ai-office/queue';
 import { TRPCError } from '@trpc/server';
 
 export const approvalsRouter = createTRPCRouter({
@@ -74,16 +74,28 @@ export const approvalsRouter = createTRPCRouter({
 
       // If there's a saved session state, re-enqueue the agent to resume execution
       if (updated.sessionState) {
+        // Look up agent priority
+        const [agentRow] = await db
+          .select({ config: agents.config })
+          .from(agents)
+          .where(eq(agents.id, updated.agentId))
+          .limit(1);
+        const agentPriority = (agentRow?.config as { priority?: string } | null)?.priority;
+
         const queue = getAgentExecutionQueue();
         const sessionState = updated.sessionState as Record<string, unknown>;
         const sessionId = (sessionState.session as Record<string, unknown>)?.sessionId as string;
-        await queue.add(`resume-${updated.agentId}-${sessionId}`, {
-          agentId: updated.agentId,
-          projectId: updated.projectId,
-          sessionId,
-          resumeState: sessionState,
-          resumeApproved: true,
-        });
+        await queue.add(
+          `resume-${updated.agentId}-${sessionId}`,
+          {
+            agentId: updated.agentId,
+            projectId: updated.projectId,
+            sessionId,
+            resumeState: sessionState,
+            resumeApproved: true,
+          },
+          { priority: toBullMQPriority(agentPriority) },
+        );
       }
 
       return updated;
@@ -131,16 +143,27 @@ export const approvalsRouter = createTRPCRouter({
 
       // If there's a saved session state, re-enqueue the agent to resume (with rejection)
       if (updated.sessionState) {
+        const [agentRow2] = await db
+          .select({ config: agents.config })
+          .from(agents)
+          .where(eq(agents.id, updated.agentId))
+          .limit(1);
+        const agentPriority2 = (agentRow2?.config as { priority?: string } | null)?.priority;
+
         const queue = getAgentExecutionQueue();
         const sessionState = updated.sessionState as Record<string, unknown>;
         const sessionId = (sessionState.session as Record<string, unknown>)?.sessionId as string;
-        await queue.add(`resume-rejected-${updated.agentId}-${sessionId}`, {
-          agentId: updated.agentId,
-          projectId: updated.projectId,
-          sessionId,
-          resumeState: sessionState,
-          resumeApproved: false,
-        });
+        await queue.add(
+          `resume-rejected-${updated.agentId}-${sessionId}`,
+          {
+            agentId: updated.agentId,
+            projectId: updated.projectId,
+            sessionId,
+            resumeState: sessionState,
+            resumeApproved: false,
+          },
+          { priority: toBullMQPriority(agentPriority2) },
+        );
       } else {
         // No session state — just set agent back to idle
         await db

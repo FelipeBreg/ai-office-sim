@@ -19,7 +19,7 @@ import {
   gte,
 } from '@ai-office/db';
 import { ragSearch } from '@ai-office/ai';
-import { getAgentExecutionQueue } from '@ai-office/queue';
+import { getAgentExecutionQueue, toBullMQPriority } from '@ai-office/queue';
 import { randomUUID } from 'crypto';
 
 /** Minimal Anthropic Tool shape — avoids importing the full SDK */
@@ -508,22 +508,23 @@ registerTool({
 
     // Verify agent exists
     const [agent] = await db
-      .select({ id: agents.id, name: agents.name, status: agents.status })
+      .select({ id: agents.id, name: agents.name, status: agents.status, config: agents.config })
       .from(agents)
       .where(and(eq(agents.id, agentId), eq(agents.projectId, projectId)))
       .limit(1);
 
     if (!agent) return { error: 'Agent not found' };
 
+    const priority = (agent.config as { priority?: string } | null)?.priority;
     const sessionId = randomUUID();
     const queue = getAgentExecutionQueue();
-    await queue.add('agent-execution', {
-      agentId,
-      projectId,
-      sessionId,
-    });
+    await queue.add(
+      'agent-execution',
+      { agentId, projectId, sessionId },
+      { priority: toBullMQPriority(priority) },
+    );
 
-    return { triggered: true, agent: agent.name, sessionId };
+    return { triggered: true, agent: agent.name, sessionId, priority: priority ?? 'normal' };
   },
 });
 

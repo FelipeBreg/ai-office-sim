@@ -232,6 +232,64 @@ export const orchestratorRouter = createTRPCRouter({
       return { paused: result.length };
     }),
 
+  /** Set an agent's priority level */
+  setAgentPriority: adminProcedure
+    .input(
+      z.object({
+        agentId: z.string().uuid(),
+        priority: z.enum(['critical', 'high', 'normal', 'low']),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [agent] = await db
+        .select({ id: agents.id, config: agents.config })
+        .from(agents)
+        .where(and(eq(agents.id, input.agentId), eq(agents.projectId, ctx.project!.id)))
+        .limit(1);
+
+      if (!agent) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Agent not found' });
+      }
+
+      const currentConfig = (agent.config ?? {
+        model: 'claude-sonnet-4-5-20250514',
+        temperature: 0.7,
+        maxTokens: 4096,
+        budget: 10,
+      }) as Record<string, unknown>;
+
+      const [updated] = await db
+        .update(agents)
+        .set({ config: { ...currentConfig, priority: input.priority } as any })
+        .where(eq(agents.id, input.agentId))
+        .returning({ id: agents.id, name: agents.name });
+
+      return updated!;
+    }),
+
+  /** Get agents with their priorities */
+  getAgentPriorities: projectProcedure.query(async ({ ctx }) => {
+    const rows = await db
+      .select({
+        id: agents.id,
+        name: agents.name,
+        status: agents.status,
+        team: agents.team,
+        config: agents.config,
+      })
+      .from(agents)
+      .where(and(eq(agents.projectId, ctx.project!.id), eq(agents.isActive, true)))
+      .orderBy(agents.name);
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      status: row.status,
+      team: row.team,
+      priority: ((row.config as { priority?: string } | null)?.priority ?? 'normal') as string,
+    }));
+  }),
+
   /** Resume all agents on a team (set to idle) */
   resumeTeam: adminProcedure
     .input(z.object({ team: z.string() }))

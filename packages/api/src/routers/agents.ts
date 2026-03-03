@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { createTRPCRouter, projectProcedure, adminProcedure, enforceResourceLimit } from '../trpc.js';
 import { db, agents, actionLogs, eq, and, desc, sql, gte, count } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
-import { getAgentExecutionQueue } from '@ai-office/queue';
+import { getAgentExecutionQueue, toBullMQPriority } from '@ai-office/queue';
 
 export const agentsRouter = createTRPCRouter({
   list: projectProcedure.query(async ({ ctx }) => {
@@ -175,6 +175,7 @@ export const agentsRouter = createTRPCRouter({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Agent is inactive' });
       }
 
+      const priority = (agent.config as { priority?: string } | null)?.priority;
       const sessionId = randomUUID();
       await getAgentExecutionQueue().add(
         `agent-${agent.id}-${sessionId}`,
@@ -184,6 +185,7 @@ export const agentsRouter = createTRPCRouter({
           sessionId,
           ...(input.payload ? { triggerPayload: input.payload as Record<string, unknown> } : {}),
         },
+        { priority: toBullMQPriority(priority) },
       );
 
       return { triggered: true, agentId: agent.id, sessionId };
