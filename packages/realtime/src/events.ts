@@ -139,6 +139,13 @@ export interface ConversationAssignedEvent {
   timestamp: string;
 }
 
+export interface BudgetProjectionWarningEvent {
+  projectedMonthlyUsd: number;
+  monthlyLimitUsd: number;
+  utilizationPct: number;
+  timestamp: string;
+}
+
 // ── Server → Client Event Map ──
 
 export interface ServerToClientEvents {
@@ -162,6 +169,7 @@ export interface ServerToClientEvents {
   'conversation:new_message': (data: ConversationNewMessageEvent) => void;
   'conversation:status_changed': (data: ConversationStatusChangedEvent) => void;
   'conversation:assigned': (data: ConversationAssignedEvent) => void;
+  'budget:projection_warning': (data: BudgetProjectionWarningEvent) => void;
 }
 
 // ── Client → Server Events ──

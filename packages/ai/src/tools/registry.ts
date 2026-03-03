@@ -147,6 +147,7 @@ toolRegistry.register({
         query,
         topK,
         agentId: context.agentId,
+        archetypeSlug: context.archetypeSlug,
         filters: sourceType ? { sourceType } : undefined,
       });
 

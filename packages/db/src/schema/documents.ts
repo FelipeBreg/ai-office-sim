@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   integer,
+  boolean,
   jsonb,
   timestamp,
   index,
@@ -25,12 +26,15 @@ export const documents = pgTable(
     sourceType: documentSourceTypeEnum('source_type').notNull(),
     sourceUrl: text('source_url'),
     content: text('content').notNull(),
+    isStatic: boolean('is_static').notNull().default(false),
+    archetypeSlug: text('archetype_slug'),
     metadata: jsonb('metadata'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index('document_project_id_idx').on(table.projectId),
     index('document_agent_id_idx').on(table.agentId),
+    index('document_static_archetype_idx').on(table.isStatic, table.archetypeSlug),
   ],
 );
 

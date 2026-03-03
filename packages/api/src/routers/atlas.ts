@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { createTRPCRouter, projectProcedure } from '../trpc.js';
 import { callLLM } from '@ai-office/ai';
-import { db, agents, workflows, strategies, eq, desc } from '@ai-office/db';
+import { db, agents, workflows, strategies, agentSessionSummaries, eq, and, desc } from '@ai-office/db';
 import {
   getAtlasAnthropicTools,
   getAtlasToolByName,
@@ -24,8 +24,8 @@ const ATLAS_SYSTEM_PROMPT = `You are ATLAS, a superintelligent AI assistant that
 You have access to real tools that interact with the platform. Use them to answer questions with actual data — never guess or make up numbers.
 
 ## Tool Behavior
-- **Read-only tools** (list_agents, get_agent, list_workflows, get_workflow, list_strategies, get_strategy, get_analytics, list_pending_approvals, list_human_tasks, search_memory) execute automatically and return real data.
-- **Mutation tools** (create_agent, update_agent, trigger_agent, create_workflow, update_strategy, create_human_task) require user approval before executing. When you call these, the user will see an approval popup.
+- **Read-only tools** (list_agents, get_agent, list_workflows, get_workflow, list_strategies, get_strategy, get_analytics, list_pending_approvals, list_human_tasks, search_memory, get_fleet_status, get_cost_report, get_orchestrator_config, search_action_logs, get_kpi_trends) execute automatically and return real data.
+- **Mutation tools** (create_agent, update_agent, trigger_agent, create_workflow, update_strategy, create_human_task, update_orchestrator_config, pause_agents_by_team, resume_agents_by_team, trigger_workflow, update_wiki_article, manage_calendar, create_strategy_kpi, update_strategy_kpi) require user approval before executing.
 
 ## Guidelines
 - Always use tools to fetch real data before answering questions about the company.
@@ -330,6 +330,49 @@ async function runAtlasLoop(
 // ── Router ──
 
 export const atlasRouter = createTRPCRouter({
+  // Latest CEO briefing for proactive display
+  latestBriefing: projectProcedure.query(async ({ ctx }) => {
+    const projectId = ctx.project!.id;
+
+    // Find the CEO agent
+    const [ceoAgent] = await db
+      .select({ id: agents.id })
+      .from(agents)
+      .where(and(eq(agents.projectId, projectId), eq(agents.archetype, 'ceo_strategist')))
+      .limit(1);
+
+    if (!ceoAgent) return null;
+
+    // Get latest session summary from the CEO
+    const [latestSummary] = await db
+      .select({
+        id: agentSessionSummaries.id,
+        summary: agentSessionSummaries.summary,
+        createdAt: agentSessionSummaries.createdAt,
+      })
+      .from(agentSessionSummaries)
+      .where(
+        and(
+          eq(agentSessionSummaries.projectId, projectId),
+          eq(agentSessionSummaries.agentId, ceoAgent.id),
+        ),
+      )
+      .orderBy(desc(agentSessionSummaries.createdAt))
+      .limit(1);
+
+    if (!latestSummary) return null;
+
+    // Only show if less than 24 hours old
+    const hoursSince = (Date.now() - new Date(latestSummary.createdAt).getTime()) / (1000 * 60 * 60);
+    if (hoursSince > 24) return null;
+
+    return {
+      id: latestSummary.id,
+      summary: latestSummary.summary,
+      createdAt: latestSummary.createdAt,
+    };
+  }),
+
   chat: projectProcedure
     .input(
       z.object({

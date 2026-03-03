@@ -1339,6 +1339,7 @@
     "unmute": "Unmute",
     "reset": "Reset",
     "chatError": "Failed to reach ATLAS. Please try again.",
+    "ceoBriefing": "CEO Agent Briefing",
     "insightPrompt": "I'd like to implement insight {id}. What steps do you recommend?",
     "actionSuggestion": "Suggested Action",
     "approve": "Approve",
@@ -1561,6 +1562,15 @@
     "recAmount": "Amount",
     "recType": "Type",
     "recCategory": "Category",
+
+    "costForecast": "Cost Forecast (7-day average)",
+    "dailyAvg": "Daily Avg",
+    "projectedMonthly": "Projected Monthly",
+    "daysAnalyzed": "Days Analyzed",
+    "budgetUsed": "Budget Used",
+    "perAgentCost": "Per-Agent Projection",
+    "agentName": "Agent",
+    "budgetWarning": "Projected spend is at {pct}% of your monthly budget limit.",
 
     "agentActivityHour": "Agent Activity by Hour",
     "actionsByDay": "Actions by Day",

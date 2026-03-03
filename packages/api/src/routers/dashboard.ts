@@ -13,6 +13,7 @@ import {
   pipelineStages,
   financialRecords,
   marketingCampaigns,
+  orchestratorConfig,
   eq,
   and,
   gte,
@@ -21,6 +22,7 @@ import {
   count,
   desc,
 } from '@ai-office/db';
+import { generateCostForecast } from '@ai-office/ai';
 
 const periodInput = z
   .object({ days: z.number().min(1).max(90).default(30) })
@@ -431,4 +433,26 @@ export const dashboardRouter = createTRPCRouter({
       funnel: funnelMetrics,
     };
   }),
+
+  // ---------------------------------------------------------------------------
+  // Cost Forecast — projected monthly spend based on trailing 7-day average
+  // ---------------------------------------------------------------------------
+  costForecast: projectProcedure
+    .input(z.object({ windowDays: z.number().min(1).max(30).default(7) }).default({}))
+    .query(async ({ ctx, input }) => {
+      const projectId = ctx.project!.id;
+
+      // Check if a monthly budget limit is configured
+      let monthlyLimitUsd: number | undefined;
+      const [config] = await db
+        .select({ monthlySpendLimitUsd: orchestratorConfig.monthlySpendLimitUsd })
+        .from(orchestratorConfig)
+        .where(eq(orchestratorConfig.projectId, projectId))
+        .limit(1);
+      if (config) {
+        monthlyLimitUsd = Number(config.monthlySpendLimitUsd);
+      }
+
+      return generateCostForecast(projectId, input.windowDays, monthlyLimitUsd);
+    }),
 });

@@ -11,6 +11,8 @@ import {
   orchestratorConfig,
   approvals,
   workflowRuns,
+  wikiArticles,
+  calendarEvents,
   eq,
   and,
   desc,
@@ -19,7 +21,7 @@ import {
   gte,
 } from '@ai-office/db';
 import { ragSearch } from '@ai-office/ai';
-import { getAgentExecutionQueue, toBullMQPriority } from '@ai-office/queue';
+import { getAgentExecutionQueue, getWorkflowExecutionQueue, toBullMQPriority } from '@ai-office/queue';
 import { randomUUID } from 'crypto';
 
 /** Minimal Anthropic Tool shape — avoids importing the full SDK */
@@ -901,6 +903,310 @@ registerTool({
   },
 });
 
+// ── New Phase 7 Tools ──
+
+registerTool({
+  name: 'search_action_logs',
+  description:
+    'Search action logs with filters: agent, status, action type, or tool name. Returns recent log entries.',
+  inputSchema: z.object({
+    agentId: z.string().optional().describe('Filter by agent UUID'),
+    status: z.enum(['pending', 'completed', 'failed', 'cancelled']).optional().describe('Filter by status'),
+    actionType: z.enum(['tool_call', 'llm_response', 'approval_request']).optional().describe('Filter by action type'),
+    limit: z.number().optional().describe('Number of results (default: 20, max: 100)'),
+  }),
+  requiresApproval: false,
+  execute: async (input, projectId) => {
+    const { agentId, status, actionType, limit = 20 } = input as {
+      agentId?: string;
+      status?: string;
+      actionType?: string;
+      limit?: number;
+    };
+    const conditions = [eq(actionLogs.projectId, projectId)];
+    if (agentId) conditions.push(eq(actionLogs.agentId, agentId));
+    if (status) conditions.push(eq(actionLogs.status, status as any));
+    if (actionType) conditions.push(eq(actionLogs.actionType, actionType));
+
+    const rows = await db
+      .select({
+        id: actionLogs.id,
+        agentId: actionLogs.agentId,
+        sessionId: actionLogs.sessionId,
+        actionType: actionLogs.actionType,
+        toolName: actionLogs.toolName,
+        status: actionLogs.status,
+        costUsd: actionLogs.costUsd,
+        tokensUsed: actionLogs.tokensUsed,
+        createdAt: actionLogs.createdAt,
+      })
+      .from(actionLogs)
+      .where(and(...conditions))
+      .orderBy(desc(actionLogs.createdAt))
+      .limit(Math.min(limit, 100));
+
+    return { logs: rows, count: rows.length };
+  },
+});
+
+registerTool({
+  name: 'trigger_workflow',
+  description:
+    'Trigger a workflow to execute now by creating a run and enqueuing it. Requires user approval.',
+  inputSchema: z.object({
+    workflowId: z.string().describe('UUID of the workflow to trigger'),
+    variables: z.record(z.string()).optional().describe('Optional variables to pass to the workflow'),
+  }),
+  requiresApproval: true,
+  execute: async (input, projectId) => {
+    const { workflowId, variables = {} } = input as { workflowId: string; variables?: Record<string, string> };
+
+    const [workflow] = await db
+      .select({ id: workflows.id, name: workflows.name, isActive: workflows.isActive })
+      .from(workflows)
+      .where(and(eq(workflows.id, workflowId), eq(workflows.projectId, projectId)))
+      .limit(1);
+
+    if (!workflow) return { error: 'Workflow not found' };
+    if (!workflow.isActive) return { error: 'Workflow is inactive' };
+
+    const [run] = await db
+      .insert(workflowRuns)
+      .values({ workflowId, projectId, variables })
+      .returning({ id: workflowRuns.id });
+
+    if (!run) return { error: 'Failed to create workflow run' };
+
+    await getWorkflowExecutionQueue().add(`atlas-workflow-${workflowId}-${run.id}`, {
+      workflowId,
+      workflowRunId: run.id,
+      projectId,
+      variables,
+    });
+
+    return { triggered: true, workflowName: workflow.name, runId: run.id };
+  },
+});
+
+registerTool({
+  name: 'update_wiki_article',
+  description:
+    'Update the content of a wiki article. Requires user approval.',
+  inputSchema: z.object({
+    articleId: z.string().describe('UUID of the wiki article'),
+    title: z.string().optional().describe('New title'),
+    content: z.string().optional().describe('New content (markdown)'),
+  }),
+  requiresApproval: true,
+  execute: async (input, projectId) => {
+    const { articleId, title, content } = input as { articleId: string; title?: string; content?: string };
+
+    const payload: Record<string, unknown> = {};
+    if (title !== undefined) payload.title = title;
+    if (content !== undefined) payload.content = content;
+
+    if (Object.keys(payload).length === 0) return { error: 'No fields to update' };
+
+    const [updated] = await db
+      .update(wikiArticles)
+      .set(payload as any)
+      .where(and(eq(wikiArticles.id, articleId), eq(wikiArticles.projectId, projectId)))
+      .returning({ id: wikiArticles.id, title: wikiArticles.title });
+
+    if (!updated) return { error: 'Article not found' };
+    return { updated: true, article: updated };
+  },
+});
+
+registerTool({
+  name: 'manage_calendar',
+  description:
+    'Create, update, or list calendar events for the project. Listing is auto-executed; create/update requires approval.',
+  inputSchema: z.object({
+    action: z.enum(['list', 'create', 'update']).describe('Action to perform'),
+    eventId: z.string().optional().describe('Event UUID (for update)'),
+    title: z.string().optional().describe('Event title (for create/update)'),
+    description: z.string().optional().describe('Event description'),
+    startAt: z.string().optional().describe('Start time (ISO 8601)'),
+    endAt: z.string().optional().describe('End time (ISO 8601)'),
+    isAllDay: z.boolean().optional().describe('All-day event'),
+  }),
+  requiresApproval: true,
+  execute: async (input, projectId) => {
+    const { action, eventId, title, description, startAt, endAt, isAllDay } = input as {
+      action: 'list' | 'create' | 'update';
+      eventId?: string;
+      title?: string;
+      description?: string;
+      startAt?: string;
+      endAt?: string;
+      isAllDay?: boolean;
+    };
+
+    if (action === 'list') {
+      const events = await db
+        .select({
+          id: calendarEvents.id,
+          title: calendarEvents.title,
+          startAt: calendarEvents.startAt,
+          endAt: calendarEvents.endAt,
+          allDay: calendarEvents.allDay,
+        })
+        .from(calendarEvents)
+        .where(eq(calendarEvents.projectId, projectId))
+        .orderBy(calendarEvents.startAt)
+        .limit(30);
+      return { events, count: events.length };
+    }
+
+    if (action === 'create') {
+      if (!title || !startAt) return { error: 'title and startAt required' };
+      const [created] = await db
+        .insert(calendarEvents)
+        .values({
+          projectId,
+          title,
+          description: description ?? null,
+          eventType: 'custom',
+          startAt: new Date(startAt),
+          endAt: endAt ? new Date(endAt) : null,
+          allDay: isAllDay ?? false,
+        })
+        .returning({ id: calendarEvents.id, title: calendarEvents.title });
+      return { created: true, event: created };
+    }
+
+    if (action === 'update' && eventId) {
+      const payload: Record<string, unknown> = {};
+      if (title !== undefined) payload.title = title;
+      if (description !== undefined) payload.description = description;
+      if (startAt !== undefined) payload.startAt = new Date(startAt);
+      if (endAt !== undefined) payload.endAt = new Date(endAt);
+      if (isAllDay !== undefined) payload.allDay = isAllDay;
+
+      const [updated] = await db
+        .update(calendarEvents)
+        .set(payload as any)
+        .where(and(eq(calendarEvents.id, eventId), eq(calendarEvents.projectId, projectId)))
+        .returning({ id: calendarEvents.id, title: calendarEvents.title });
+      if (!updated) return { error: 'Event not found' };
+      return { updated: true, event: updated };
+    }
+
+    return { error: 'Invalid action or missing eventId for update' };
+  },
+});
+
+registerTool({
+  name: 'create_strategy_kpi',
+  description:
+    'Create a new KPI for a strategy. Requires user approval.',
+  inputSchema: z.object({
+    strategyId: z.string().describe('UUID of the strategy'),
+    name: z.string().describe('KPI name (e.g., "MRR", "Churn Rate")'),
+    targetValue: z.string().describe('Target value as string'),
+    currentValue: z.string().optional().describe('Current value (default: "0")'),
+    unit: z.string().optional().describe('Unit (e.g., "USD", "%", "users")'),
+  }),
+  requiresApproval: true,
+  execute: async (input, projectId) => {
+    const { strategyId, name, targetValue, currentValue = '0', unit } = input as {
+      strategyId: string;
+      name: string;
+      targetValue: string;
+      currentValue?: string;
+      unit?: string;
+    };
+
+    const [strategy] = await db
+      .select({ id: strategies.id })
+      .from(strategies)
+      .where(and(eq(strategies.id, strategyId), eq(strategies.projectId, projectId)))
+      .limit(1);
+    if (!strategy) return { error: 'Strategy not found' };
+
+    const [created] = await db
+      .insert(strategyKpis)
+      .values({
+        strategyId,
+        projectId,
+        name,
+        targetValue,
+        currentValue,
+        unit: unit ?? null,
+      })
+      .returning({ id: strategyKpis.id, name: strategyKpis.name });
+
+    return { created: true, kpi: created };
+  },
+});
+
+registerTool({
+  name: 'update_strategy_kpi',
+  description:
+    'Update a KPI value or target. Requires user approval.',
+  inputSchema: z.object({
+    kpiId: z.string().describe('UUID of the KPI'),
+    currentValue: z.string().optional().describe('New current value'),
+    targetValue: z.string().optional().describe('New target value'),
+  }),
+  requiresApproval: true,
+  execute: async (input, projectId) => {
+    const { kpiId, currentValue, targetValue } = input as {
+      kpiId: string;
+      currentValue?: string;
+      targetValue?: string;
+    };
+
+    const payload: Record<string, unknown> = {};
+    if (currentValue !== undefined) payload.currentValue = currentValue;
+    if (targetValue !== undefined) payload.targetValue = targetValue;
+    if (Object.keys(payload).length === 0) return { error: 'No fields to update' };
+
+    const [updated] = await db
+      .update(strategyKpis)
+      .set(payload as any)
+      .where(and(eq(strategyKpis.id, kpiId), eq(strategyKpis.projectId, projectId)))
+      .returning({ id: strategyKpis.id, name: strategyKpis.name });
+
+    if (!updated) return { error: 'KPI not found' };
+    return { updated: true, kpi: updated };
+  },
+});
+
+registerTool({
+  name: 'get_kpi_trends',
+  description:
+    'Get all KPIs for a strategy with current vs target values and progress percentage.',
+  inputSchema: z.object({
+    strategyId: z.string().describe('UUID of the strategy'),
+  }),
+  requiresApproval: false,
+  execute: async (input, projectId) => {
+    const { strategyId } = input as { strategyId: string };
+    const kpis = await db
+      .select({
+        id: strategyKpis.id,
+        name: strategyKpis.name,
+        currentValue: strategyKpis.currentValue,
+        targetValue: strategyKpis.targetValue,
+        unit: strategyKpis.unit,
+        isMonitored: strategyKpis.isMonitored,
+      })
+      .from(strategyKpis)
+      .where(and(eq(strategyKpis.strategyId, strategyId), eq(strategyKpis.projectId, projectId)));
+
+    return {
+      kpis: kpis.map((k) => {
+        const current = Number(k.currentValue) || 0;
+        const target = Number(k.targetValue) || 0;
+        const progressPct = target > 0 ? Math.round((current / target) * 100) : 0;
+        return { ...k, progressPct };
+      }),
+    };
+  },
+});
+
 // ── Exports ──
 
 export const ATLAS_AUTO_EXECUTE_TOOLS = new Set([
@@ -917,6 +1223,8 @@ export const ATLAS_AUTO_EXECUTE_TOOLS = new Set([
   'get_fleet_status',
   'get_cost_report',
   'get_orchestrator_config',
+  'search_action_logs',
+  'get_kpi_trends',
 ]);
 
 export const ATLAS_APPROVAL_TOOLS = new Set([
@@ -930,6 +1238,11 @@ export const ATLAS_APPROVAL_TOOLS = new Set([
   'pause_agents_by_team',
   'resume_agents_by_team',
   'set_agent_priority',
+  'trigger_workflow',
+  'update_wiki_article',
+  'manage_calendar',
+  'create_strategy_kpi',
+  'update_strategy_kpi',
 ]);
 
 export function getAtlasToolByName(name: string): AtlasToolDefinition | undefined {

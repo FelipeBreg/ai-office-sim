@@ -16,6 +16,7 @@ export type {
   ConversationNewMessageEvent,
   ConversationStatusChangedEvent,
   ConversationAssignedEvent,
+  BudgetProjectionWarningEvent,
 } from './events.js';
 
 export { SERVER_EVENTS, CLIENT_EVENTS } from './events.js';

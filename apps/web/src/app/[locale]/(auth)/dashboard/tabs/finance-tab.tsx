@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { ExternalLink, TrendingUp, TrendingDown, Plus, X, Trash2 } from 'lucide-react';
+import { ExternalLink, TrendingUp, TrendingDown, Plus, X, Trash2, AlertTriangle } from 'lucide-react';
 import {
   AreaChart,
   Area,
@@ -37,6 +37,7 @@ export function FinanceTab() {
   const { data, isLoading, error } = trpc.dashboard.finance.useQuery({ days });
   const { data: finSummary } = trpc.financialRecords.summary.useQuery({ days });
   const { data: records } = trpc.financialRecords.list.useQuery();
+  const { data: forecast } = trpc.dashboard.costForecast.useQuery({});
 
   const createRecordMutation = trpc.financialRecords.create.useMutation({
     onSuccess: () => {
@@ -113,6 +114,56 @@ export function FinanceTab() {
         <StatCard label={t('totalTokens')} value={formatNumber(data.totals.totalTokens, locale)} />
         <StatCard label={t('totalActions')} value={formatNumber(data.totals.totalActions, locale)} />
       </div>
+
+      {/* Cost Forecast */}
+      {forecast && (
+        <div className="border border-border-default bg-bg-base p-4">
+          {forecast.budgetWarning && (
+            <div className="mb-3 flex items-center gap-2 border border-status-warning/30 bg-status-warning/10 p-2 text-[10px] text-status-warning">
+              <AlertTriangle size={12} />
+              <span>
+                {t('budgetWarning', { pct: forecast.budgetUtilizationPct ?? 0 })}
+              </span>
+            </div>
+          )}
+          <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+            {t('costForecast')}
+          </h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCard label={t('dailyAvg')} value={formatCurrency(forecast.dailyAvgUsd, 'USD', locale)} />
+            <StatCard label={t('projectedMonthly')} value={formatCurrency(forecast.projectedMonthlyUsd, 'USD', locale)} />
+            <StatCard label={t('daysAnalyzed')} value={String(forecast.daysAnalyzed)} />
+            {forecast.budgetUtilizationPct !== null && (
+              <StatCard label={t('budgetUsed')} value={`${forecast.budgetUtilizationPct}%`} />
+            )}
+          </div>
+          {forecast.perAgent.length > 0 && (
+            <div className="mt-3">
+              <p className="mb-1 text-[9px] uppercase tracking-wider text-text-muted">{t('perAgentCost')}</p>
+              <table className="w-full text-[10px]">
+                <thead>
+                  <tr className="border-b border-border-subtle text-text-muted">
+                    <th className="py-1 text-left font-medium uppercase tracking-wider">{t('agentName')}</th>
+                    <th className="py-1 text-right font-medium uppercase tracking-wider">{t('dailyAvg')}</th>
+                    <th className="py-1 text-right font-medium uppercase tracking-wider">{t('projectedMonthly')}</th>
+                    <th className="py-1 text-right font-medium uppercase tracking-wider">{t('totalActions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {forecast.perAgent.slice(0, 10).map((a) => (
+                    <tr key={a.agentId} className="border-b border-border-subtle/50">
+                      <td className="py-1.5 text-text-primary">{a.agentName}</td>
+                      <td className="py-1.5 text-right tabular-nums text-text-secondary">{formatCurrency(a.dailyAvgUsd, 'USD', locale)}</td>
+                      <td className="py-1.5 text-right tabular-nums text-text-primary">{formatCurrency(a.projectedMonthlyUsd, 'USD', locale)}</td>
+                      <td className="py-1.5 text-right tabular-nums text-text-secondary">{a.totalActions}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Daily cost area chart */}
       {data.daily.length > 0 && (

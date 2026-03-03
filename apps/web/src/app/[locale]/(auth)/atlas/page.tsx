@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
-import { Mic, MicOff, Volume2, VolumeX, RotateCcw } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, RotateCcw, AlertTriangle, X } from 'lucide-react';
 import { useAtlasStore } from '@/stores/atlas-store';
 import { useActiveProject } from '@/stores/project-store';
 import { trpc } from '@/lib/trpc/client';
 import { OrbVisualization } from '@/components/atlas/OrbVisualization';
 import { TranscriptPanel } from '@/components/atlas/TranscriptPanel';
+import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
+import { useSpeechSynthesis } from '@/hooks/use-speech-synthesis';
 import type { AtlasState } from '@/stores/atlas-store';
 
 const STATE_LABEL_MAP: Record<AtlasState, { label: string; sub: string }> = {
@@ -29,6 +31,7 @@ const STATE_COLOR_CLASS: Record<AtlasState, string> = {
 
 export default function AtlasPage() {
   const t = useTranslations('atlas');
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const activeProject = useActiveProject();
 
@@ -53,8 +56,51 @@ export default function AtlasPage() {
   const reset = useAtlasStore((s) => s.reset);
 
   const [input, setInput] = useState('');
+  const [briefingDismissed, setBriefingDismissed] = useState(false);
   const intensityTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const insightHandled = useRef(false);
+
+  // ── Voice: Speech-to-Text ──
+  const stt = useSpeechRecognition({
+    locale,
+    onResult: (transcript) => {
+      setInput(transcript);
+    },
+    onEnd: () => {
+      // When STT ends, auto-send if we have text
+      const text = input.trim();
+      if (text) {
+        setInput('');
+        sendMessage(text);
+      } else {
+        setAtlasState('idle');
+        stopIntensitySimulation();
+      }
+    },
+    onError: () => {
+      setAtlasState('idle');
+      stopIntensitySimulation();
+    },
+  });
+
+  // ── Voice: Text-to-Speech ──
+  const tts = useSpeechSynthesis({
+    locale,
+    rate: 1.0,
+    onStart: () => {
+      setAtlasState('speaking');
+      startIntensitySimulation();
+    },
+    onEnd: () => {
+      setAtlasState('idle');
+      stopIntensitySimulation();
+    },
+  });
+
+  // Fetch latest CEO briefing for proactive display
+  const { data: briefing } = trpc.atlas.latestBriefing.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+  });
 
   // Handle loop result (shared by chat + resolve)
   const handleLoopResult = useCallback(
@@ -65,14 +111,20 @@ export default function AtlasPage() {
       if (data.status === 'complete') {
         addMessage('atlas', data.text);
         clearToolState();
-        setAtlasState('speaking');
-        startIntensitySimulation();
 
-        const speakDuration = 1500 + Math.random() * 1500;
-        setTimeout(() => {
-          setAtlasState('idle');
-          stopIntensitySimulation();
-        }, speakDuration);
+        // TTS: speak the response if not muted and supported
+        if (!useAtlasStore.getState().muted && tts.isSupported && data.text) {
+          tts.speak(data.text);
+        } else {
+          // Simulate speaking state briefly if no TTS
+          setAtlasState('speaking');
+          startIntensitySimulation();
+          const speakDuration = 1500 + Math.random() * 1500;
+          setTimeout(() => {
+            setAtlasState('idle');
+            stopIntensitySimulation();
+          }, speakDuration);
+        }
       } else if (data.status === 'awaiting_approval') {
         // Show partial text if any
         if (data.text) {
@@ -239,19 +291,27 @@ export default function AtlasPage() {
     [approveToolCall, rejectToolCall, setAtlasState, startIntensitySimulation, resolveMutation],
   );
 
-  // Handle mic toggle
+  // Handle mic toggle — uses real STT when available
   const handleMicToggle = useCallback(() => {
     if (atlasState === 'thinking' || atlasState === 'speaking' || atlasState === 'awaiting_approval')
       return;
 
     if (atlasState === 'listening') {
+      // Stop listening — STT onEnd callback will auto-send
+      if (stt.isSupported) {
+        stt.stopListening();
+      }
       setAtlasState('idle');
       stopIntensitySimulation();
     } else {
+      // Start listening
       setAtlasState('listening');
       startIntensitySimulation();
+      if (stt.isSupported) {
+        stt.startListening();
+      }
     }
-  }, [atlasState, setAtlasState, startIntensitySimulation, stopIntensitySimulation]);
+  }, [atlasState, setAtlasState, startIntensitySimulation, stopIntensitySimulation, stt]);
 
   // Handle text send
   const handleSend = useCallback(() => {
@@ -280,9 +340,11 @@ export default function AtlasPage() {
   // Handle reset
   const handleReset = useCallback(() => {
     stopIntensitySimulation();
+    tts.cancel();
+    if (stt.isListening) stt.stopListening();
     reset();
     setInput('');
-  }, [reset, stopIntensitySimulation]);
+  }, [reset, stopIntensitySimulation, tts, stt]);
 
   const stateLabels = STATE_LABEL_MAP[atlasState];
   const stateColorClass = STATE_COLOR_CLASS[atlasState];
@@ -331,6 +393,29 @@ export default function AtlasPage() {
           </button>
         </div>
       </div>
+
+      {/* Proactive CEO briefing */}
+      {briefing && !briefingDismissed && (
+        <div className="shrink-0 border-b border-accent-cyan/10 bg-accent-cyan/5 px-4 py-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <p className="font-mono text-[9px] font-bold uppercase tracking-wider text-accent-cyan">
+                {t('ceoBriefing')}
+              </p>
+              <p className="mt-1 font-mono text-[10px] leading-relaxed text-text-secondary">
+                {briefing.summary?.slice(0, 300)}
+                {(briefing.summary?.length ?? 0) > 300 ? '...' : ''}
+              </p>
+            </div>
+            <button
+              onClick={() => setBriefingDismissed(true)}
+              className="mt-0.5 shrink-0 text-text-muted hover:text-text-primary"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main content: orb + transcript */}
       <div className="flex flex-1 overflow-hidden">

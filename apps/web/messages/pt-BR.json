@@ -1339,6 +1339,7 @@
     "unmute": "Ativar som",
     "reset": "Resetar",
     "chatError": "Falha ao conectar com ATLAS. Tente novamente.",
+    "ceoBriefing": "Briefing do Agente CEO",
     "insightPrompt": "Gostaria de implementar o insight {id}. Quais passos você recomenda?",
     "actionSuggestion": "Ação Sugerida",
     "approve": "Aprovar",
@@ -1561,6 +1562,15 @@
     "recAmount": "Valor",
     "recType": "Tipo",
     "recCategory": "Categoria",
+
+    "costForecast": "Projeção de Custos (média 7 dias)",
+    "dailyAvg": "Média Diária",
+    "projectedMonthly": "Projeção Mensal",
+    "daysAnalyzed": "Dias Analisados",
+    "budgetUsed": "Orçamento Usado",
+    "perAgentCost": "Projeção por Agente",
+    "agentName": "Agente",
+    "budgetWarning": "Gasto projetado está em {pct}% do limite mensal de orçamento.",
 
     "agentActivityHour": "Atividade dos Agentes por Hora",
     "actionsByDay": "Ações por Dia",

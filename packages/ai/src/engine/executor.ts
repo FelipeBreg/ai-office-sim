@@ -349,6 +349,7 @@ export async function executeAgent(
         agentId: session.agentId,
         projectId: session.projectId,
         sessionId: session.sessionId,
+        archetypeSlug: context.agent.archetype,
         cascade: context.cascade,
       };
 

@@ -107,6 +107,14 @@ export { loadStrategyContext } from './context/strategy-loader.js';
 // Triggers
 export { checkKpiThreshold } from './triggers/kpi-monitor.js';
 
+// Knowledge
+export { getArchetypeKnowledge, getKnowledgeArchetypes } from './knowledge/index.js';
+export type { StaticKnowledgeDoc } from './knowledge/index.js';
+
+// Billing / Cost Forecast
+export { generateCostForecast } from './billing/cost-forecast.js';
+export type { CostForecastResult, AgentCostProjection } from './billing/cost-forecast.js';
+
 // Memory
 export { loadMemory, saveMemory, searchMemory } from './memory/individual.js';
 export { ingestDocument, deleteDocument, splitIntoChunks, generateEmbeddings } from './memory/ingest.js';

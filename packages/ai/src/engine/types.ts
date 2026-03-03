@@ -58,6 +58,7 @@ export interface ToolExecutionContext {
   agentId: string;
   projectId: string;
   sessionId: string;
+  archetypeSlug?: string;
   cascade?: {
     cascadeId: string;
     cascadeDepth: number;

@@ -138,6 +138,32 @@ async function processOrchestratorTick() {
       }
     }
 
+    // 3b. Budget projection warning (emit at 80% of monthly limit)
+    const monthlyLimit = Number(config.monthlySpendLimitUsd);
+    if (monthlyLimit > 0) {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const [weekSpend] = await db
+        .select({
+          total: sql<number>`coalesce(sum(${actionLogs.costUsd}::numeric), 0)`,
+        })
+        .from(actionLogs)
+        .where(and(eq(actionLogs.projectId, projectId), gte(actionLogs.createdAt, sevenDaysAgo)));
+
+      const weekTotal = Number(weekSpend?.total ?? 0);
+      const dailyAvg = weekTotal / 7;
+      const projectedMonthly = dailyAvg * 30;
+      const utilizationPct = Math.round((projectedMonthly / monthlyLimit) * 100);
+
+      if (utilizationPct >= 80) {
+        emitToProject(projectId, 'budget:projection_warning', {
+          projectedMonthlyUsd: Math.round(projectedMonthly * 100) / 100,
+          monthlyLimitUsd: monthlyLimit,
+          utilizationPct,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
     // 4. Check for stalled agents (status = 'working' for > 15 min with no recent action log)
     const stalledCutoff = new Date(Date.now() - 15 * 60 * 1000);
     const stalledAgents = await db

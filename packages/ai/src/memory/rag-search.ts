@@ -13,6 +13,7 @@ export interface RagSearchParams {
   query: string;
   topK?: number;
   agentId?: string;
+  archetypeSlug?: string;
   filters?: {
     sourceType?: string;
     dateRange?: { from?: string; to?: string };
@@ -26,6 +27,7 @@ export interface RagSearchResult {
   chunkIndex: number;
   score: number;
   sourceType: string;
+  isStatic: boolean;
 }
 
 /**
@@ -63,12 +65,19 @@ async function generateQueryEmbedding(query: string): Promise<number[]> {
   return data.data[0]!.embedding;
 }
 
+/** Relevance boost applied to curated static knowledge docs */
+const STATIC_DOC_BOOST = 0.05;
+
 /**
  * Perform semantic search over document chunks using pgvector cosine similarity.
+ * Combines three document pools:
+ *   1. Agent-scoped dynamic docs (if agentId provided)
+ *   2. Project-wide dynamic docs
+ *   3. Static archetype knowledge docs (if archetypeSlug provided, boosted)
  * Returns top-K results ranked by relevance.
  */
 export async function ragSearch(params: RagSearchParams): Promise<RagSearchResult[]> {
-  const { projectId, query, topK = 5, agentId, filters } = params;
+  const { projectId, query, topK = 5, agentId, archetypeSlug, filters } = params;
 
   // 1. Generate embedding for the query
   const queryEmbedding = await generateQueryEmbedding(query);
@@ -88,13 +97,31 @@ export async function ragSearch(params: RagSearchParams): Promise<RagSearchResul
       : undefined,
   ];
 
-  // 3. If agentId provided, search agent-scoped docs first, then project-wide
-  // Agent-scoped = documents.agentId = agentId
-  // Project-wide = documents.agentId IS NULL
-  // Combined: (agentId = X OR agentId IS NULL)
-  const agentCondition = agentId
-    ? sql`(${documents.agentId} = ${agentId} OR ${documents.agentId} IS NULL)`
-    : undefined;
+  // 3. Build scoping condition: agent-scoped + project-wide + static archetype docs
+  // Dynamic docs: (agentId = X OR agentId IS NULL) AND isStatic = false
+  // Static docs: isStatic = true AND archetypeSlug = Y
+  const scopeCondition = (() => {
+    const dynamicScope = agentId
+      ? sql`(${documents.agentId} = ${agentId} OR ${documents.agentId} IS NULL)`
+      : undefined;
+
+    if (archetypeSlug) {
+      const staticScope = sql`(${documents.isStatic} = true AND ${documents.archetypeSlug} = ${archetypeSlug})`;
+      if (dynamicScope) {
+        return sql`((${documents.isStatic} = false AND ${dynamicScope}) OR ${staticScope})`;
+      }
+      return sql`(${documents.isStatic} = false OR ${staticScope})`;
+    }
+
+    // No archetype — exclude static docs
+    if (dynamicScope) {
+      return sql`${documents.isStatic} = false AND ${dynamicScope}`;
+    }
+    return sql`${documents.isStatic} = false`;
+  })();
+
+  // 4. Fetch extra results to allow re-ranking with static boost
+  const fetchLimit = topK + 5;
 
   const results = await db
     .select({
@@ -103,20 +130,26 @@ export async function ragSearch(params: RagSearchParams): Promise<RagSearchResul
       documentId: documentChunks.documentId,
       documentTitle: documents.title,
       sourceType: documents.sourceType,
+      isStatic: documents.isStatic,
       score: sql<number>`1 - (${documentChunks.embedding} <=> ${embeddingStr}::vector)`.as('score'),
     })
     .from(documentChunks)
     .innerJoin(documents, eq(documentChunks.documentId, documents.id))
-    .where(and(...baseConditions, agentCondition))
+    .where(and(...baseConditions, scopeCondition))
     .orderBy(sql`${documentChunks.embedding} <=> ${embeddingStr}::vector`)
-    .limit(topK);
+    .limit(fetchLimit);
 
-  return results.map((r) => ({
+  // 5. Apply static doc boost and re-rank
+  const boosted = results.map((r) => ({
     content: r.content,
     documentTitle: r.documentTitle,
     documentId: r.documentId,
     chunkIndex: r.chunkIndex,
-    score: r.score,
+    score: r.isStatic ? Math.min(r.score + STATIC_DOC_BOOST, 1.0) : r.score,
     sourceType: r.sourceType,
+    isStatic: r.isStatic,
   }));
+
+  boosted.sort((a, b) => b.score - a.score);
+  return boosted.slice(0, topK);
 }
