@@ -27,6 +27,7 @@ import { sendConversationMessageTool } from './messaging/send-conversation-messa
 import { syncGoogleCalendarTool } from './calendar/google-calendar.js';
 import { metaMarketingTool } from './ads/meta-marketing.js';
 import { googleAdsTool } from './ads/google-ads.js';
+import { triggerAgentTool } from './agents/trigger-agent.js';
 
 // Convert Zod schema to JSON Schema for Anthropic tool format
 function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
@@ -228,3 +229,6 @@ toolRegistry.register(syncGoogleCalendarTool);
 // ── Ads (Meta + Google) ──
 toolRegistry.register(metaMarketingTool);
 toolRegistry.register(googleAdsTool);
+
+// ── Agent-to-Agent Communication ──
+toolRegistry.register(triggerAgentTool);

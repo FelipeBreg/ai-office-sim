@@ -97,6 +97,9 @@ export {
 // OAuth2 Helper
 export { getValidAccessToken } from './tools/oauth2-helper.js';
 
+// Agent-to-Agent Communication
+export { triggerAgentTool } from './tools/agents/trigger-agent.js';
+
 // Memory
 export { loadMemory, saveMemory, searchMemory } from './memory/individual.js';
 export { ingestDocument, deleteDocument, splitIntoChunks, generateEmbeddings } from './memory/ingest.js';

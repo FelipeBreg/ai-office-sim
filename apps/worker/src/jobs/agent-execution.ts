@@ -138,7 +138,25 @@ export async function processAgentExecution(
 
       const basePrompt = agent.systemPromptEn ?? agent.systemPromptPtBr ??
         `You are ${agent.name}, a ${agent.archetype} agent. Complete the assigned task using the available tools.`;
-      const systemPrompt = basePrompt + sessionHistory;
+
+      // Append inter-agent message context if triggered by another agent
+      let agentMessageContext = '';
+      if (triggerPayload && typeof triggerPayload === 'object' && (triggerPayload as Record<string, unknown>).type === 'agent_message') {
+        const payload = triggerPayload as { fromAgentId: string; message: string; priority?: string };
+        // Look up source agent name
+        const [sourceAgent] = await db
+          .select({ name: agents.name })
+          .from(agents)
+          .where(eq(agents.id, payload.fromAgentId))
+          .limit(1);
+        const sourceName = sourceAgent?.name ?? payload.fromAgentId;
+        agentMessageContext = `\n\n[Incoming Message from Agent "${sourceName}"]\n${payload.message}`;
+        if (payload.priority === 'high') {
+          agentMessageContext += '\n[Priority: HIGH — please handle this promptly]';
+        }
+      }
+
+      const systemPrompt = basePrompt + sessionHistory + agentMessageContext;
 
       const context: AgentContext = {
         agent: {
