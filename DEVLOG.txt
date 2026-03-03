@@ -7,6 +7,40 @@
 
 
 ================================================================================
+COMMIT #103 — Priority-Aware Agent Scheduling (Phase 3.3)
+================================================================================
+Hash:     df55ab8
+Date:     2026-03-03
+Scope:    packages/queue, packages/api, apps/worker
+
+WHAT CHANGED:
+  • NEW: packages/queue/src/priority.ts — AgentPriority type + toBullMQPriority()
+    Maps critical=1, high=5, normal=10, low=20 to BullMQ numeric priority
+  • AGENTS ROUTER: trigger mutation now reads agent config.priority and passes
+    BullMQ { priority } option when enqueuing execution job
+  • APPROVALS ROUTER: approve/reject resume paths now look up agent priority
+    before re-enqueuing with correct BullMQ priority
+  • ATLAS TOOLS: trigger_agent tool reads agent config.priority, uses BullMQ
+    priority; returns priority in response
+  • SCHEDULED WORKER: agent-scheduled.worker.ts now queries agent config for
+    priority before enqueuing scheduled execution
+  • ORCHESTRATOR ROUTER: added setAgentPriority mutation (stores in config JSONB),
+    getAgentPriorities query (returns all agents with their priority)
+  • ATLAS TOOL: set_agent_priority stores priority in agent config JSONB
+
+FILES:
+  + packages/queue/src/priority.ts (NEW)
+  ~ packages/queue/src/index.ts (export toBullMQPriority + AgentPriority)
+  ~ packages/api/src/routers/agents.ts (priority on trigger)
+  ~ packages/api/src/routers/approvals.ts (priority on resume)
+  ~ packages/api/src/routers/orchestrator.ts (setAgentPriority, getAgentPriorities)
+  ~ packages/api/src/lib/atlas-tools.ts (trigger_agent priority, toBullMQPriority import)
+  ~ apps/worker/src/workers/agent-scheduled.worker.ts (priority on scheduled enqueue)
+
+TYPECHECK: 13/13 pass
+
+
+================================================================================
 COMMIT #102 — Orchestrator Dashboard (Phase 3.2)
 ================================================================================
 Hash:     932ae30
