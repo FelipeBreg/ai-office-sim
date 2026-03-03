@@ -277,7 +277,7 @@ export const messagingRouter = createTRPCRouter({
         .where(
           and(
             eq(conversations.projectId, projectId),
-            ilike(conversationMessages.content, `%${input.query}%`),
+            ilike(conversationMessages.content, `%${input.query.replace(/[%_\\]/g, '\\$&')}%`),
           ),
         )
         .orderBy(desc(conversationMessages.createdAt))

@@ -349,7 +349,7 @@ export const communityRouter = createTRPCRouter({
   /* ------------------------------------------------------------------ */
   /*  Install Agent                                                      */
   /* ------------------------------------------------------------------ */
-  installAgent: projectProcedure
+  installAgent: adminProcedure
     .input(z.object({ listingId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const [listing] = await db
@@ -423,7 +423,7 @@ export const communityRouter = createTRPCRouter({
   /* ------------------------------------------------------------------ */
   /*  Install Workflow                                                   */
   /* ------------------------------------------------------------------ */
-  installWorkflow: projectProcedure
+  installWorkflow: adminProcedure
     .input(z.object({ listingId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const [listing] = await db

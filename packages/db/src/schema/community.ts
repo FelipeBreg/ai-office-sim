@@ -28,10 +28,10 @@ export const communityListings = pgTable(
     snapshot: jsonb('snapshot').notNull(),
     publishedById: uuid('published_by_id')
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade' }),
     orgId: uuid('org_id')
       .notNull()
-      .references(() => organizations.id),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     installCount: integer('install_count').notNull().default(0),
     ratingSum: integer('rating_sum').notNull().default(0),
     ratingCount: integer('rating_count').notNull().default(0),

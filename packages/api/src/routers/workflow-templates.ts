@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   createTRPCRouter,
   protectedProcedure,
+  projectProcedure,
   adminProcedure,
   enforceResourceLimit,
 } from '../trpc.js';
@@ -60,7 +61,7 @@ export const workflowTemplatesRouter = createTRPCRouter({
     }),
 
   /** Preview what deploying a template would create */
-  previewDeploy: protectedProcedure
+  previewDeploy: projectProcedure
     .input(z.object({ templateId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const [template] = await db

@@ -103,6 +103,34 @@ export async function resumeAgent(
           },
         ],
       });
+    } else if (session.sandboxMode && toolDef.isMutation) {
+      // Sandbox mode: intercept mutation tools
+      const sandboxResult = {
+        _sandbox: true,
+        tool: pending.toolName,
+        message: `[SANDBOX] Tool "${pending.toolName}" was intercepted. In production, this would execute with the provided input.`,
+        input: pending.toolInput,
+      };
+
+      session.actionCount++;
+      actions.push({
+        type: 'tool_call',
+        toolName: pending.toolName,
+        input: pending.toolInput,
+        output: sandboxResult,
+        durationMs: 0,
+      });
+
+      messages.push({
+        role: 'user',
+        content: [
+          {
+            type: 'tool_result',
+            tool_use_id: pending.toolUseId,
+            content: safeStringify(sandboxResult),
+          },
+        ],
+      });
     } else {
       const toolContext: ToolExecutionContext = {
         agentId: session.agentId,
@@ -346,6 +374,32 @@ export async function resumeAgent(
           abortReason: session.abortReason,
           pausedState,
         };
+      }
+
+      // Sandbox mode: intercept mutation tools
+      if (session.sandboxMode && toolDef.isMutation) {
+        const sandboxResult = {
+          _sandbox: true,
+          tool: toolBlock.name,
+          message: `[SANDBOX] Tool "${toolBlock.name}" was intercepted. In production, this would execute with the provided input.`,
+          input: toolBlock.input,
+        };
+
+        session.actionCount++;
+        actions.push({
+          type: 'tool_call',
+          toolName: toolBlock.name,
+          input: toolBlock.input,
+          output: sandboxResult,
+          durationMs: 0,
+        });
+
+        toolResults.push({
+          type: 'tool_result',
+          tool_use_id: toolBlock.id,
+          content: safeStringify(sandboxResult),
+        });
+        continue;
       }
 
       const parseResult = toolDef.inputSchema.safeParse(toolBlock.input);

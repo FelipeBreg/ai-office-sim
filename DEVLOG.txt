@@ -7,6 +7,67 @@
 
 
 ================================================================================
+COMMIT #111 — Full Codebase Audit & Security Fixes
+================================================================================
+Date:     2026-03-03
+Scope:    packages/api, packages/db, packages/ai
+
+Performed comprehensive 4-part audit (DB schema, tRPC routers, frontend, worker/queue).
+Audited ~33 routers, 31 schema files, 22 auth pages, 12 workers, 4 backend packages.
+
+CRITICAL FIXES (Security):
+  - members.ts: Cross-tenant privilege escalation — updateRole and remove mutations
+    did not scope user lookup/update/delete to orgId. An admin from Org A could
+    theoretically change roles or delete users in Org B. Fixed by adding
+    eq(users.orgId, ctx.org!.id) to all WHERE clauses (3 locations).
+  - community.ts: installAgent/installWorkflow used projectProcedure instead of
+    adminProcedure, allowing viewers/managers to install agents. Changed to adminProcedure.
+  - resume.ts: Sandbox mode bypass — after approval resume, mutation tools executed
+    for real even when sandboxMode=true. Added sandbox intercept checks in both the
+    pending tool execution path and the continuation loop (matching executor.ts pattern).
+
+MEDIUM FIXES (Data/Logic):
+  - documents.ts: listByAgent with agentOnly=false was identical to agentOnly=true
+    (never returned project-wide docs). Fixed by adding or(eq(...), isNull(documents.agentId)).
+  - messaging.ts: ILIKE search did not escape %, _, \ wildcard characters (same fix
+    already applied to community.ts but missing from messaging search).
+  - workflow-templates.ts: previewDeploy used protectedProcedure but accessed ctx.project!
+    (which could be null). Changed to projectProcedure.
+  - community.ts (schema): publishedById and orgId FK references had no onDelete rule
+    (PostgreSQL defaults to NO ACTION, blocking user/org deletion). Added onDelete: CASCADE.
+    Migration SQL: packages/db/src/migrations/community-fk-ondelete.sql
+
+AUDIT FINDINGS (NOT FIXED — backlog):
+  DB Schema:
+    - Missing indexes on several FK columns (conversationMessages.conversationId solo,
+      emailMessages.connectionId, whatsappMessages.connectionId, workflows.createdBy, etc.)
+    - Enums defined inline in marketing-campaigns.ts, brand-touchpoints.ts, financial-records.ts
+      instead of centralized enums.ts
+    - deals.ts dual stage system (enum stage + FK stageId) — potential data drift
+    - Missing workflowRuns.status index (common orchestrator query)
+
+  tRPC Routers:
+    - financialRecords.list, strategies.list, marketing-campaigns.list have no pagination
+    - approvals.ts: enforceResourceLimit + insert not atomic (race condition on concurrent requests)
+    - atlas.ts: Tool execution errors swallowed without logging
+    - orchestrator.ts: team input is z.string() not enum-validated
+
+  Worker/Queue:
+    - Calendar reminder, calendar recurrence, email inbound, cleanup jobs never enqueued
+      (workers exist but no repeatable BullMQ jobs registered in index.ts)
+    - LLM Helicone timeout 5s too low — most Claude calls take 10-60s
+    - notification.worker.ts hardcodes riskLevel: 'medium'
+    - approval-check.ts: checkApprovalRule() exists but never called
+
+  Frontend:
+    - Calendar page: all strings hardcoded in English (no i18n)
+    - Messaging page: all strings hardcoded in English (no i18n)
+    - Header: dead '/analytics' entry in routeToNavKey map
+
+TypeCheck: All 13 packages pass.
+
+
+================================================================================
 COMMIT #110 — Community & Marketplace Review Fixes
 ================================================================================
 Hash:     70eecdf

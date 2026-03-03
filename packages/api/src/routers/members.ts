@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure, adminProcedure, ownerProcedure } from '../trpc.js';
-import { db, users, eq } from '@ai-office/db';
+import { db, users, eq, and } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 
 export const membersRouter = createTRPCRouter({
@@ -49,7 +49,7 @@ export const membersRouter = createTRPCRouter({
       const [target] = await db
         .select({ role: users.role })
         .from(users)
-        .where(eq(users.id, input.userId))
+        .where(and(eq(users.id, input.userId), eq(users.orgId, ctx.org!.id)))
         .limit(1);
 
       if (!target) {
@@ -73,7 +73,7 @@ export const membersRouter = createTRPCRouter({
       const [updated] = await db
         .update(users)
         .set({ role: input.role as any })
-        .where(eq(users.id, input.userId))
+        .where(and(eq(users.id, input.userId), eq(users.orgId, ctx.org!.id)))
         .returning({
           id: users.id,
           name: users.name,
@@ -97,7 +97,7 @@ export const membersRouter = createTRPCRouter({
       const [target] = await db
         .select({ role: users.role })
         .from(users)
-        .where(eq(users.id, input.userId))
+        .where(and(eq(users.id, input.userId), eq(users.orgId, ctx.org!.id)))
         .limit(1);
 
       if (!target) {
@@ -118,7 +118,7 @@ export const membersRouter = createTRPCRouter({
         });
       }
 
-      await db.delete(users).where(eq(users.id, input.userId));
+      await db.delete(users).where(and(eq(users.id, input.userId), eq(users.orgId, ctx.org!.id)));
       return { removed: true };
     }),
 });

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
-import { db, documents, documentChunks, eq, and, desc, count, isNull } from '@ai-office/db';
+import { db, documents, documentChunks, eq, and, or, desc, count, isNull } from '@ai-office/db';
 import { ingestDocument } from '@ai-office/ai';
 import { TRPCError } from '@trpc/server';
 
@@ -49,7 +49,7 @@ export const documentsRouter = createTRPCRouter({
         : and(
             eq(documents.projectId, ctx.project!.id),
             // Agent-specific OR project-wide (agentId is null)
-            eq(documents.agentId, input.agentId),
+            or(eq(documents.agentId, input.agentId), isNull(documents.agentId)),
           );
 
       const docs = await db
