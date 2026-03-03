@@ -58,7 +58,8 @@
     "messaging": "Messaging",
     "calendar": "Calendar",
     "finance": "Finance",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "orchestrator": "Orchestrator"
   },
   "agents": {
     "title": "Agents",
@@ -1559,5 +1560,43 @@
     "tpType": "Type",
     "tpUrl": "URL",
     "tpStatus": "Status"
+  },
+  "orchestrator": {
+    "title": "Orchestrator",
+    "subtitle": "fleet management and cost control",
+    "fleetOverview": "Fleet Overview",
+    "costTracker": "Cost Tracker",
+    "config": "Configuration",
+    "totalAgents": "Total Agents",
+    "idle": "Idle",
+    "working": "Working",
+    "awaitingApproval": "Awaiting Approval",
+    "errorState": "Error",
+    "offline": "Offline",
+    "workflowsRunning": "Workflows Running",
+    "pendingApprovals": "Pending Approvals",
+    "todaySpend": "Today's Spend",
+    "monthSpend": "Monthly Spend",
+    "todayTokens": "Today's Tokens",
+    "monthTokens": "Monthly Tokens",
+    "costByAgent": "Cost by Agent",
+    "dailyTrend": "Daily Trend",
+    "agent": "Agent",
+    "cost": "Cost",
+    "tokens": "Tokens",
+    "actions": "Actions",
+    "date": "Date",
+    "maxConcurrency": "Max Concurrency",
+    "dailySpendLimit": "Daily Spend Limit",
+    "monthlySpendLimit": "Monthly Spend Limit",
+    "saveConfig": "Save Configuration",
+    "saving": "Saving...",
+    "configSaved": "Configuration saved",
+    "unlimited": "Unlimited",
+    "noData": "No cost data yet.",
+    "pauseTeam": "Pause Team",
+    "resumeTeam": "Resume Team",
+    "teamActions": "Team Actions",
+    "noCostData": "No cost data for this period."
   }
 }

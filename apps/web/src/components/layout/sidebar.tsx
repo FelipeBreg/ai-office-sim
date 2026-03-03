@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  Cpu,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/ui-store';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/office', labelKey: 'office', icon: Building2 },
       { href: '/approvals', labelKey: 'approvals', icon: ShieldCheck, hasBadge: true },
       { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
+      { href: '/orchestrator', labelKey: 'orchestrator', icon: Cpu },
       { href: '/strategy', labelKey: 'strategy', icon: Target },
       { href: '/memory', labelKey: 'memory', icon: BookOpen },
     ],
