@@ -7,6 +7,33 @@
 
 
 ================================================================================
+COMMIT #92 — Wire Approval Notifications (Phase 0.4 / New Roadmap v2)
+================================================================================
+Hash:     09343a5
+Date:     2026-03-02
+Scope:    packages/api, packages/queue, apps/worker, apps/web
+
+WHAT CHANGED:
+  • APPROVALS ROUTER: emit approval:resolved notification on approve + reject
+    – Enqueues notification job with resolvedStatus='approved'|'rejected'
+  • NOTIFICATION JOB SCHEMA: added resolvedStatus optional field
+  • NOTIFICATION WORKER: uses resolvedStatus instead of hardcoded 'approved'
+  • HEADER: bell icon now links to /approvals page (was just a button)
+
+WHY:
+  Approval events need to flow through the full pipeline: tRPC mutation →
+  notification queue → notification worker → Socket.IO → frontend store →
+  header badge. Phase 0.2 handled the request side; this completes the
+  resolve side.
+
+FILES (4):
+  M packages/api/src/routers/approvals.ts
+  M packages/queue/src/jobs.ts
+  M apps/worker/src/workers/notification.worker.ts
+  M apps/web/src/components/layout/header.tsx
+
+
+================================================================================
 COMMIT #91 — Wire Cron-Based Agent Execution (Phase 0.3 / New Roadmap v2)
 ================================================================================
 Hash:     d14b42a
