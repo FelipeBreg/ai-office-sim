@@ -7,6 +7,46 @@
 
 
 ================================================================================
+COMMIT #97 — Agent Testing Sandbox (Phase 1.5)
+================================================================================
+Hash:     0964d37
+Date:     2026-03-02
+Scope:    packages/ai, packages/api, packages/queue, apps/worker, apps/web
+
+WHAT CHANGED:
+  • EXECUTOR: sandbox mode interception — when session.sandboxMode is true and
+    tool.isMutation is true, tool execution is skipped and a mock result is
+    returned with _sandbox: true flag + original input
+  • TOOL DEFINITIONS: 20 mutation tools marked with isMutation: true (send_email,
+    send_whatsapp, create_contact, create_deal, update_contact, write_spreadsheet,
+    trigger_agent, etc.). Read-only tools left unchanged.
+  • AGENTS ROUTER: new testRun mutation — identical to trigger but with
+    sandboxMode: true in the job payload
+  • JOB SCHEMA: added sandboxMode boolean to agentExecutionJobSchema
+  • AGENT EXECUTION JOB: passes data.sandboxMode to session object
+  • AGENT DETAIL PAGE: Test Run button uses testRun endpoint, shows cyan
+    sandbox banner with instructions to check Sessions tab for results
+
+WHY:
+  Users need to test agents safely before deploying to production. Without
+  sandbox mode, running an agent sends real emails, real WhatsApp messages,
+  creates real contacts, etc. Now "Test Run" intercepts all mutation tools
+  and returns mock results, letting users review the agent's reasoning and
+  tool choices without side effects.
+
+FILES (28):
+  M packages/ai/src/engine/types.ts (sandboxMode on AgentSession, isMutation on ToolDefinition)
+  M packages/ai/src/engine/executor.ts (sandbox interception logic)
+  M packages/ai/src/tools/{20 mutation tool files} (isMutation: true)
+  M packages/api/src/routers/agents.ts (testRun endpoint)
+  M packages/queue/src/jobs.ts (sandboxMode field)
+  M apps/worker/src/jobs/agent-execution.ts (pass sandboxMode to session)
+  M apps/web/src/app/[locale]/(auth)/agents/[id]/page.tsx (use testRun)
+  M apps/web/messages/en-US.json
+  M apps/web/messages/pt-BR.json
+
+
+================================================================================
 COMMIT #96 — Agent-to-Agent Communication (Phase 1.4)
 ================================================================================
 Hash:     09a5eee
