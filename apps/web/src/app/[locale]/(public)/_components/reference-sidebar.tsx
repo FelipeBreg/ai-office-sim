@@ -64,6 +64,33 @@ function TopicItem({
   );
 }
 
+function SidebarGroup({
+  label,
+  defaultOpen,
+  children,
+}: {
+  label: string;
+  defaultOpen: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((p) => !p)}
+        className="flex w-full items-center gap-1.5 px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-widest text-text-muted transition-colors hover:text-text-primary first:pt-0"
+      >
+        <ChevronRight
+          className={`h-2.5 w-2.5 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
+        />
+        {label}
+      </button>
+      {open && children}
+    </div>
+  );
+}
+
 export default function ReferenceSidebar({
   topics,
   basePath,
@@ -94,23 +121,32 @@ export default function ReferenceSidebar({
 
   const sidebar = (
     <nav className="flex flex-col gap-0.5 py-2">
-      {groups.map(([group, items]) => (
-        <div key={group}>
-          {group && (
-            <p className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-widest text-text-muted first:pt-0">
-              {group}
-            </p>
-          )}
-          {items.map((topic) => (
-            <TopicItem
-              key={topic.slug}
-              topic={topic}
-              active={currentSlug === topic.slug}
-              basePath={basePath}
-            />
-          ))}
-        </div>
-      ))}
+      {groups.map(([group, items]) => {
+        const hasActive = items.some((t) => t.slug === currentSlug);
+        return group ? (
+          <SidebarGroup key={group} label={group} defaultOpen={hasActive}>
+            {items.map((topic) => (
+              <TopicItem
+                key={topic.slug}
+                topic={topic}
+                active={currentSlug === topic.slug}
+                basePath={basePath}
+              />
+            ))}
+          </SidebarGroup>
+        ) : (
+          <div key="ungrouped">
+            {items.map((topic) => (
+              <TopicItem
+                key={topic.slug}
+                topic={topic}
+                active={currentSlug === topic.slug}
+                basePath={basePath}
+              />
+            ))}
+          </div>
+        );
+      })}
     </nav>
   );
 
