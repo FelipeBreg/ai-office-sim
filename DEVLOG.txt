@@ -7,6 +7,22 @@
 
 
 ================================================================================
+COMMIT #125 — Collapsible Sections in Agent Wizard Behavior Step
+Date: 2026-03-04
+Hash: d182d8a
+────────────────────────────────────────────────────────────────────────────────
+
+Features:
+  - New CollapsibleSection component with chevron toggle, title, and count badge
+  - Behavior step (step 2) sections now collapsible:
+    - Trigger Type — default open
+    - Tools — default open, shows selected count badge
+    - Reference Documents — default collapsed, shows selected count badge
+  - DOS-aesthetic styling: no border-radius, border-border-default, chevron rotation
+
+Files: 1 changed (+71 lines, −22 lines)
+
+================================================================================
 COMMIT #124 — RAG Document Selection in Agent Wizard + Cache Fix
 Date: 2026-03-04
 Hash: 4b256cd
