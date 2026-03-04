@@ -7,6 +7,29 @@
 
 
 ================================================================================
+COMMIT #121 — Docs Rewrite (Post-Phase 9)
+Date: 2026-03-04
+Hash: af9d9d4
+────────────────────────────────────────────────────────────────────────────────
+
+Docs Overhaul:
+  - Rewrote /docs page from 19 topics → 14 consolidated topics
+  - Previous docs were written at commit #48 (Feb 26), now accurate to #120
+  - Updated all metrics: 21 archetypes, 42+ tools, 88 workflow templates,
+    30 ATLAS tools, 6 workflow node types, 4 trigger types, 22 company templates
+  - Removed 8 obsolete limitations (agent-to-agent messaging, conditional logic,
+    scheduled triggers, voice STT/TTS, proactive briefings, inbound email,
+    approval timeouts, sequential-only workflows)
+  - New topics: Fleet Orchestrator, Safety & Governance, Roadmap
+  - Consolidated: WhatsApp+Email→Communication, Documents+Wiki→Knowledge & RAG,
+    Approvals+Activity→Safety & Governance, 6 screen topics→Screen Guide
+  - Renamed Tech Stack → Architecture (added Security & Real-time sections)
+  - File: apps/web/src/app/[locale]/(public)/docs/_lib/docs-data.tsx
+    (861 insertions, 1100 deletions)
+
+────────────────────────────────────────────────────────────────────────────────
+
+================================================================================
 COMMIT #120 — Phase 9: Launch Readiness (Roadmap v2)
 Date: 2026-03-03
 Hash: 33e78bc
