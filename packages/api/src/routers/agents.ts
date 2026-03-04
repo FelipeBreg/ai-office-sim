@@ -60,6 +60,7 @@ export const agentsRouter = createTRPCRouter({
           sourceAgentId: z.string().uuid().optional(),
         }).optional(),
         tools: z.array(z.string().max(100)).max(50).optional(),
+        ragDocuments: z.array(z.string().max(200)).max(100).optional(),
         team: z.enum(['development', 'research', 'marketing', 'sales', 'support', 'finance', 'operations']).optional(),
         config: z.object({
           model: z.string(),
@@ -96,6 +97,7 @@ export const agentsRouter = createTRPCRouter({
           sourceAgentId: z.string().uuid().optional(),
         }).optional(),
         tools: z.array(z.string().max(100)).max(50).optional(),
+        ragDocuments: z.array(z.string().max(200)).max(100).optional(),
         team: z.enum(['development', 'research', 'marketing', 'sales', 'support', 'finance', 'operations']).nullish(),
         isActive: z.boolean().optional(),
         config: z.object({

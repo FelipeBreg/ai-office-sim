@@ -369,6 +369,27 @@ const TEMPLATE_ICON_MAP: Record<string, LucideIcon> = {
 };
 
 /* -------------------------------------------------------------------------- */
+/*  Reference documents (extracted from templates)                            */
+/* -------------------------------------------------------------------------- */
+
+/** All unique RAG doc slugs used across PROCESS_AGENT_TEMPLATES */
+const REFERENCE_DOCS: { slug: string; label: string }[] = (() => {
+  const seen = new Set<string>();
+  for (const tpl of PROCESS_AGENT_TEMPLATES) {
+    for (const doc of tpl.ragDocuments) seen.add(doc);
+  }
+  return Array.from(seen)
+    .sort()
+    .map((slug) => ({
+      slug,
+      label: slug
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' '),
+    }));
+})();
+
+/* -------------------------------------------------------------------------- */
 /*  Slug helper                                                               */
 /* -------------------------------------------------------------------------- */
 
@@ -860,6 +881,125 @@ function StepToolSelection({
 }
 
 /* -------------------------------------------------------------------------- */
+/*  RAG Document Selection (used in Behavior step)                            */
+/* -------------------------------------------------------------------------- */
+
+function StepRagDocs({
+  selectedRagDocs,
+  toggleRagDoc,
+  t,
+}: {
+  selectedRagDocs: Set<string>;
+  toggleRagDoc: (slug: string) => void;
+  t: (key: string) => string;
+}) {
+  const companyDocsQuery = trpc.documents.list.useQuery(undefined, { retry: false });
+  const companyDocs = companyDocsQuery.data ?? [];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
+          {t('ragDocsLabel')}
+        </label>
+        <p className="mb-3 text-[9px] text-text-muted">
+          {t('ragDocsHint')}
+        </p>
+      </div>
+
+      {/* Fixed reference documents */}
+      <div>
+        <span className="mb-2 block text-[9px] font-medium uppercase tracking-[0.1em] text-text-secondary">
+          {t('ragDocsFixed')}
+        </span>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {REFERENCE_DOCS.map((doc) => {
+            const isChecked = selectedRagDocs.has(doc.slug);
+            return (
+              <button
+                key={doc.slug}
+                type="button"
+                onClick={() => toggleRagDoc(doc.slug)}
+                className={`flex items-start gap-3 border p-3 text-left transition-colors ${
+                  isChecked
+                    ? 'border-accent-cyan bg-accent-cyan/5'
+                    : 'border-border-default bg-bg-base hover:border-border-hover'
+                }`}
+              >
+                <div
+                  className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border transition-colors ${
+                    isChecked
+                      ? 'border-accent-cyan bg-accent-cyan text-bg-deepest'
+                      : 'border-border-default bg-bg-deepest'
+                  }`}
+                >
+                  {isChecked && <Check size={10} strokeWidth={2.5} />}
+                </div>
+                <div className="min-w-0">
+                  <span className={`block text-[10px] font-medium ${isChecked ? 'text-accent-cyan' : 'text-text-primary'}`}>
+                    {doc.label}
+                  </span>
+                  <span className="block text-[8px] text-text-muted">{doc.slug}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Company documents */}
+      <div>
+        <span className="mb-2 block text-[9px] font-medium uppercase tracking-[0.1em] text-text-secondary">
+          {t('ragDocsCompany')}
+        </span>
+        {companyDocsQuery.isLoading ? (
+          <p className="text-[9px] text-text-muted">{t('ragDocsLoading')}</p>
+        ) : companyDocsQuery.isError ? (
+          <p className="text-[9px] text-status-error">{t('ragDocsError')}</p>
+        ) : companyDocs.length === 0 ? (
+          <p className="text-[9px] text-text-muted">{t('ragDocsNoneAvailable')}</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {companyDocs.map((doc) => {
+              const docKey = `company:${doc.id}`;
+              const isChecked = selectedRagDocs.has(docKey);
+              return (
+                <button
+                  key={doc.id}
+                  type="button"
+                  onClick={() => toggleRagDoc(docKey)}
+                  className={`flex items-start gap-3 border p-3 text-left transition-colors ${
+                    isChecked
+                      ? 'border-accent-cyan bg-accent-cyan/5'
+                      : 'border-border-default bg-bg-base hover:border-border-hover'
+                  }`}
+                >
+                  <div
+                    className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border transition-colors ${
+                      isChecked
+                        ? 'border-accent-cyan bg-accent-cyan text-bg-deepest'
+                        : 'border-border-default bg-bg-deepest'
+                    }`}
+                  >
+                    {isChecked && <Check size={10} strokeWidth={2.5} />}
+                  </div>
+                  <div className="min-w-0">
+                    <span className={`block text-[10px] font-medium ${isChecked ? 'text-accent-cyan' : 'text-text-primary'}`}>
+                      {doc.title}
+                    </span>
+                    <Badge variant="default">{doc.sourceType}</Badge>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Step 2: Review                                                            */
 /* -------------------------------------------------------------------------- */
 
@@ -870,6 +1010,7 @@ function StepReview({
   promptEn,
   promptPtBr,
   selectedTools,
+  selectedRagDocs,
   triggerType,
   cronExpr,
   eventName,
@@ -883,6 +1024,7 @@ function StepReview({
   promptEn: string;
   promptPtBr: string;
   selectedTools: Set<string>;
+  selectedRagDocs: Set<string>;
   triggerType: TriggerType;
   cronExpr: string;
   eventName: string;
@@ -970,6 +1112,28 @@ function StepReview({
           </div>
         )}
       </div>
+
+      {/* RAG docs section */}
+      <div className="border border-border-default bg-bg-base px-3 py-2">
+        <span className="text-[9px] font-medium uppercase tracking-[0.1em] text-text-muted">
+          {t('reviewRagDocs')}
+        </span>
+        {selectedRagDocs.size === 0 ? (
+          <p className="mt-1 text-[10px] text-text-muted">{t('reviewNoneSelected')}</p>
+        ) : (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {Array.from(selectedRagDocs).map((slug) => {
+              const fixed = REFERENCE_DOCS.find((d) => d.slug === slug);
+              return (
+                <Badge key={slug} variant="cyan">
+                  <BookOpen size={8} strokeWidth={1.5} className="mr-0.5" />
+                  {fixed ? fixed.label : slug}
+                </Badge>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -998,6 +1162,7 @@ export default function AgentWizardPage() {
   const [promptEn, setPromptEn] = useState('');
   const [promptPtBr, setPromptPtBr] = useState('');
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
+  const [selectedRagDocs, setSelectedRagDocs] = useState<Set<string>>(new Set());
   const [triggerType, setTriggerType] = useState<TriggerType>('manual');
   const [cronExpr, setCronExpr] = useState('');
   const [eventName, setEventName] = useState('');
@@ -1015,6 +1180,7 @@ export default function AgentWizardPage() {
       setPromptEn(tpl.systemPromptEn);
       setPromptPtBr(tpl.systemPromptPtBr);
       setSelectedTools(new Set(tpl.tools));
+      setSelectedRagDocs(new Set(tpl.ragDocuments));
       setTeam((tpl.team ?? 'none') as Team);
       setTriggerType(tpl.triggerType as TriggerType);
     },
@@ -1050,6 +1216,19 @@ export default function AgentWizardPage() {
     });
   }, []);
 
+  /* ---- RAG doc toggle ---- */
+  const toggleRagDoc = useCallback((slug: string) => {
+    setSelectedRagDocs((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) {
+        next.delete(slug);
+      } else {
+        next.add(slug);
+      }
+      return next;
+    });
+  }, []);
+
   /* ---- Step validation ---- */
   const isStepValid = useMemo(() => {
     switch (step) {
@@ -1069,8 +1248,10 @@ export default function AgentWizardPage() {
   }, [step, name, triggerType, cronExpr, eventName, sourceAgentId]);
 
   /* ---- Create mutation ---- */
+  const utils = trpc.useUtils();
   const createMutation = trpc.agents.create.useMutation({
     onSuccess: () => {
+      utils.agents.list.invalidate();
       router.push('/agents');
     },
   });
@@ -1089,6 +1270,7 @@ export default function AgentWizardPage() {
         : triggerType === 'agent' ? { sourceAgentId }
         : undefined,
       tools: Array.from(selectedTools),
+      ragDocuments: selectedRagDocs.size > 0 ? Array.from(selectedRagDocs) : undefined,
       team: team === 'none' ? undefined : team,
       config: {
         model: 'claude-sonnet-4-6',
@@ -1097,7 +1279,7 @@ export default function AgentWizardPage() {
         budget: 10,
       },
     });
-  }, [name, slug, archetype, promptEn, promptPtBr, triggerType, cronExpr, eventName, sourceAgentId, selectedTools, team, createMutation]);
+  }, [name, slug, archetype, promptEn, promptPtBr, triggerType, cronExpr, eventName, sourceAgentId, selectedTools, selectedRagDocs, team, createMutation]);
 
   /* ---- Navigation ---- */
   const goNext = useCallback(() => {
@@ -1178,6 +1360,11 @@ export default function AgentWizardPage() {
                 toggleTool={toggleTool}
                 t={t}
               />
+              <StepRagDocs
+                selectedRagDocs={selectedRagDocs}
+                toggleRagDoc={toggleRagDoc}
+                t={t}
+              />
             </div>
           )}
           {step === 2 && (
@@ -1188,6 +1375,7 @@ export default function AgentWizardPage() {
               promptEn={promptEn}
               promptPtBr={promptPtBr}
               selectedTools={selectedTools}
+              selectedRagDocs={selectedRagDocs}
               triggerType={triggerType}
               cronExpr={cronExpr}
               eventName={eventName}

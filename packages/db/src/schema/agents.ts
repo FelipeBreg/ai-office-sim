@@ -41,6 +41,7 @@ export const agents = pgTable(
       budget: number;
     }>(),
     tools: text('tools').array(),
+    ragDocuments: text('rag_documents').array(),
     team: agentTeamEnum('team'),
     memoryScope: memoryScopeEnum('memory_scope').notNull().default('read_write'),
     triggerType: triggerTypeEnum('trigger_type').notNull().default('manual'),
