@@ -7,6 +7,37 @@
 
 
 ================================================================================
+COMMIT #124 — RAG Document Selection in Agent Wizard + Cache Fix
+Date: 2026-03-04
+Hash: 4b256cd
+────────────────────────────────────────────────────────────────────────────────
+
+Features:
+  - DB: Added ragDocuments text[] column to agents table (same pattern as tools)
+  - API: Added ragDocuments to create + update input schemas (z.string[].max(100))
+  - UI: New StepRagDocs component in wizard Behavior step (step 2)
+    - Fixed Documents: 61 reference doc slugs extracted from PROCESS_AGENT_TEMPLATES
+      shown as checkbox grid with slug→title conversion
+    - Company Documents: fetched via trpc.documents.list with loading/error states
+      prefixed with company: namespace for disambiguation
+  - Template auto-fill: selecting a template pre-fills selectedRagDocs
+  - Review step: RAG docs shown as cyan badges with BookOpen icon
+  - REFERENCE_DOCS constant built at module load from all template ragDocuments
+
+Bug Fixes:
+  - Cache invalidation: added utils.agents.list.invalidate() in create onSuccess
+    so /agents list updates immediately without manual refresh
+
+i18n (en-US + pt-BR):
+  - ragDocsLabel, ragDocsHint, ragDocsFixed, ragDocsCompany,
+    ragDocsNoneAvailable, ragDocsLoading, ragDocsError, reviewRagDocs
+
+Migration Required (not yet run):
+  ALTER TABLE agents ADD COLUMN rag_documents text[];
+
+Files: 5 changed (+208 lines, −1 line)
+
+================================================================================
 COMMIT #123 — Fix & Simplify Agent Creation Wizard (7→3 Steps)
 Date: 2026-03-04
 Hash: 9cb1a08
