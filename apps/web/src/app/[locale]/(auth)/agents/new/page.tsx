@@ -691,6 +691,49 @@ function StepIdentity({
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Collapsible Section                                                       */
+/* -------------------------------------------------------------------------- */
+
+function CollapsibleSection({
+  title,
+  count,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  count?: number;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className="border border-border-default">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-bg-base"
+      >
+        <div className="flex items-center gap-2">
+          <ChevronDown
+            size={12}
+            strokeWidth={1.5}
+            className={`text-text-muted transition-transform ${open ? '' : '-rotate-90'}`}
+          />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-primary">
+            {title}
+          </span>
+          {count !== undefined && count > 0 && (
+            <Badge variant="cyan">{count}</Badge>
+          )}
+        </div>
+      </button>
+      {open && <div className="border-t border-border-default px-3 pb-3 pt-3">{children}</div>}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Trigger Configuration (used in Behavior step)                             */
 /* -------------------------------------------------------------------------- */
 
@@ -1343,28 +1386,34 @@ export default function AgentWizardPage() {
             />
           )}
           {step === 1 && (
-            <div className="flex flex-col gap-8">
-              <StepTriggerConfig
-                triggerType={triggerType}
-                setTriggerType={setTriggerType}
-                cronExpr={cronExpr}
-                setCronExpr={setCronExpr}
-                eventName={eventName}
-                setEventName={setEventName}
-                sourceAgentId={sourceAgentId}
-                setSourceAgentId={setSourceAgentId}
-                t={t}
-              />
-              <StepToolSelection
-                selectedTools={selectedTools}
-                toggleTool={toggleTool}
-                t={t}
-              />
-              <StepRagDocs
-                selectedRagDocs={selectedRagDocs}
-                toggleRagDoc={toggleRagDoc}
-                t={t}
-              />
+            <div className="flex flex-col gap-4">
+              <CollapsibleSection title={t('triggerLabel')}>
+                <StepTriggerConfig
+                  triggerType={triggerType}
+                  setTriggerType={setTriggerType}
+                  cronExpr={cronExpr}
+                  setCronExpr={setCronExpr}
+                  eventName={eventName}
+                  setEventName={setEventName}
+                  sourceAgentId={sourceAgentId}
+                  setSourceAgentId={setSourceAgentId}
+                  t={t}
+                />
+              </CollapsibleSection>
+              <CollapsibleSection title={t('toolsLabel')} count={selectedTools.size}>
+                <StepToolSelection
+                  selectedTools={selectedTools}
+                  toggleTool={toggleTool}
+                  t={t}
+                />
+              </CollapsibleSection>
+              <CollapsibleSection title={t('ragDocsLabel')} count={selectedRagDocs.size} defaultOpen={false}>
+                <StepRagDocs
+                  selectedRagDocs={selectedRagDocs}
+                  toggleRagDoc={toggleRagDoc}
+                  t={t}
+                />
+              </CollapsibleSection>
             </div>
           )}
           {step === 2 && (
