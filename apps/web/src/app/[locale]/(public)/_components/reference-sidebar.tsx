@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { Menu, X, ChevronRight } from 'lucide-react';
 import type { ReferenceTopic } from './reference-types';
@@ -81,15 +81,35 @@ export default function ReferenceSidebar({
   const regex = new RegExp(`^${basePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\/?`);
   const currentSlug = pathname.replace(regex, '').split('#')[0] || defaultSlug;
 
+  const groups = useMemo(() => {
+    const map = new Map<string, ReferenceTopic[]>();
+    for (const topic of topics) {
+      const g = topic.group ?? '';
+      const arr = map.get(g);
+      if (arr) arr.push(topic);
+      else map.set(g, [topic]);
+    }
+    return Array.from(map.entries());
+  }, [topics]);
+
   const sidebar = (
     <nav className="flex flex-col gap-0.5 py-2">
-      {topics.map((topic) => (
-        <TopicItem
-          key={topic.slug}
-          topic={topic}
-          active={currentSlug === topic.slug}
-          basePath={basePath}
-        />
+      {groups.map(([group, items]) => (
+        <div key={group}>
+          {group && (
+            <p className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-widest text-text-muted first:pt-0">
+              {group}
+            </p>
+          )}
+          {items.map((topic) => (
+            <TopicItem
+              key={topic.slug}
+              topic={topic}
+              active={currentSlug === topic.slug}
+              basePath={basePath}
+            />
+          ))}
+        </div>
       ))}
     </nav>
   );

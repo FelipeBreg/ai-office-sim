@@ -58,7 +58,7 @@ export default async function LandingPage({
           <Link href="/docs" className="font-mono text-sm text-text-secondary transition-colors hover:text-text-primary">
             Docs
           </Link>
-          <Link href="/blueprint" className="font-mono text-sm text-text-secondary transition-colors hover:text-text-primary">
+          <Link href="/docs/visao-geral" className="font-mono text-sm text-text-secondary transition-colors hover:text-text-primary">
             Blueprint
           </Link>
           <a href="#" className="font-mono text-sm text-text-secondary transition-colors hover:text-text-primary">

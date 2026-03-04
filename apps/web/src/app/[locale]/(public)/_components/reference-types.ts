@@ -8,4 +8,5 @@ export interface ReferenceTopic {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   subtopics?: ReferenceSubtopic[];
+  group?: string;
 }

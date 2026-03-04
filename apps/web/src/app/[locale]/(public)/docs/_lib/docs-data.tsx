@@ -24,6 +24,9 @@ export { StatusBadge, SectionHeading, FeatureList, LimitationList, QuickStart };
 
 import { agentCapabilitiesContent } from './content/agent-capabilities';
 
+import { blueprintTopics } from '../../blueprint/_lib/blueprint-topics';
+import { blueprintContent } from '../../blueprint/_lib/blueprint-content';
+
 /* ------------------------------------------------------------------ */
 /*  TOC structure                                                      */
 /* ------------------------------------------------------------------ */
@@ -33,7 +36,7 @@ import type { ReferenceTopic, ReferenceSubtopic } from '../../_components/refere
 export type DocSubtopic = ReferenceSubtopic;
 export type DocTopic = ReferenceTopic;
 
-export const topics: DocTopic[] = [
+const docTopics: DocTopic[] = [
   { slug: 'overview', label: 'Overview', icon: Globe },
   {
     slug: 'agents',
@@ -213,6 +216,11 @@ export const topics: DocTopic[] = [
       { id: 'planejamento', label: 'Planejamento' },
     ],
   },
+];
+
+export const topics: DocTopic[] = [
+  ...docTopics.map((t) => ({ ...t, group: 'Documentation' })),
+  ...blueprintTopics.map((t) => ({ ...t, group: 'Blueprint Empresarial' })),
 ];
 
 /* ------------------------------------------------------------------ */
@@ -1683,4 +1691,7 @@ export const topicContent: Record<string, React.ReactNode> = {
 
   /* ---- Agents & Capabilities ------------------------------------- */
   'agent-capabilities': agentCapabilitiesContent,
+
+  /* ---- Blueprint Empresarial ------------------------------------- */
+  ...blueprintContent,
 };

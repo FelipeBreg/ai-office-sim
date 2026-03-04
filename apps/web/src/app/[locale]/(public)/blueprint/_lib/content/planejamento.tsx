@@ -1,7 +1,7 @@
 import { Target, Flag, BarChart3, Compass, Calendar, Users } from 'lucide-react';
 import { SectionHeading, FeatureList, QuickStart } from '../../../_components/reference-components';
-import { ProcessCard } from '../../_components/process-card';
-import { SimMapping } from '../../_components/sim-mapping';
+import { ProcessCard } from '../../../_components/process-card';
+import { SimMapping } from '../../../_components/sim-mapping';
 
 export const planejamentoContent = (
   <section>

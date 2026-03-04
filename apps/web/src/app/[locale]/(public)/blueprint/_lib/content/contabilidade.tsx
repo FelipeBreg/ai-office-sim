@@ -1,7 +1,7 @@
 import { Calculator, BarChart3, TrendingDown, ArrowDownCircle, ArrowUpCircle, RefreshCw, PiggyBank } from 'lucide-react';
 import { SectionHeading, FeatureList, QuickStart } from '../../../_components/reference-components';
-import { ProcessCard } from '../../_components/process-card';
-import { SimMapping } from '../../_components/sim-mapping';
+import { ProcessCard } from '../../../_components/process-card';
+import { SimMapping } from '../../../_components/sim-mapping';
 
 export const contabilidadeContent = (
   <section>

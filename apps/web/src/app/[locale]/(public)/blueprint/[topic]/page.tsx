@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { blueprintContent } from '../_lib/blueprint-content';
 import { blueprintTopics } from '../_lib/blueprint-topics';
 
 interface Props {
@@ -12,11 +11,5 @@ export function generateStaticParams() {
 
 export default async function BlueprintTopicPage({ params }: Props) {
   const { locale, topic } = await params;
-  const content = blueprintContent[topic];
-
-  if (!content) {
-    redirect(`/${locale}/blueprint/visao-geral`);
-  }
-
-  return <>{content}</>;
+  redirect(`/${locale}/docs/${topic}`);
 }
