@@ -9,7 +9,7 @@
 ================================================================================
 COMMIT #122 — Merge Blueprint into Docs + Coverage Update
 Date: 2026-03-04
-Hash: 0fc929d
+Hash: 0fc929d → 767a407 (follow-up: collapsible sidebar groups)
 ────────────────────────────────────────────────────────────────────────────────
 
 Blueprint → Docs Merge:
@@ -20,6 +20,7 @@ Blueprint → Docs Merge:
   - Updated 12 blueprint content file imports to new paths
   - Redirected /blueprint and /blueprint/[topic] routes to /docs equivalents
   - Updated landing page Blueprint nav link to /docs/visao-geral
+  - Made sidebar groups collapsible with chevron toggle (auto-expands active group)
 
 Coverage Status Updates (76 processes):
   - 9 parcial → automatizável: Anúncios pagos, DRE, Obrigações acessórias,
