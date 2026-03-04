@@ -7,6 +7,29 @@
 
 
 ================================================================================
+COMMIT #123 — Fix & Simplify Agent Creation Wizard (7→3 Steps)
+Date: 2026-03-04
+Hash: 9cb1a08
+────────────────────────────────────────────────────────────────────────────────
+
+Bug Fixes:
+  - triggerConfig (cron, eventName, sourceAgentId) now sent in mutation payload
+  - Error display moved from inside step content to always-visible footer bar
+  - Model updated from gpt-4o to claude-sonnet-4-6
+
+Wizard Simplification (7 steps → 3):
+  - Step 1 Identity: name + template/archetype + team (merged from old steps 0+5)
+  - Step 2 Behavior: trigger config + tool selection (merged from old steps 4+2)
+  - Step 3 Review: summary without memory/maxActions rows
+  - Removed: System Prompt step (auto-filled, editable on detail page)
+  - Removed: Memory step (memoryScope/maxActions not in mutation)
+  - Removed: MemoryScope type, StepSystemPrompt, StepMemoryConfig,
+    StepTeamAssignment components
+  - Updated i18n keys in en-US.json and pt-BR.json
+
+Files: 3 changed (−342 lines, +116 lines)
+
+================================================================================
 COMMIT #122 — Merge Blueprint into Docs + Coverage Update
 Date: 2026-03-04
 Hash: 0fc929d → 767a407 (follow-up: collapsible sidebar groups)
