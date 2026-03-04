@@ -889,12 +889,8 @@
     "createSuccess": "Agente criado com sucesso.",
     "createError": "Falha ao criar agente.",
 
-    "stepName": "Identidade",
-    "stepPrompt": "Prompt do Sistema",
-    "stepTools": "Ferramentas",
-    "stepMemory": "Memória",
-    "stepTrigger": "Gatilho",
-    "stepTeam": "Equipe",
+    "stepIdentity": "Identidade",
+    "stepBehavior": "Comportamento",
     "stepReview": "Revisão",
 
     "nameLabel": "Nome do Agente",
@@ -1082,8 +1078,6 @@
     "reviewPromptEn": "Prompt do Sistema (EN)",
     "reviewPromptPtBr": "Prompt do Sistema (PT-BR)",
     "reviewTools": "Ferramentas",
-    "reviewMemory": "Memória",
-    "reviewMaxActions": "Máx. Ações",
     "reviewTrigger": "Gatilho",
     "reviewTeam": "Equipe",
     "reviewNotSet": "Não definido",

@@ -889,12 +889,8 @@
     "createSuccess": "Agent created successfully.",
     "createError": "Failed to create agent.",
 
-    "stepName": "Identity",
-    "stepPrompt": "System Prompt",
-    "stepTools": "Tools",
-    "stepMemory": "Memory",
-    "stepTrigger": "Trigger",
-    "stepTeam": "Team",
+    "stepIdentity": "Identity",
+    "stepBehavior": "Behavior",
     "stepReview": "Review",
 
     "nameLabel": "Agent Name",
@@ -1082,8 +1078,6 @@
     "reviewPromptEn": "System Prompt (EN)",
     "reviewPromptPtBr": "System Prompt (PT-BR)",
     "reviewTools": "Tools",
-    "reviewMemory": "Memory",
-    "reviewMaxActions": "Max Actions",
     "reviewTrigger": "Trigger",
     "reviewTeam": "Team",
     "reviewNotSet": "Not set",

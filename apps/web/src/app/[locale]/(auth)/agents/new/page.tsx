@@ -112,8 +112,6 @@ type Archetype =
 
 type TriggerType = 'always_on' | 'scheduled' | 'event' | 'manual' | 'agent';
 
-type MemoryScope = 'read_only' | 'read_write';
-
 type Team =
   | 'development'
   | 'research'
@@ -124,19 +122,13 @@ type Team =
   | 'operations'
   | 'none';
 
-type PromptTab = 'en' | 'ptBr';
-
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                 */
 /* -------------------------------------------------------------------------- */
 
 const STEPS = [
-  'stepName',
-  'stepPrompt',
-  'stepTools',
-  'stepMemory',
-  'stepTrigger',
-  'stepTeam',
+  'stepIdentity',
+  'stepBehavior',
   'stepReview',
 ] as const;
 
@@ -450,10 +442,10 @@ function StepIndicator({
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Step 0: Name + Archetype                                                  */
+/*  Step 0: Identity (Name + Archetype/Template + Team)                       */
 /* -------------------------------------------------------------------------- */
 
-function StepNameArchetype({
+function StepIdentity({
   name,
   setName,
   slug,
@@ -465,6 +457,8 @@ function StepNameArchetype({
   setDeptFilter,
   onTemplateSelect,
   selectedTemplateSlug,
+  team,
+  setTeam,
   locale,
   t,
 }: {
@@ -479,6 +473,8 @@ function StepNameArchetype({
   setDeptFilter: (v: string) => void;
   onTemplateSelect: (tpl: ProcessAgentTemplate) => void;
   selectedTemplateSlug: string | null;
+  team: Team;
+  setTeam: (v: Team) => void;
   locale: string;
   t: (key: string, values?: Record<string, string | number>) => string;
 }) {
@@ -639,231 +635,42 @@ function StepNameArchetype({
           </div>
         </div>
       )}
-    </div>
-  );
-}
 
-/* -------------------------------------------------------------------------- */
-/*  Step 1: System Prompt                                                     */
-/* -------------------------------------------------------------------------- */
-
-function StepSystemPrompt({
-  promptEn,
-  setPromptEn,
-  promptPtBr,
-  setPromptPtBr,
-  t,
-}: {
-  promptEn: string;
-  setPromptEn: (v: string) => void;
-  promptPtBr: string;
-  setPromptPtBr: (v: string) => void;
-  t: (key: string) => string;
-}) {
-  const [tab, setTab] = useState<PromptTab>('en');
-
-  return (
-    <div className="flex flex-col gap-4">
+      {/* Team assignment */}
       <div>
         <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
-          {t('promptLabel')}
+          {t('teamLabel')}
         </label>
-        <p className="mb-3 text-[9px] text-text-muted">{t('promptHint')}</p>
-      </div>
-
-      {/* Language tabs */}
-      <div className="flex gap-1">
-        {(['en', 'ptBr'] as const).map((tabId) => {
-          const isActive = tab === tabId;
-          const labelKey = tabId === 'en' ? 'promptTabEn' : 'promptTabPtBr';
-          return (
-            <button
-              key={tabId}
-              type="button"
-              onClick={() => setTab(tabId)}
-              className={`border px-3 py-1.5 text-[10px] transition-colors ${
-                isActive
-                  ? 'border-accent-cyan bg-accent-cyan/5 text-accent-cyan'
-                  : 'border-border-default text-text-muted hover:border-border-hover hover:text-text-secondary'
-              }`}
-            >
-              {t(labelKey)}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Textarea */}
-      {tab === 'en' && (
-        <textarea
-          value={promptEn}
-          onChange={(e) => setPromptEn(e.target.value)}
-          placeholder={t('promptPlaceholder')}
-          rows={12}
-          className="w-full border border-border-default bg-bg-base px-3 py-2 font-mono text-[11px] leading-relaxed text-text-primary placeholder:text-text-muted transition-colors focus:border-accent-cyan focus:outline-none"
-        />
-      )}
-      {tab === 'ptBr' && (
-        <textarea
-          value={promptPtBr}
-          onChange={(e) => setPromptPtBr(e.target.value)}
-          placeholder={t('promptPlaceholder')}
-          rows={12}
-          className="w-full border border-border-default bg-bg-base px-3 py-2 font-mono text-[11px] leading-relaxed text-text-primary placeholder:text-text-muted transition-colors focus:border-accent-cyan focus:outline-none"
-        />
-      )}
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/*  Step 2: Tool Selection                                                    */
-/* -------------------------------------------------------------------------- */
-
-function StepToolSelection({
-  selectedTools,
-  toggleTool,
-  t,
-}: {
-  selectedTools: Set<string>;
-  toggleTool: (id: string) => void;
-  t: (key: string) => string;
-}) {
-  return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
-          {t('toolsLabel')}
-        </label>
-        <p className="mb-3 text-[9px] text-text-muted">
-          {t('toolsHint')}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {TOOLS.map((tool) => {
-          const isChecked = selectedTools.has(tool.id);
-          return (
-            <button
-              key={tool.id}
-              type="button"
-              onClick={() => toggleTool(tool.id)}
-              className={`flex items-start gap-3 border p-3 text-left transition-colors ${
-                isChecked
-                  ? 'border-accent-cyan bg-accent-cyan/5'
-                  : 'border-border-default bg-bg-base hover:border-border-hover'
-              }`}
-            >
-              {/* Checkbox indicator */}
-              <div
-                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border transition-colors ${
-                  isChecked
-                    ? 'border-accent-cyan bg-accent-cyan text-bg-deepest'
-                    : 'border-border-default bg-bg-deepest'
-                }`}
-              >
-                {isChecked && <Check size={10} strokeWidth={2.5} />}
-              </div>
-              <div className="min-w-0">
-                <span className={`block text-[10px] font-medium ${isChecked ? 'text-accent-cyan' : 'text-text-primary'}`}>
-                  {t(tool.nameKey)}
-                </span>
-                <span className="block text-[8px] text-text-muted">{t(tool.descKey)}</span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/*  Step 3: Memory Configuration                                              */
-/* -------------------------------------------------------------------------- */
-
-function StepMemoryConfig({
-  memoryScope,
-  setMemoryScope,
-  maxActions,
-  setMaxActions,
-  t,
-}: {
-  memoryScope: MemoryScope;
-  setMemoryScope: (v: MemoryScope) => void;
-  maxActions: number;
-  setMaxActions: (v: number) => void;
-  t: (key: string) => string;
-}) {
-  const options: { id: MemoryScope; nameKey: string; descKey: string }[] = [
-    { id: 'read_only', nameKey: 'memoryReadOnly', descKey: 'memoryReadOnlyDesc' },
-    { id: 'read_write', nameKey: 'memoryReadWrite', descKey: 'memoryReadWriteDesc' },
-  ];
-
-  return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
-          {t('memoryLabel')}
-        </label>
-        <p className="mb-3 text-[9px] text-text-muted">{t('memoryHint')}</p>
-
-        <div className="flex flex-col gap-2 sm:flex-row">
-          {options.map((opt) => {
-            const isSelected = memoryScope === opt.id;
+        <p className="mb-3 text-[9px] text-text-muted">{t('teamHint')}</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {TEAMS.map((opt) => {
+            const isSelected = team === opt.id;
             return (
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => setMemoryScope(opt.id)}
-                className={`flex flex-1 items-center gap-3 border p-4 text-left transition-colors ${
+                onClick={() => setTeam(opt.id)}
+                className={`flex flex-col items-center gap-2 border p-3 text-center transition-colors ${
                   isSelected
                     ? 'border-accent-cyan bg-accent-cyan/5'
                     : 'border-border-default bg-bg-base hover:border-border-hover'
                 }`}
               >
-                <div
-                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-none border transition-colors ${
-                    isSelected
-                      ? 'border-accent-cyan'
-                      : 'border-border-default'
-                  }`}
-                >
-                  {isSelected && <div className="h-2 w-2 rounded-none bg-accent-cyan" />}
-                </div>
-                <div>
-                  <span className={`block text-[10px] font-medium ${isSelected ? 'text-accent-cyan' : 'text-text-primary'}`}>
-                    {t(opt.nameKey)}
-                  </span>
-                  <span className="block text-[8px] text-text-muted">{t(opt.descKey)}</span>
-                </div>
+                <span className={`text-[10px] font-medium ${isSelected ? 'text-accent-cyan' : 'text-text-primary'}`}>
+                  {t(opt.nameKey)}
+                </span>
+                <span className="text-[8px] text-text-muted">{t(opt.descKey)}</span>
               </button>
             );
           })}
         </div>
-      </div>
-
-      {/* Max actions */}
-      <div>
-        <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
-          {t('maxActionsLabel')}
-        </label>
-        <p className="mb-2 text-[9px] text-text-muted">{t('maxActionsHint')}</p>
-        <Input
-          type="number"
-          min={1}
-          max={1000}
-          value={maxActions}
-          onChange={(e) => setMaxActions(Math.max(1, parseInt(e.target.value, 10) || 1))}
-          className="w-32"
-        />
       </div>
     </div>
   );
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Step 4: Trigger Configuration                                             */
+/*  Trigger Configuration (used in Behavior step)                             */
 /* -------------------------------------------------------------------------- */
 
 function StepTriggerConfig({
@@ -991,45 +798,59 @@ function StepTriggerConfig({
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Step 5: Team Assignment                                                   */
+/*  Tool Selection (used in Behavior step)                                    */
 /* -------------------------------------------------------------------------- */
 
-function StepTeamAssignment({
-  team,
-  setTeam,
+function StepToolSelection({
+  selectedTools,
+  toggleTool,
   t,
 }: {
-  team: Team;
-  setTeam: (v: Team) => void;
+  selectedTools: Set<string>;
+  toggleTool: (id: string) => void;
   t: (key: string) => string;
 }) {
   return (
     <div className="flex flex-col gap-4">
       <div>
         <label className="mb-1.5 block text-[8px] uppercase tracking-[0.15em] text-text-muted">
-          {t('teamLabel')}
+          {t('toolsLabel')}
         </label>
-        <p className="mb-3 text-[9px] text-text-muted">{t('teamHint')}</p>
+        <p className="mb-3 text-[9px] text-text-muted">
+          {t('toolsHint')}
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        {TEAMS.map((opt) => {
-          const isSelected = team === opt.id;
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {TOOLS.map((tool) => {
+          const isChecked = selectedTools.has(tool.id);
           return (
             <button
-              key={opt.id}
+              key={tool.id}
               type="button"
-              onClick={() => setTeam(opt.id)}
-              className={`flex flex-col items-center gap-2 border p-4 text-center transition-colors ${
-                isSelected
+              onClick={() => toggleTool(tool.id)}
+              className={`flex items-start gap-3 border p-3 text-left transition-colors ${
+                isChecked
                   ? 'border-accent-cyan bg-accent-cyan/5'
                   : 'border-border-default bg-bg-base hover:border-border-hover'
               }`}
             >
-              <span className={`text-[10px] font-medium ${isSelected ? 'text-accent-cyan' : 'text-text-primary'}`}>
-                {t(opt.nameKey)}
-              </span>
-              <span className="text-[8px] text-text-muted">{t(opt.descKey)}</span>
+              {/* Checkbox indicator */}
+              <div
+                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border transition-colors ${
+                  isChecked
+                    ? 'border-accent-cyan bg-accent-cyan text-bg-deepest'
+                    : 'border-border-default bg-bg-deepest'
+                }`}
+              >
+                {isChecked && <Check size={10} strokeWidth={2.5} />}
+              </div>
+              <div className="min-w-0">
+                <span className={`block text-[10px] font-medium ${isChecked ? 'text-accent-cyan' : 'text-text-primary'}`}>
+                  {t(tool.nameKey)}
+                </span>
+                <span className="block text-[8px] text-text-muted">{t(tool.descKey)}</span>
+              </div>
             </button>
           );
         })}
@@ -1039,7 +860,7 @@ function StepTeamAssignment({
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Step 6: Review                                                            */
+/*  Step 2: Review                                                            */
 /* -------------------------------------------------------------------------- */
 
 function StepReview({
@@ -1049,9 +870,10 @@ function StepReview({
   promptEn,
   promptPtBr,
   selectedTools,
-  memoryScope,
-  maxActions,
   triggerType,
+  cronExpr,
+  eventName,
+  sourceAgentId,
   team,
   t,
 }: {
@@ -1061,12 +883,19 @@ function StepReview({
   promptEn: string;
   promptPtBr: string;
   selectedTools: Set<string>;
-  memoryScope: MemoryScope;
-  maxActions: number;
   triggerType: TriggerType;
+  cronExpr: string;
+  eventName: string;
+  sourceAgentId: string;
   team: Team;
   t: (key: string) => string;
 }) {
+  const triggerDetail =
+    triggerType === 'scheduled' && cronExpr ? ` (${cronExpr})`
+    : triggerType === 'event' && eventName ? ` (${eventName})`
+    : triggerType === 'agent' && sourceAgentId ? ` (${sourceAgentId})`
+    : '';
+
   const reviewRows: { labelKey: string; value: string }[] = [
     { labelKey: 'reviewName', value: name || t('reviewNotSet') },
     { labelKey: 'reviewSlug', value: slug || t('reviewNotSet') },
@@ -1085,13 +914,8 @@ function StepReview({
       value: promptPtBr ? `${promptPtBr.slice(0, 80)}${promptPtBr.length > 80 ? '...' : ''}` : t('reviewNotSet'),
     },
     {
-      labelKey: 'reviewMemory',
-      value: memoryScope === 'read_write' ? t('memoryReadWrite') : t('memoryReadOnly'),
-    },
-    { labelKey: 'reviewMaxActions', value: String(maxActions) },
-    {
       labelKey: 'reviewTrigger',
-      value: t(TRIGGER_OPTIONS.find((o) => o.id === triggerType)?.nameKey ?? 'triggerManual'),
+      value: t(TRIGGER_OPTIONS.find((o) => o.id === triggerType)?.nameKey ?? 'triggerManual') + triggerDetail,
     },
     {
       labelKey: 'reviewTeam',
@@ -1162,32 +986,22 @@ export default function AgentWizardPage() {
   /* ---- Wizard step ---- */
   const [step, setStep] = useState<number>(0);
 
-  /* ---- Step 0 state ---- */
+  /* ---- Identity state ---- */
   const [name, setName] = useState('');
   const [archetype, setArchetype] = useState<Archetype | null>(null);
   const [creationMode, setCreationMode] = useState<'template' | 'scratch'>('template');
   const [deptFilter, setDeptFilter] = useState('all');
   const [selectedTemplateSlug, setSelectedTemplateSlug] = useState<string | null>(null);
+  const [team, setTeam] = useState<Team>('none');
 
-  /* ---- Step 1 state ---- */
+  /* ---- Behavior state ---- */
   const [promptEn, setPromptEn] = useState('');
   const [promptPtBr, setPromptPtBr] = useState('');
-
-  /* ---- Step 2 state ---- */
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
-
-  /* ---- Step 3 state ---- */
-  const [memoryScope, setMemoryScope] = useState<MemoryScope>('read_only');
-  const [maxActions, setMaxActions] = useState(20);
-
-  /* ---- Step 4 state ---- */
   const [triggerType, setTriggerType] = useState<TriggerType>('manual');
   const [cronExpr, setCronExpr] = useState('');
   const [eventName, setEventName] = useState('');
   const [sourceAgentId, setSourceAgentId] = useState('');
-
-  /* ---- Step 5 state ---- */
-  const [team, setTeam] = useState<Team>('none');
 
   /* ---- Derived ---- */
   const slug = useMemo(() => toSlug(name), [name]);
@@ -1241,21 +1055,13 @@ export default function AgentWizardPage() {
     switch (step) {
       case 0:
         return name.trim().length > 0;
-      case 1:
-        return true; // Prompts are optional
-      case 2:
-        return true; // Tools are optional
-      case 3:
-        return true; // Memory config always has defaults
-      case 4: {
+      case 1: {
         if (triggerType === 'scheduled' && !cronExpr.trim()) return false;
         if (triggerType === 'event' && !eventName.trim()) return false;
         if (triggerType === 'agent' && !sourceAgentId) return false;
         return true;
       }
-      case 5:
-        return true; // Team is optional
-      case 6:
+      case 2:
         return name.trim().length > 0;
       default:
         return false;
@@ -1276,17 +1082,22 @@ export default function AgentWizardPage() {
       archetype: archetype ?? 'custom',
       systemPromptEn: promptEn || undefined,
       systemPromptPtBr: promptPtBr || undefined,
-      triggerType: triggerType,
+      triggerType,
+      triggerConfig:
+        triggerType === 'scheduled' ? { cron: cronExpr }
+        : triggerType === 'event' ? { eventName }
+        : triggerType === 'agent' ? { sourceAgentId }
+        : undefined,
       tools: Array.from(selectedTools),
       team: team === 'none' ? undefined : team,
       config: {
-        model: 'gpt-4o',
+        model: 'claude-sonnet-4-6',
         temperature: 0.7,
         maxTokens: 4096,
         budget: 10,
       },
     });
-  }, [name, slug, archetype, promptEn, promptPtBr, triggerType, selectedTools, team, createMutation]);
+  }, [name, slug, archetype, promptEn, promptPtBr, triggerType, cronExpr, eventName, sourceAgentId, selectedTools, team, createMutation]);
 
   /* ---- Navigation ---- */
   const goNext = useCallback(() => {
@@ -1331,7 +1142,7 @@ export default function AgentWizardPage() {
       <div className="flex-1 overflow-auto p-4">
         <div className="mx-auto max-w-3xl">
           {step === 0 && (
-            <StepNameArchetype
+            <StepIdentity
               name={name}
               setName={setName}
               slug={slug}
@@ -1343,56 +1154,33 @@ export default function AgentWizardPage() {
               setDeptFilter={setDeptFilter}
               onTemplateSelect={handleTemplateSelect}
               selectedTemplateSlug={selectedTemplateSlug}
+              team={team}
+              setTeam={setTeam}
               locale={locale}
               t={t}
             />
           )}
           {step === 1 && (
-            <StepSystemPrompt
-              promptEn={promptEn}
-              setPromptEn={setPromptEn}
-              promptPtBr={promptPtBr}
-              setPromptPtBr={setPromptPtBr}
-              t={t}
-            />
+            <div className="flex flex-col gap-8">
+              <StepTriggerConfig
+                triggerType={triggerType}
+                setTriggerType={setTriggerType}
+                cronExpr={cronExpr}
+                setCronExpr={setCronExpr}
+                eventName={eventName}
+                setEventName={setEventName}
+                sourceAgentId={sourceAgentId}
+                setSourceAgentId={setSourceAgentId}
+                t={t}
+              />
+              <StepToolSelection
+                selectedTools={selectedTools}
+                toggleTool={toggleTool}
+                t={t}
+              />
+            </div>
           )}
           {step === 2 && (
-            <StepToolSelection
-              selectedTools={selectedTools}
-              toggleTool={toggleTool}
-              t={t}
-            />
-          )}
-          {step === 3 && (
-            <StepMemoryConfig
-              memoryScope={memoryScope}
-              setMemoryScope={setMemoryScope}
-              maxActions={maxActions}
-              setMaxActions={setMaxActions}
-              t={t}
-            />
-          )}
-          {step === 4 && (
-            <StepTriggerConfig
-              triggerType={triggerType}
-              setTriggerType={setTriggerType}
-              cronExpr={cronExpr}
-              setCronExpr={setCronExpr}
-              eventName={eventName}
-              setEventName={setEventName}
-              sourceAgentId={sourceAgentId}
-              setSourceAgentId={setSourceAgentId}
-              t={t}
-            />
-          )}
-          {step === 5 && (
-            <StepTeamAssignment
-              team={team}
-              setTeam={setTeam}
-              t={t}
-            />
-          )}
-          {step === 6 && (
             <StepReview
               name={name}
               slug={slug}
@@ -1400,22 +1188,13 @@ export default function AgentWizardPage() {
               promptEn={promptEn}
               promptPtBr={promptPtBr}
               selectedTools={selectedTools}
-              memoryScope={memoryScope}
-              maxActions={maxActions}
               triggerType={triggerType}
+              cronExpr={cronExpr}
+              eventName={eventName}
+              sourceAgentId={sourceAgentId}
               team={team}
               t={t}
             />
-          )}
-
-          {/* Mutation feedback */}
-          {createMutation.isError && (
-            <p className="mt-3 text-[10px] text-status-error">
-              {t('createError')}: {createMutation.error.message}
-            </p>
-          )}
-          {createMutation.isSuccess && (
-            <p className="mt-3 text-[10px] text-status-success">{t('createSuccess')}</p>
           )}
         </div>
       </div>
@@ -1430,6 +1209,13 @@ export default function AgentWizardPage() {
           <ArrowLeft size={12} strokeWidth={1.5} className="mr-1" />
           {t('back')}
         </Button>
+
+        {/* Error display in footer — always visible */}
+        {createMutation.isError && (
+          <p className="text-[10px] text-status-error truncate max-w-md">
+            {t('createError')}: {createMutation.error.message}
+          </p>
+        )}
 
         {isLastStep ? (
           <Button
