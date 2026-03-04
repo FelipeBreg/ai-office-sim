@@ -2,23 +2,17 @@ import {
   Bot,
   Workflow,
   MessageSquare,
-  Mail,
   ShieldCheck,
-  FileText,
-  BarChart3,
   Wrench,
-  Clock,
   BookOpen,
   CreditCard,
   Globe,
   Layers,
   Radio,
-  Activity,
   Building2,
-  Settings,
-  HelpCircle,
-  Compass,
   Users,
+  Cpu,
+  Map,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -48,10 +42,12 @@ export const topics: DocTopic[] = [
     subtopics: [
       { id: 'quickstart', label: 'Quickstart' },
       { id: 'archetypes', label: 'Archetypes' },
+      { id: 'execution-modes', label: 'Execution Modes' },
       { id: 'llm-config', label: 'LLM Config' },
-      { id: 'tool-assignment', label: 'Tool Assignment' },
       { id: 'agent-memory', label: 'Memory' },
-      { id: 'triggers', label: 'Triggers' },
+      { id: 'knowledge', label: 'Knowledge Base' },
+      { id: 'health', label: 'Health & Recovery' },
+      { id: 'sandbox', label: 'Sandbox' },
       { id: 'teams', label: 'Teams' },
     ],
   },
@@ -61,13 +57,16 @@ export const topics: DocTopic[] = [
     icon: Wrench,
     subtopics: [
       { id: 'quickstart', label: 'Quickstart' },
-      { id: 'core', label: 'Core' },
-      { id: 'whatsapp-tools', label: 'WhatsApp' },
-      { id: 'email-tools', label: 'Email' },
+      { id: 'built-in', label: 'Built-in' },
+      { id: 'communication-tools', label: 'Communication' },
       { id: 'crm', label: 'CRM' },
-      { id: 'google-sheets', label: 'Google Sheets' },
+      { id: 'productivity', label: 'Productivity' },
       { id: 'finance', label: 'Finance' },
       { id: 'devops', label: 'DevOps' },
+      { id: 'ads', label: 'Ads & Analytics' },
+      { id: 'self-config', label: 'Self-Configuration' },
+      { id: 'fleet-tools', label: 'Fleet' },
+      { id: 'strategy-tools', label: 'Strategy' },
     ],
   },
   {
@@ -78,87 +77,99 @@ export const topics: DocTopic[] = [
       { id: 'quickstart', label: 'Quickstart' },
       { id: 'editor', label: 'Visual Editor' },
       { id: 'nodes', label: 'Node Types' },
-      { id: 'execution', label: 'Execution' },
+      { id: 'triggers', label: 'Triggers' },
+      { id: 'templates', label: 'Templates' },
+      { id: 'monitoring', label: 'Monitoring' },
     ],
   },
   {
-    slug: 'whatsapp',
-    label: 'WhatsApp',
+    slug: 'communication',
+    label: 'Communication',
     icon: MessageSquare,
     subtopics: [
       { id: 'quickstart', label: 'Quickstart' },
-      { id: 'providers', label: 'Providers' },
-      { id: 'messaging', label: 'Messaging' },
-      { id: 'webhooks', label: 'Webhooks' },
-      { id: 'templates', label: 'Templates' },
+      { id: 'whatsapp', label: 'WhatsApp' },
+      { id: 'email', label: 'Email' },
+      { id: 'inbox', label: 'Messaging Inbox' },
     ],
   },
   {
-    slug: 'email',
-    label: 'Email',
-    icon: Mail,
-    subtopics: [
-      { id: 'quickstart', label: 'Quickstart' },
-      { id: 'email-providers', label: 'Providers' },
-      { id: 'sending', label: 'Sending' },
-      { id: 'email-templates', label: 'Templates' },
-      { id: 'inbox-reading', label: 'Inbox Reading' },
-    ],
-  },
-  {
-    slug: 'documents',
-    label: 'Documents & RAG',
-    icon: FileText,
-    subtopics: [
-      { id: 'quickstart', label: 'Quickstart' },
-      { id: 'sources', label: 'Sources' },
-      { id: 'chunking', label: 'Chunking' },
-      { id: 'search', label: 'Search' },
-      { id: 'agent-access', label: 'Agent Access' },
-    ],
-  },
-  {
-    slug: 'wiki',
-    label: 'Wiki & Knowledge Base',
+    slug: 'knowledge',
+    label: 'Knowledge & RAG',
     icon: BookOpen,
     subtopics: [
       { id: 'quickstart', label: 'Quickstart' },
-      { id: 'categories', label: 'Categories' },
-      { id: 'articles', label: 'Articles' },
-      { id: 'wiki-documents', label: 'Documents' },
+      { id: 'documents', label: 'Documents' },
+      { id: 'wiki', label: 'Wiki' },
+      { id: 'curated', label: 'Curated Knowledge' },
+      { id: 'rag-search', label: 'RAG Search' },
     ],
   },
   {
-    slug: 'approvals',
-    label: 'Approval System',
+    slug: 'atlas',
+    label: 'ATLAS',
+    icon: Radio,
+    subtopics: [
+      { id: 'quickstart', label: 'Quickstart' },
+      { id: 'atlas-orb', label: 'Orb Visualization' },
+      { id: 'atlas-loop', label: 'Agentic Loop' },
+      { id: 'atlas-tools', label: 'Tool Categories' },
+      { id: 'atlas-voice', label: 'Voice' },
+      { id: 'atlas-briefing', label: 'CEO Briefing' },
+    ],
+  },
+  {
+    slug: 'safety',
+    label: 'Safety & Governance',
     icon: ShieldCheck,
     subtopics: [
       { id: 'quickstart', label: 'Quickstart' },
-      { id: 'rules', label: 'Rules' },
-      { id: 'risk-levels', label: 'Risk Levels' },
-      { id: 'review-flow', label: 'Review Flow' },
+      { id: 'approvals', label: 'Approvals' },
+      { id: 'rbac', label: 'RBAC' },
+      { id: 'audit', label: 'Audit Logging' },
+      { id: 'pii', label: 'PII Masking' },
+      { id: 'cascades', label: 'Cascade Safety' },
+      { id: 'lgpd', label: 'LGPD Compliance' },
     ],
   },
   {
-    slug: 'tasks',
-    label: 'Task Management',
-    icon: Clock,
+    slug: 'orchestrator',
+    label: 'Fleet Orchestrator',
+    icon: Cpu,
     subtopics: [
       { id: 'quickstart', label: 'Quickstart' },
-      { id: 'human-tasks', label: 'Human Tasks' },
-      { id: 'devops-requests', label: 'DevOps Requests' },
+      { id: 'engine', label: 'Engine' },
+      { id: 'cost-tracking', label: 'Cost Tracking' },
+      { id: 'config', label: 'Configuration' },
+      { id: 'ceo-agent', label: 'CEO Agent' },
     ],
   },
   {
-    slug: 'strategies',
-    label: 'Strategies & KPIs',
-    icon: BarChart3,
+    slug: 'screens',
+    label: 'Screen Guide',
+    icon: Building2,
     subtopics: [
-      { id: 'quickstart', label: 'Quickstart' },
-      { id: 'strategy-types', label: 'Types' },
-      { id: 'kpis', label: 'KPIs' },
-      { id: 'learnings', label: 'Learnings' },
-      { id: 'recommendations', label: 'Recommendations' },
+      { id: 'office', label: 'Virtual Office' },
+      { id: 'dashboard', label: 'Dashboard' },
+      { id: 'strategy-screen', label: 'Strategy' },
+      { id: 'calendar', label: 'Calendar' },
+      { id: 'devops-screen', label: 'DevOps' },
+      { id: 'community', label: 'Community' },
+      { id: 'settings-screen', label: 'Settings' },
+      { id: 'onboarding-screen', label: 'Onboarding' },
+    ],
+  },
+  {
+    slug: 'tech',
+    label: 'Architecture',
+    icon: Layers,
+    subtopics: [
+      { id: 'frontend', label: 'Frontend' },
+      { id: 'backend', label: 'Backend' },
+      { id: 'ai-stack', label: 'AI' },
+      { id: 'infrastructure', label: 'Infrastructure' },
+      { id: 'security', label: 'Security' },
+      { id: 'realtime', label: 'Real-time' },
     ],
   },
   {
@@ -169,87 +180,17 @@ export const topics: DocTopic[] = [
       { id: 'quickstart', label: 'Quickstart' },
       { id: 'plans', label: 'Plans' },
       { id: 'payment-methods', label: 'Payment Methods' },
+      { id: 'usage', label: 'Usage & Tokens' },
     ],
   },
   {
-    slug: 'atlas',
-    label: 'ATLAS',
-    icon: Radio,
+    slug: 'roadmap',
+    label: 'Roadmap',
+    icon: Map,
     subtopics: [
-      { id: 'quickstart', label: 'Quickstart' },
-      { id: 'atlas-orb', label: 'Orb Visualization' },
-      { id: 'atlas-agentic-loop', label: 'Agentic Loop' },
-      { id: 'atlas-tools', label: 'Tool Categories' },
-      { id: 'atlas-approval', label: 'Approval Popup' },
-      { id: 'atlas-conversation', label: 'Conversation' },
-    ],
-  },
-  {
-    slug: 'activity',
-    label: 'Activity Log',
-    icon: Activity,
-    subtopics: [
-      { id: 'quickstart', label: 'Quickstart' },
-      { id: 'activity-list', label: 'Log List' },
-      { id: 'activity-detail', label: 'Action Detail' },
-      { id: 'activity-session', label: 'Session Timeline' },
-    ],
-  },
-  {
-    slug: 'office',
-    label: 'Virtual Office',
-    icon: Building2,
-    subtopics: [
-      { id: 'quickstart', label: 'Quickstart' },
-      { id: 'office-agents', label: 'Agent Avatars' },
-      { id: 'office-rooms', label: 'Rooms & Departments' },
-      { id: 'office-inspector', label: 'Agent Inspector' },
-    ],
-  },
-  {
-    slug: 'settings',
-    label: 'Settings',
-    icon: Settings,
-    subtopics: [
-      { id: 'quickstart', label: 'Quickstart' },
-      { id: 'settings-general', label: 'General' },
-      { id: 'settings-members', label: 'Members' },
-      { id: 'settings-models', label: 'Models' },
-      { id: 'settings-api-keys', label: 'API Keys' },
-      { id: 'settings-tools-credentials', label: 'Tool Credentials' },
-      { id: 'settings-billing', label: 'Billing' },
-      { id: 'settings-notifications', label: 'Notifications' },
-    ],
-  },
-  {
-    slug: 'help',
-    label: 'Help Center',
-    icon: HelpCircle,
-    subtopics: [
-      { id: 'quickstart', label: 'Quickstart' },
-      { id: 'help-guide', label: 'Getting Started' },
-      { id: 'help-playbook', label: 'Alpha Playbook' },
-    ],
-  },
-  {
-    slug: 'onboarding',
-    label: 'Onboarding',
-    icon: Compass,
-    subtopics: [
-      { id: 'quickstart', label: 'Quickstart' },
-      { id: 'onboarding-steps', label: 'Setup Steps' },
-      { id: 'onboarding-templates', label: 'Templates' },
-    ],
-  },
-  {
-    slug: 'tech',
-    label: 'Tech Stack',
-    icon: Layers,
-    subtopics: [
-      { id: 'frontend', label: 'Frontend' },
-      { id: 'backend', label: 'Backend' },
-      { id: 'ai-stack', label: 'AI' },
-      { id: 'infrastructure', label: 'Infrastructure' },
+      { id: 'upcoming', label: 'Upcoming Features' },
+      { id: 'latam', label: 'LatAm Expansion' },
+      { id: 'enterprise', label: 'Enterprise' },
     ],
   },
   {
@@ -284,29 +225,49 @@ export const topicContent: Record<string, React.ReactNode> = {
     <section>
       <SectionHeading id="overview" icon={Globe} title="Overview" />
       <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        AI Office Sim is a virtual office platform where AI agents work autonomously on real business tasks.
-        You create agents, assign them roles and tools, and they execute tasks — from sending WhatsApp messages
-        to managing CRM contacts, writing emails, analyzing spreadsheets, and more.
+        AI Office Sim is a virtual office platform where AI agents work autonomously on real business
+        tasks. You create agents, assign them roles and tools, and they execute tasks — from sending
+        WhatsApp messages to managing CRM contacts, writing emails, analyzing spreadsheets, running
+        multi-step workflows, and more.
       </p>
       <p className="mb-6 text-sm leading-relaxed text-text-secondary">
         Think of it as a fully staffed office that runs 24/7, powered by Claude (Anthropic) with
-        built-in approval workflows so you stay in control of high-risk actions.
+        built-in approval workflows, fleet orchestration, safety guardrails, and a visual workflow
+        engine so you stay in control of high-risk actions.
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="border border-border-default bg-bg-base p-4">
-          <p className="mb-1 text-2xl font-bold text-accent-cyan">19</p>
-          <p className="text-xs text-text-muted">Agent archetypes</p>
-        </div>
-        <div className="border border-border-default bg-bg-base p-4">
-          <p className="mb-1 text-2xl font-bold text-accent-cyan">21+</p>
-          <p className="text-xs text-text-muted">Built-in tools</p>
-        </div>
-        <div className="border border-border-default bg-bg-base p-4">
-          <p className="mb-1 text-2xl font-bold text-accent-cyan">5</p>
-          <p className="text-xs text-text-muted">External integrations</p>
-        </div>
+      <div className="mb-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        {[
+          { value: '21', label: 'Agent archetypes' },
+          { value: '42+', label: 'Agent tools' },
+          { value: '88', label: 'Workflow templates' },
+          { value: '17', label: 'Screens' },
+          { value: '30', label: 'ATLAS tools' },
+          { value: '22', label: 'Company templates' },
+        ].map((stat) => (
+          <div key={stat.label} className="border border-border-default bg-bg-base p-4">
+            <p className="mb-1 text-2xl font-bold text-accent-cyan">{stat.value}</p>
+            <p className="text-xs text-text-muted">{stat.label}</p>
+          </div>
+        ))}
       </div>
+
+      <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Key Capabilities
+      </h3>
+      <FeatureList
+        items={[
+          'Autonomous AI agents with 21 role archetypes and 42+ tools',
+          'Visual workflow editor with conditional branching, approvals, and delays',
+          'WhatsApp, Email, and internal messaging with bi-directional I/O',
+          'Knowledge base with RAG (Retrieval-Augmented Generation) via pgvector',
+          'ATLAS — voice-enabled AI advisor with 30 tools and agentic loop',
+          'Fleet orchestrator with cost tracking, priority scheduling, and CEO agent',
+          'Safety layer: approval gates, RBAC, audit logging, PII masking, LGPD compliance',
+          'Real-time 3D virtual office with agent status visualization',
+          'Full i18n (en-US / pt-BR) and Brazil-specific payments (PIX, boleto)',
+        ]}
+      />
     </section>
   ),
 
@@ -315,17 +276,18 @@ export const topicContent: Record<string, React.ReactNode> = {
     <section>
       <SectionHeading id="agents" icon={Bot} title="AI Agents" status="done" />
       <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        Agents are the core of AI Office Sim. Each agent has a role, a set of tools, memory, and configurable
-        behavior. They can be triggered manually, on a schedule, by events, or by other agents.
+        Agents are the core of AI Office Sim. Each agent has a role archetype, a set of tools,
+        persistent memory, knowledge base access, and configurable execution behavior. They can be
+        triggered manually, on a schedule, by events, by other agents, or run continuously.
       </p>
 
       <QuickStart
         steps={[
           'Navigate to the Agents page from the sidebar',
-          'Click "Create Agent" and choose an archetype (e.g. Support, Sales)',
+          'Click "Create Agent" and choose an archetype (e.g. Support, Sales, CEO Strategist)',
           'Configure the agent\'s LLM model, temperature, and token budget',
           'Assign tools the agent is allowed to use (WhatsApp, Email, CRM, etc.)',
-          'Set a trigger mode (manual for testing) and click Save',
+          'Set an execution mode (manual for testing) and click Save',
         ]}
       />
 
@@ -333,14 +295,15 @@ export const topicContent: Record<string, React.ReactNode> = {
         Archetypes
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Pre-configured agent templates for common business roles.
+        21 pre-configured agent templates for common business roles.
       </p>
       <div className="mb-6 flex flex-wrap gap-2">
         {[
           'Support', 'Sales', 'Marketing', 'Data Analyst', 'Content Writer',
           'Developer', 'Project Manager', 'HR', 'Finance', 'Email Campaign Manager',
           'Research', 'Recruiter', 'Social Media', 'Mercado Livre', 'Inventory Monitor',
-          'Legal Research', 'Ad Analyst', 'Account Manager', 'Deployment Monitor', 'Custom',
+          'Legal Research', 'Ad Analyst', 'Account Manager', 'Deployment Monitor',
+          'CEO Strategist', 'Custom',
         ].map((a) => (
           <span
             key={a}
@@ -350,6 +313,22 @@ export const topicContent: Record<string, React.ReactNode> = {
           </span>
         ))}
       </div>
+
+      <h3 id="execution-modes" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Execution Modes
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Define how and when agents start working.
+      </p>
+      <FeatureList
+        items={[
+          'Manual — trigger from the UI or via API',
+          'Scheduled — cron-based recurring execution (e.g. daily at 9am)',
+          'Event-driven — react to incoming messages, webhooks, or system events',
+          'Agent-chained — triggered by another agent via the trigger_agent tool',
+          'Always-on — continuously listening and responding to incoming requests',
+        ]}
+      />
 
       <h3 id="llm-config" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
         LLM Config
@@ -363,21 +342,7 @@ export const topicContent: Record<string, React.ReactNode> = {
           'Temperature slider for creativity vs determinism',
           'Max tokens limit per response',
           'Budget cap per agent (USD) to control costs',
-        ]}
-      />
-
-      <h3 id="tool-assignment" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Tool Assignment
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Control which tools each agent can access.
-      </p>
-      <FeatureList
-        items={[
-          'Assign any combination of 21+ tools per agent',
-          'Per-tool approval rules (always allow, require approval, always block)',
           'Bilingual system prompts (English & Portuguese)',
-          'Tool usage tracked in activity log with full I/O payloads',
         ]}
       />
 
@@ -396,19 +361,47 @@ export const topicContent: Record<string, React.ReactNode> = {
         ]}
       />
 
-      <h3 id="triggers" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Triggers
+      <h3 id="knowledge" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Knowledge Base Access
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Define how and when agents start working.
+        Agents access company knowledge during execution.
       </p>
       <FeatureList
         items={[
-          'Manual — trigger from the UI with a click',
-          'Scheduled — cron-based recurring execution',
-          'Event-driven — react to incoming messages or system events',
-          'Agent-chained — triggered by another agent completing a task',
-          'Always-on — continuously listening and responding',
+          'RAG search via the search_company_memory tool',
+          'Search results injected into agent context as reference material',
+          'Agents can also create and update documents and wiki articles',
+        ]}
+      />
+
+      <h3 id="health" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Health & Recovery
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Monitor agent health and handle failures gracefully.
+      </p>
+      <FeatureList
+        items={[
+          'Heartbeat tracking — agents report status periodically',
+          'Automatic error detection with status indicators (idle, working, error, awaiting approval)',
+          'Per-agent safety limits: max actions per session, token budgets, cost caps',
+          'Pause and resume agents individually or by team',
+        ]}
+      />
+
+      <h3 id="sandbox" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Sandbox
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Test agents safely before deploying to production.
+      </p>
+      <FeatureList
+        items={[
+          'Agent inspector panel with real-time action feed',
+          'Manual trigger mode for step-by-step testing',
+          'Full I/O payload visibility in the activity log',
+          'Tool-level approval rules to prevent accidental mutations',
         ]}
       />
 
@@ -416,21 +409,21 @@ export const topicContent: Record<string, React.ReactNode> = {
         Teams
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Group agents by department for organization and desk assignment.
+        Group agents by department for organization and office placement.
       </p>
       <FeatureList
         items={[
           'Teams: development, research, marketing, sales, support, finance, operations',
           'Team assignment controls desk placement in the Virtual Office',
-          'Per-agent safety limits: max actions per session, token budgets, cost tracking',
+          'Pause/resume agents by team via fleet management tools',
+          'Team-based priority scheduling in the orchestrator',
         ]}
       />
 
       <LimitationList
         items={[
-          'No direct agent-to-agent messaging (async triggers only)',
-          'Semantic memory search is basic (full vector similarity coming soon)',
-          'No agent team hierarchy or permission scoping',
+          'No agent team hierarchy or permission scoping between teams',
+          'No multi-model routing within a single agent session',
         ]}
       />
     </section>
@@ -439,10 +432,11 @@ export const topicContent: Record<string, React.ReactNode> = {
   /* ---- Tools & Integrations -------------------------------------- */
   tools: (
     <section>
-      <SectionHeading id="tools" icon={Wrench} title="Tools & Integrations" status="partial" />
+      <SectionHeading id="tools" icon={Wrench} title="Tools & Integrations" status="done" />
       <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        Tools are the actions agents can perform. Each tool has defined inputs, outputs, and an optional
-        approval requirement. Tools are registered in a central registry and can be assigned to any agent.
+        Tools are the actions agents can perform. 42+ tools across 11 categories are registered in
+        a central registry. Each tool has defined inputs, outputs, and an optional approval
+        requirement. Tools can be assigned to any agent individually.
       </p>
 
       <QuickStart
@@ -458,29 +452,25 @@ export const topicContent: Record<string, React.ReactNode> = {
       <div className="mb-6 space-y-4">
         {[
           {
-            id: 'core',
-            category: 'Core',
+            id: 'built-in',
+            category: 'Built-in',
             tools: [
               { name: 'get_current_time', desc: 'Returns ISO 8601 timestamp with timezone' },
               { name: 'search_company_memory', desc: 'Semantic search over uploaded documents (RAG)' },
               { name: 'log_message', desc: 'Structured logging (info, warning, error levels)' },
-              { name: 'search_web', desc: 'Web search for real-time information' },
+              { name: 'search_web', desc: 'Web search via Serper API for real-time information' },
+              { name: 'trigger_agent', desc: 'Trigger another agent with a message payload' },
             ],
           },
           {
-            id: 'whatsapp-tools',
-            category: 'WhatsApp',
+            id: 'communication-tools',
+            category: 'Communication',
             tools: [
               { name: 'send_whatsapp_message', desc: 'Send message to a contact (requires approval)' },
               { name: 'read_whatsapp_messages', desc: 'Fetch conversation history with a contact' },
-            ],
-          },
-          {
-            id: 'email-tools',
-            category: 'Email',
-            tools: [
               { name: 'send_email', desc: 'Send email with HTML body and attachments (requires approval)' },
               { name: 'read_email', desc: 'Read emails from inbox via IMAP' },
+              { name: 'send_conversation_message', desc: 'Send messages in internal conversations' },
             ],
           },
           {
@@ -495,19 +485,21 @@ export const topicContent: Record<string, React.ReactNode> = {
             ],
           },
           {
-            id: 'google-sheets',
-            category: 'Google Sheets',
+            id: 'productivity',
+            category: 'Productivity — Google Workspace',
             tools: [
-              { name: 'read_spreadsheet', desc: 'Fetch cell ranges from a spreadsheet' },
-              { name: 'write_spreadsheet', desc: 'Update specific cells' },
+              { name: 'read_spreadsheet', desc: 'Fetch cell ranges from Google Sheets' },
+              { name: 'write_spreadsheet', desc: 'Update specific cells in Google Sheets' },
               { name: 'append_to_spreadsheet', desc: 'Append new rows to a sheet' },
+              { name: 'schedule_event', desc: 'Schedule Google Calendar events' },
+              { name: 'sync_google_calendar', desc: 'Sync Google Calendar data' },
             ],
           },
           {
             id: 'finance',
             category: 'Finance (Brazil)',
             tools: [
-              { name: 'monitor_pix_transactions', desc: 'Track PIX instant payments' },
+              { name: 'monitor_pix_transactions', desc: 'Track PIX instant payments via EFI Bank API' },
               { name: 'check_nfe_status', desc: 'Check NFe invoice status' },
             ],
           },
@@ -518,6 +510,47 @@ export const topicContent: Record<string, React.ReactNode> = {
               { name: 'create_deploy_request', desc: 'Request a deployment to an environment' },
               { name: 'create_pr_review_request', desc: 'Request code review on a PR' },
               { name: 'create_human_task', desc: 'Create a task for a human team member' },
+            ],
+          },
+          {
+            id: 'ads',
+            category: 'Ads & Analytics',
+            tools: [
+              { name: 'meta_marketing', desc: 'Meta (Facebook/Instagram) ad management and analytics' },
+              { name: 'google_ads', desc: 'Google Ads campaign management and reporting' },
+            ],
+          },
+          {
+            id: 'self-config',
+            category: 'Self-Configuration',
+            tools: [
+              { name: 'update_my_heartbeat', desc: 'Agent updates its own health heartbeat' },
+              { name: 'update_my_schedule', desc: 'Agent adjusts its own schedule' },
+            ],
+          },
+          {
+            id: 'fleet-tools',
+            category: 'Fleet Management',
+            tools: [
+              { name: 'get_fleet_status', desc: 'Get agent fleet status summary' },
+              { name: 'update_agent_schedule', desc: 'Update another agent\'s schedule' },
+              { name: 'update_agent_heartbeat', desc: 'Update another agent\'s heartbeat' },
+              { name: 'get_cost_report', desc: 'Get cost/billing report for agents' },
+              { name: 'search_action_logs', desc: 'Search agent action logs' },
+              { name: 'pause_agents_by_team', desc: 'Pause all agents in a team' },
+              { name: 'resume_agents_by_team', desc: 'Resume all agents in a team' },
+            ],
+          },
+          {
+            id: 'strategy-tools',
+            category: 'Strategy & Knowledge',
+            tools: [
+              { name: 'update_strategy_kpi', desc: 'Update strategy KPI values' },
+              { name: 'get_kpi_trends', desc: 'Get KPI trend data over time' },
+              { name: 'create_document', desc: 'Save searchable documents in knowledge base' },
+              { name: 'generate_document', desc: 'Generate documents from templates' },
+              { name: 'update_document', desc: 'Update existing documents' },
+              { name: 'update_wiki_article', desc: 'Update wiki articles' },
             ],
           },
         ].map((group) => (
@@ -539,9 +572,9 @@ export const topicContent: Record<string, React.ReactNode> = {
 
       <LimitationList
         items={[
-          'Web search has limited implementation',
-          'No native Slack, GitHub API, or database query tools yet',
           'Google Sheets and RD Station require OAuth2 credential setup',
+          'No native Slack, GitHub API, or database query tools yet',
+          'Ad tools require active Meta/Google Ads API credentials',
         ]}
       />
     </section>
@@ -552,17 +585,18 @@ export const topicContent: Record<string, React.ReactNode> = {
     <section>
       <SectionHeading id="workflows" icon={Workflow} title="Workflows" status="done" />
       <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        Workflows let you chain multiple agent tasks into automated pipelines using a visual graph editor
-        (React Flow). Each node in the graph represents an agent executing a specific task.
+        Workflows let you chain multiple agent tasks into automated pipelines using a visual graph
+        editor (React Flow). Build multi-agent pipelines with conditional branching, approval gates,
+        delays, and output destinations. Choose from 88 pre-built templates or create from scratch.
       </p>
 
       <QuickStart
         steps={[
           'Navigate to Workflows from the sidebar',
-          'Click "Create Workflow" and give it a name',
-          'Drag agent nodes onto the canvas and connect them in sequence',
-          'Configure each node with a task prompt and target agent',
-          'Click "Run" to execute the workflow end-to-end',
+          'Click "Create Workflow" — choose from 88 templates or start blank',
+          'Drag nodes onto the canvas: agent tasks, conditions, approvals, delays',
+          'Connect nodes with edges to define execution flow',
+          'Set a trigger (manual, scheduled, webhook, or event) and activate',
         ]}
       />
 
@@ -575,9 +609,10 @@ export const topicContent: Record<string, React.ReactNode> = {
       <FeatureList
         items={[
           'React Flow-based visual graph editor with zoom, pan, and snap-to-grid',
-          'Drag agent nodes from a palette onto the canvas',
-          'Connect nodes with edges to define execution order',
+          'Drag nodes from a palette onto the canvas',
+          'Connect nodes with edges to define execution order and branching',
           'Activate/deactivate workflows without deleting them',
+          'Full workflow definition stored as JSON for portability',
         ]}
       />
 
@@ -585,67 +620,103 @@ export const topicContent: Record<string, React.ReactNode> = {
         Node Types
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Each node assigns a task to a specific agent with configurable inputs.
+        Six node types for building complex automation flows.
+      </p>
+      <div className="mb-6 space-y-2">
+        {[
+          { type: 'Trigger', desc: 'Entry point — defines how the workflow starts (manual, cron, webhook, event)' },
+          { type: 'Agent', desc: 'Executes an AI agent with a prompt template, receives predecessor output as context' },
+          { type: 'Condition', desc: 'Evaluates conditions with branching (LLM eval, contains, JSON path matching)' },
+          { type: 'Approval', desc: 'Human approval gate — pauses execution until approved/rejected, with configurable timeout and auto-action' },
+          { type: 'Delay', desc: 'Pauses execution for a configured duration (minutes, hours, or days)' },
+          { type: 'Output', desc: 'Sends results to external systems (email, webhook, or log)' },
+        ].map((n) => (
+          <div key={n.type} className="flex gap-3 border border-border-default bg-bg-base p-3">
+            <span className="shrink-0 text-xs font-bold text-accent-cyan">{n.type}</span>
+            <p className="text-xs text-text-muted">{n.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <h3 id="triggers" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Trigger Types
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Four ways to start a workflow.
       </p>
       <FeatureList
         items={[
-          'Agent node: assign a task prompt to a specific agent',
-          'Each node receives the output of its predecessor as context',
-          'Node-level status indicators: pending, running, completed, failed',
+          'Manual — trigger from the UI or via API',
+          'Scheduled — cron expression for recurring execution',
+          'Webhook — external systems trigger via HTTP POST',
+          'Event — react to system events (e.g. new message, agent completion)',
         ]}
       />
 
-      <h3 id="execution" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Execution
+      <h3 id="templates" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Templates
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Run workflows and track progress in real time.
+        88 pre-built workflow templates covering universal and Brazil-specific use cases.
+      </p>
+      <FeatureList
+        items={[
+          '12 universal templates (onboarding, lead nurturing, content pipeline, etc.)',
+          '76 department-specific templates for Brazilian businesses',
+          'Templates cover legal, tax, accounting, HR, sales, marketing, ops, support, IT, compliance, treasury, and planning',
+          'One-click import with automatic node and edge generation',
+        ]}
+      />
+
+      <h3 id="monitoring" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Run Monitoring
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Track workflow execution progress in real time.
       </p>
       <FeatureList
         items={[
           'Per-node execution tracking: input, output, status, duration',
-          'Workflow-level status: running, completed, failed, cancelled',
+          'Workflow-level status: running, completed, failed, cancelled, waiting_approval',
+          'Node-level status indicators: pending, running, completed, failed',
           'Resource limits enforced per plan (e.g. 5 workflows on Starter)',
         ]}
       />
 
       <LimitationList
         items={[
-          'Sequential execution only — no parallel branches',
-          'No conditional logic (if/else nodes)',
-          'No scheduled triggers — manual execution only',
-          'No loop/retry nodes',
+          'No loop/retry nodes — use agent-chaining for retry patterns',
+          'No parallel branch execution — conditions route to one path at a time',
         ]}
       />
     </section>
   ),
 
-  /* ---- WhatsApp -------------------------------------------------- */
-  whatsapp: (
+  /* ---- Communication --------------------------------------------- */
+  communication: (
     <section>
-      <SectionHeading id="whatsapp" icon={MessageSquare} title="WhatsApp Integration" status="done" />
+      <SectionHeading id="communication" icon={MessageSquare} title="Communication" status="done" />
       <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        Connect your WhatsApp Business number and let agents send/receive messages. Supports three providers
-        with automatic webhook handling for incoming messages.
+        Unified communication layer covering WhatsApp, email, and internal messaging. Agents can
+        send and receive messages across all channels with full status tracking and webhook handling.
       </p>
 
       <QuickStart
         steps={[
-          'Go to Settings → Tool Credentials and add your WhatsApp provider credentials',
-          'Create a WhatsApp connection with your business phone number',
-          'Assign the send_whatsapp_message and read_whatsapp_messages tools to an agent',
+          'Go to Settings → Tool Credentials and add your provider credentials (WhatsApp, Email)',
+          'Assign communication tools (send_whatsapp_message, send_email, etc.) to an agent',
           'Set a default handler agent for automatic responses to incoming messages',
-          'Send a test message to verify the integration',
+          'Monitor all conversations in the Messaging Inbox',
         ]}
       />
 
-      <h3 id="providers" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Supported Providers
+      <h3 id="whatsapp" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        WhatsApp
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Choose the WhatsApp API provider that fits your setup.
+        Connect your WhatsApp Business number and let agents send/receive messages.
       </p>
-      <div className="mb-6 flex gap-3">
+      <div className="mb-4 flex gap-3">
         {['Z-API', 'Twilio', 'Meta Cloud API'].map((p) => (
           <span
             key={p}
@@ -655,83 +726,24 @@ export const topicContent: Record<string, React.ReactNode> = {
           </span>
         ))}
       </div>
-
-      <h3 id="messaging" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Messaging
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Bi-directional messaging with full status tracking.
-      </p>
       <FeatureList
         items={[
-          'Send outbound messages + receive inbound via webhooks',
-          'Message status tracking: pending, sent, delivered, read, failed',
-          'Contact name and phone indexing',
+          'Bi-directional messaging with full status tracking (pending, sent, delivered, read, failed)',
+          'Webhook signature verification (HMAC-SHA256/SHA1, Bearer token)',
+          'Default handler agent per connection for auto-responses',
+          'Contact name and phone indexing with automatic message routing',
+          'Pre-approved message templates for Meta Cloud API compliance',
           'Media URL support for images and files',
         ]}
       />
 
-      <h3 id="webhooks" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Webhooks
+      <h3 id="email" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Email
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Automatic webhook handling for incoming messages and status updates.
+        Send and receive emails through your preferred provider.
       </p>
-      <FeatureList
-        items={[
-          'Webhook signature verification (HMAC-SHA256/SHA1, Bearer token)',
-          'Default handler agent per connection for auto-responses',
-          'Automatic message routing to the correct project and agent',
-        ]}
-      />
-
-      <h3 id="templates" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Templates
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Pre-approved message templates for Meta Cloud API compliance.
-      </p>
-      <FeatureList
-        items={[
-          'Pre-approved message templates for business-initiated conversations',
-          'Template variable substitution for personalization',
-        ]}
-      />
-
-      <LimitationList
-        items={[
-          'No WhatsApp group support',
-          'Media via URL only — no direct file uploads',
-          'No typing indicators or read receipts',
-        ]}
-      />
-    </section>
-  ),
-
-  /* ---- Email ----------------------------------------------------- */
-  email: (
-    <section>
-      <SectionHeading id="email" icon={Mail} title="Email Integration" status="partial" />
-      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        Send emails through your preferred provider. Supports rich HTML content, attachments, and templates.
-      </p>
-
-      <QuickStart
-        steps={[
-          'Go to Settings → Tool Credentials and configure your email provider (SMTP, SendGrid, or AWS SES)',
-          'Assign the send_email and read_email tools to an agent',
-          'Optionally create reusable email templates for common messages',
-          'Test by triggering the agent with an email task',
-        ]}
-      />
-
-      <h3 id="email-providers" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Supported Providers
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Choose from three email delivery providers.
-      </p>
-      <div className="mb-6 flex gap-3">
+      <div className="mb-4 flex gap-3">
         {['SMTP', 'SendGrid', 'AWS SES'].map((p) => (
           <span
             key={p}
@@ -741,422 +753,764 @@ export const topicContent: Record<string, React.ReactNode> = {
           </span>
         ))}
       </div>
-
-      <h3 id="sending" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Sending
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Rich email sending with HTML, attachments, and recipient management.
-      </p>
       <FeatureList
         items={[
           'Send emails with HTML body, plain text fallback, and attachments',
-          'To, CC, BCC recipient support',
-          'Message status tracking: pending, sent, delivered, bounced, failed',
-        ]}
-      />
-
-      <h3 id="email-templates" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Templates
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Reusable email templates for transactional and marketing use cases.
-      </p>
-      <FeatureList
-        items={[
-          'Template types: transactional and marketing',
-          'Variable substitution for personalization',
-          'HTML body with plain text fallback',
-        ]}
-      />
-
-      <h3 id="inbox-reading" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Inbox Reading
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Read incoming emails via IMAP for agent processing.
-      </p>
-      <FeatureList
-        items={[
+          'To, CC, BCC recipient support with status tracking',
+          'Inbound email worker for receiving and processing incoming messages',
+          'Reusable email templates (transactional and marketing) with variable substitution',
           'IMAP inbox reading with configurable host/port/credentials',
-          'Agents can process incoming emails and take action',
+        ]}
+      />
+
+      <h3 id="inbox" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Messaging Inbox
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Unified inbox for viewing all message activity across channels.
+      </p>
+      <FeatureList
+        items={[
+          'Internal conversation system with send_conversation_message tool',
+          'Message history with timestamps and delivery status',
+          'Agent-to-agent communication via trigger_agent tool',
+          'Automatic routing of inbound messages to designated handler agents',
         ]}
       />
 
       <LimitationList
         items={[
-          'Inbound email reading is a stub (not fully implemented)',
-          'No calendar or meeting scheduling integration',
+          'No WhatsApp group support',
+          'Media via URL only — no direct file uploads',
+          'No calendar or meeting scheduling via email',
         ]}
       />
     </section>
   ),
 
-  /* ---- Documents & RAG ------------------------------------------- */
-  documents: (
+  /* ---- Knowledge & RAG ------------------------------------------- */
+  knowledge: (
     <section>
-      <SectionHeading id="documents" icon={FileText} title="Documents & RAG" status="done" />
+      <SectionHeading id="knowledge" icon={BookOpen} title="Knowledge & RAG" status="done" />
       <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        Upload documents to build a company knowledge base. Agents can search it using semantic similarity
-        (RAG — Retrieval-Augmented Generation) to answer questions with real company data.
+        Build a company knowledge base from documents, wiki articles, and curated content. Agents
+        search it using semantic similarity (RAG — Retrieval-Augmented Generation) to answer
+        questions with real company data.
       </p>
 
       <QuickStart
         steps={[
-          'Navigate to Documents from the sidebar',
-          'Upload a document (PDF, TXT, or paste text content)',
-          'The system automatically chunks and embeds the content',
-          'Assign the search_company_memory tool to any agent that needs knowledge base access',
+          'Navigate to Documents from the sidebar and upload a document (PDF, TXT, or paste text)',
+          'The system automatically chunks and embeds the content via pgvector',
+          'Assign the search_company_memory tool to agents that need knowledge access',
+          'Optionally organize knowledge in the Wiki with categories and articles',
           'Test by asking an agent a question that requires document knowledge',
         ]}
       />
 
-      <h3 id="sources" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Sources
+      <h3 id="documents" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Documents
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Multiple ways to ingest content into the knowledge base.
+        Upload and manage documents for the knowledge base.
       </p>
       <FeatureList
         items={[
-          'File upload: PDF, TXT, and text content',
+          'File upload: PDF, TXT, and raw text content',
           'Web sources: paste a URL for content extraction',
-          'API sources: ingest from external APIs',
-          'Agent-generated: agents can create documents from their outputs',
+          'Agent-generated: agents can create documents via create_document and generate_document tools',
           'Metadata and source URL tracking per document',
+          'Automatic chunking into searchable segments with embedding',
         ]}
       />
 
-      <h3 id="chunking" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Chunking
+      <h3 id="wiki" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Wiki
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Automatic text splitting and embedding for semantic search.
+        Structured knowledge base with hierarchical categories and articles.
       </p>
       <FeatureList
         items={[
-          'Automatic chunking into searchable segments',
-          'Embedding with OpenAI text-embedding-3-small (1536 dimensions)',
-          'Chunks stored alongside metadata for traceability',
+          'Hierarchical categories up to 3 levels deep with custom icons and sort order',
+          'Articles with title, summary, content body, and tags',
+          'Attach documents to articles for RAG integration',
+          'Agents can update wiki articles via the update_wiki_article tool',
         ]}
       />
 
-      <h3 id="search" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Search
+      <h3 id="curated" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Curated Knowledge
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Company-specific knowledge curated by agents and humans.
+      </p>
+      <FeatureList
+        items={[
+          'Agent-generated learnings with confidence scores tied to strategies',
+          'Strategy recommendations that can be applied or dismissed',
+          'Agent memory (key-value store) acts as per-agent curated knowledge',
+        ]}
+      />
+
+      <h3 id="rag-search" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        RAG Search
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
         Cosine similarity search for fast, relevant retrieval.
       </p>
       <FeatureList
         items={[
+          'Embedding with OpenAI text-embedding-3-small (1536 dimensions)',
           'Cosine similarity search via pgvector',
-          'Returns top-K most relevant chunks with scores',
-          'Filters by project scope — agents only see their project\'s documents',
-        ]}
-      />
-
-      <h3 id="agent-access" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Agent Access
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        How agents use the knowledge base during execution.
-      </p>
-      <FeatureList
-        items={[
-          'Agents access knowledge via the search_company_memory tool',
-          'Search results injected into the agent\'s context window as reference material',
-          'Agents cite source documents in their responses',
+          'Returns top-K most relevant chunks with similarity scores',
+          'Project-scoped — agents only see their project\'s documents',
+          'Search results injected into agent context as reference material',
         ]}
       />
 
       <LimitationList
         items={[
-          'Auto-ingestion pipeline not yet implemented (manual chunking only)',
           'No document versioning',
+          'No article version history or draft/published workflow',
           'Large document corpuses may have slower query times',
         ]}
       />
     </section>
   ),
 
-  /* ---- Wiki ------------------------------------------------------ */
-  wiki: (
+  /* ---- ATLAS ----------------------------------------------------- */
+  atlas: (
     <section>
-      <SectionHeading id="wiki" icon={BookOpen} title="Wiki & Knowledge Base" status="done" />
+      <SectionHeading id="atlas" icon={Radio} title="ATLAS — Agent Tracking & Live Advisory System" status="done" />
       <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        Organize company knowledge into a structured wiki with hierarchical categories and articles.
-        Teams can document processes, policies, and reference material.
+        ATLAS is an interactive AI advisory interface with voice input (STT) and voice output (TTS).
+        Powered by a real Claude agentic loop with 30 tools, ATLAS can read your project data,
+        analyze agent performance, manage your fleet, and deliver CEO briefings with live data.
       </p>
 
       <QuickStart
         steps={[
-          'Navigate to Wiki from the sidebar',
-          'Create a category (e.g. "Engineering", "Sales Playbooks")',
-          'Add articles within the category with title, summary, and content',
-          'Optionally attach existing documents for RAG integration',
+          'Navigate to ATLAS from the sidebar',
+          'Type a question or click the microphone for voice input (speech-to-text)',
+          'ATLAS runs a Claude agentic loop — read-only tools auto-execute, mutations require approval',
+          'Review the response in the transcript panel with full tool-use transparency',
+          'Use CEO Briefing for a one-click executive summary of your project',
         ]}
       />
 
-      <h3 id="categories" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Categories
+      <h3 id="atlas-orb" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Orb Visualization
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Hierarchical organization for your knowledge base.
+        A canvas-based animated orb that visually represents ATLAS&apos;s current state with dynamic effects.
       </p>
+      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+        {[
+          { state: 'Idle', color: '#00C8E0', desc: 'Cyan pulse — ready to listen' },
+          { state: 'Listening', color: '#34D399', desc: 'Green pulse — speak now' },
+          { state: 'Thinking', color: '#4493F8', desc: 'Blue pulse — analyzing context' },
+          { state: 'Speaking', color: '#FBBF24', desc: 'Amber pulse — delivering response' },
+        ].map((s) => (
+          <div key={s.state} className="flex items-center gap-3 border border-border-default bg-bg-base p-3">
+            <span
+              className="inline-block h-3 w-3 shrink-0"
+              style={{ backgroundColor: s.color, boxShadow: `0 0 8px ${s.color}` }}
+            />
+            <div>
+              <p className="text-xs font-bold text-text-primary">{s.state}</p>
+              <p className="text-[10px] text-text-muted">{s.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
       <FeatureList
         items={[
-          'Hierarchical categories up to 3 levels deep',
-          'Custom icons and sort order per category',
-          'Nested subcategories for fine-grained organization',
+          'Pulsing orb with outer glow rings and wave distortion effects',
+          'Orbiting particles that increase with state activity (3–8 particles)',
+          'Intensity modulation responds to conversation flow in real time',
+          'Retina-ready rendering (2x canvas resolution)',
         ]}
       />
 
-      <h3 id="articles" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Articles
+      <h3 id="atlas-loop" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Agentic Loop
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Rich content articles with metadata and tagging.
+        ATLAS runs a real Claude agentic loop — not mock data.
       </p>
       <FeatureList
         items={[
-          'Articles with title, summary, content body, and tags',
-          'Assign articles to categories for discoverability',
-          'Full-text content editing',
+          'Powered by Claude Sonnet with tool-use capabilities',
+          'Up to 8 iterations per query for multi-step reasoning',
+          '30 tools: 15 auto-execute (read-only) + 15 approval-required (mutations)',
+          'Full tool-call transparency: every tool invocation visible in the response',
+          'Streaming responses with real-time status updates in the orb',
         ]}
       />
 
-      <h3 id="wiki-documents" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Documents
+      <h3 id="atlas-tools" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Tool Categories
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Link uploaded documents to wiki articles for RAG-powered agent access.
+        30 tools organized by domain, split between auto-execute and approval-required.
+      </p>
+      <div className="mb-6 space-y-4">
+        {[
+          {
+            category: 'Auto-Execute (Read-Only)',
+            tools: [
+              'list_agents', 'get_agent', 'list_workflows', 'get_workflow',
+              'list_strategies', 'get_strategy', 'get_analytics',
+              'list_pending_approvals', 'list_human_tasks', 'search_memory',
+              'get_fleet_status', 'get_cost_report', 'get_orchestrator_config',
+              'search_action_logs', 'get_kpi_trends',
+            ],
+          },
+          {
+            category: 'Approval-Required (Mutations)',
+            tools: [
+              'create_agent', 'update_agent', 'trigger_agent',
+              'create_workflow', 'update_strategy', 'create_human_task',
+              'update_orchestrator_config', 'pause_agents_by_team',
+              'resume_agents_by_team', 'set_agent_priority', 'trigger_workflow',
+              'update_wiki_article', 'manage_calendar',
+              'create_strategy_kpi', 'update_strategy_kpi',
+            ],
+          },
+        ].map((group) => (
+          <div key={group.category} className="border border-border-default bg-bg-base p-3">
+            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-accent-cyan">
+              {group.category}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {group.tools.map((t) => (
+                <code key={t} className="text-xs text-text-secondary">{t}</code>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <h3 id="atlas-voice" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Voice
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Full voice pipeline with speech-to-text input and text-to-speech output.
       </p>
       <FeatureList
         items={[
-          'Attach existing documents to articles',
-          'Documents linked to articles are searchable via the RAG pipeline',
-          'Agents can reference wiki-linked documents during execution',
+          'Speech-to-text (STT) via microphone button for voice queries',
+          'Text-to-speech (TTS) for spoken responses in the speaking state',
+          'Mute toggle, reset button, and volume controls',
+          'Orb visualization syncs with voice state transitions',
+        ]}
+      />
+
+      <h3 id="atlas-briefing" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        CEO Briefing
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        One-click executive summary of your project status.
+      </p>
+      <FeatureList
+        items={[
+          'Proactive CEO briefing with project health overview',
+          'Agent performance summary, cost analysis, and risk assessment',
+          'Starter suggestions: MRR status, risk assessment, weekly priorities',
+          'Actionable recommendations for fleet optimization',
         ]}
       />
 
       <LimitationList
         items={[
-          'No article version history',
-          'No draft/published workflow',
-          'No comments or discussions on articles',
+          'No persistent conversation memory across sessions',
+          'CEO briefing is query-triggered — not auto-scheduled yet',
         ]}
       />
     </section>
   ),
 
-  /* ---- Approval System ------------------------------------------- */
-  approvals: (
+  /* ---- Safety & Governance --------------------------------------- */
+  safety: (
     <section>
-      <SectionHeading id="approvals" icon={ShieldCheck} title="Approval System" status="done" />
+      <SectionHeading id="safety" icon={ShieldCheck} title="Safety & Governance" status="done" />
       <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        Stay in control of what your agents do. The approval system lets you define rules for which
-        agent + tool combinations require human review before execution.
+        Comprehensive safety layer ensuring agents operate within defined boundaries. Includes
+        approval gates, role-based access control, audit logging, PII masking, cascade protection,
+        and LGPD compliance.
       </p>
 
       <QuickStart
         steps={[
-          'Open an agent\'s configuration page',
-          'In the tool list, set approval mode per tool (always allow, require approval, or block)',
-          'When an agent triggers a tool that requires approval, execution pauses',
-          'Review the pending approval in the Approvals dashboard — approve or reject with a comment',
+          'Approval rules are set per agent + tool combination in agent config',
+          'RBAC roles (owner, admin, viewer) are managed in Settings → Members',
+          'Audit logs are viewable in the Activity Log screen',
+          'PII masking and cascade limits are enforced automatically by the engine',
         ]}
       />
 
-      <h3 id="rules" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Rules
+      <h3 id="approvals" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Approval System
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Per-agent, per-tool approval rules that control execution flow.
+        Human-in-the-loop review for high-risk agent actions.
       </p>
       <FeatureList
         items={[
-          'Three modes: always allow, require approval, always block',
-          'Rules are set per agent + tool combination',
-          'Default mode is configurable per tool category',
-        ]}
-      />
-
-      <h3 id="risk-levels" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Risk Levels
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Classify tools by risk to prioritize review attention.
-      </p>
-      <FeatureList
-        items={[
-          'Four levels: low, medium, high, critical',
-          'Risk level displayed in approval requests for quick triage',
-          'Higher-risk actions highlighted with stronger visual indicators',
-        ]}
-      />
-
-      <h3 id="review-flow" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Review Flow
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        How approval requests are reviewed and resolved.
-      </p>
-      <FeatureList
-        items={[
+          'Three modes per tool: always allow, require approval, always block',
+          'Four risk levels: low, medium, high, critical',
           'Approval requests pause agent execution until reviewed',
-          'Full action context: tool name, input payload, agent identity',
+          'Full action context: tool name, input payload, agent identity, risk level',
           'Review with optional comments (approve or reject)',
+          '48-hour timeout on pending approvals with configurable auto-action',
           'Approved actions resume agent execution automatically',
         ]}
       />
 
+      <h3 id="rbac" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        RBAC (Role-Based Access Control)
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Control who can do what within your organization.
+      </p>
+      <FeatureList
+        items={[
+          'Three roles: owner (full access), admin (manage agents & tools), viewer (read-only)',
+          'Role assignment during member invitation',
+          'Project-level scoping — members only see assigned projects',
+          'Clerk-powered authentication with SSO support',
+        ]}
+      />
+
+      <h3 id="audit" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Audit Logging
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Complete audit trail of all agent actions and system events.
+      </p>
+      <FeatureList
+        items={[
+          'Every tool call logged with full input/output payloads',
+          'LLM responses tracked with token count, duration, and cost',
+          'Session timeline view showing all actions within an agent execution',
+          'Filterable by agent, status (pending, completed, failed, cancelled)',
+          'Paginated table with relative timestamps and action detail drawer',
+        ]}
+      />
+
+      <h3 id="pii" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        PII Masking
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Protect sensitive personal information in agent communications.
+      </p>
+      <FeatureList
+        items={[
+          'Automatic detection and masking of PII in agent outputs',
+          'CPF, CNPJ, and Brazilian document number recognition',
+          'Email and phone number masking in logs and responses',
+        ]}
+      />
+
+      <h3 id="cascades" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Cascade Safety
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Prevent runaway agent chains and infinite loops.
+      </p>
+      <FeatureList
+        items={[
+          'Max actions per session limit prevents infinite execution loops',
+          'Token budget caps per agent prevent cost overruns',
+          'Agent-chaining depth limits prevent cascade failures',
+          'Automatic pause on repeated failures or budget exhaustion',
+        ]}
+      />
+
+      <h3 id="lgpd" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        LGPD Compliance
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Built with Brazilian data protection law (LGPD) requirements in mind.
+      </p>
+      <FeatureList
+        items={[
+          'Data scoped per project — no cross-project data leakage',
+          'Audit trail for all data access and modifications',
+          'PII masking for sensitive Brazilian documents (CPF, CNPJ)',
+          'Project deletion with full data cleanup',
+        ]}
+      />
+
       <LimitationList
         items={[
-          'Binary approve/reject only — no escalation paths',
-          'No time-based expiration on pending approvals',
-          'No approval delegation or notification routing',
+          'No approval delegation or escalation paths',
+          'No IP allowlisting or geographic access restrictions',
+          'GDPR compliance not yet implemented (EU expansion planned)',
         ]}
       />
     </section>
   ),
 
-  /* ---- Task Management ------------------------------------------- */
-  tasks: (
+  /* ---- Fleet Orchestrator ---------------------------------------- */
+  orchestrator: (
     <section>
-      <SectionHeading id="tasks" icon={Clock} title="Task Management" status="done" />
+      <SectionHeading id="orchestrator" icon={Cpu} title="Fleet Orchestrator" status="done" />
       <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        Agents can create tasks for human team members when work requires manual action. Tasks integrate
-        with the DevOps request system for deployments and code reviews.
+        The Fleet Orchestrator is the engine that manages all agent execution across your
+        organization. It handles scheduling, priority routing, cost tracking, and provides a
+        dedicated CEO agent for fleet-level operations.
       </p>
 
       <QuickStart
         steps={[
-          'Assign the create_human_task tool to an agent',
-          'The agent creates tasks when it encounters work requiring human action',
-          'View and manage tasks in the Tasks dashboard',
-          'Update task status as you complete them (todo → in progress → done)',
+          'The orchestrator runs automatically when agents are active',
+          'View fleet status in the Dashboard or via ATLAS (get_fleet_status tool)',
+          'Configure orchestrator settings via the CEO Strategist agent or ATLAS',
+          'Monitor costs in real time with the cost projection system',
         ]}
       />
 
-      <h3 id="human-tasks" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Human Tasks
+      <h3 id="engine" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Engine
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Tasks created by agents for human team members to complete.
+        BullMQ-powered execution engine with priority scheduling.
       </p>
       <FeatureList
         items={[
-          'Priority levels: low, medium, high, urgent',
-          'Status tracking: todo, in progress, done',
-          'Agent context: why the task was created and what\'s needed',
-          'Assignee management and due dates',
+          'BullMQ + Redis job queue for reliable agent task execution',
+          'Priority-based scheduling — critical tasks execute first',
+          'Concurrent execution with configurable worker concurrency',
+          'Automatic retry with exponential backoff on transient failures',
+          'Job status tracking: waiting, active, completed, failed, delayed',
         ]}
       />
 
-      <h3 id="devops-requests" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        DevOps Requests
+      <h3 id="cost-tracking" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Cost Tracking
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Specialized task type for deployment, code review, and infrastructure changes.
+        Real-time cost monitoring and projection for AI token usage.
+      </p>
+      <FeatureList
+        items={[
+          'Per-agent cost tracking with token-level granularity',
+          'Cost breakdown by input tokens, output tokens, and model tier',
+          'Budget caps per agent with automatic pause on budget exhaustion',
+          'Fleet-level cost reports accessible via ATLAS (get_cost_report tool)',
+          'Project-wide cost aggregation and trend analysis',
+        ]}
+      />
+
+      <h3 id="config" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Configuration
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Fine-tune orchestrator behavior for your workload.
+      </p>
+      <FeatureList
+        items={[
+          'Orchestrator config accessible via ATLAS (get_orchestrator_config / update_orchestrator_config)',
+          'Worker concurrency and rate limiting settings',
+          'Global token budget and cost ceiling configuration',
+          'Team-level pause/resume for controlled rollouts',
+        ]}
+      />
+
+      <h3 id="ceo-agent" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        CEO Agent
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        A specialized agent archetype with fleet management privileges.
+      </p>
+      <FeatureList
+        items={[
+          'CEO Strategist archetype with access to fleet management tools',
+          'Can pause/resume agents by team, set priorities, and view fleet status',
+          'Cost report generation and budget optimization recommendations',
+          'Available through both ATLAS interface and direct agent execution',
+        ]}
+      />
+
+      <LimitationList
+        items={[
+          'No auto-scaling based on workload (manual concurrency config)',
+          'No multi-region orchestration',
+        ]}
+      />
+    </section>
+  ),
+
+  /* ---- Screen Guide ---------------------------------------------- */
+  screens: (
+    <section>
+      <SectionHeading id="screens" icon={Building2} title="Screen Guide" status="done" />
+      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
+        AI Office Sim has 17 screens organized in a sidebar navigation. Each screen serves a
+        specific function from real-time office visualization to strategy management.
+      </p>
+
+      <h3 id="office" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Virtual Office
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        3D isometric virtual office built with React Three Fiber.
+      </p>
+      <FeatureList
+        items={[
+          'Orthographic camera with pan, zoom, and rotate controls',
+          'Agent avatars with status-driven colors (idle=green, working=cyan, error=red, approval=gold)',
+          'Data flow particles stream from agents to the server room when working',
+          '9 rooms: Open Workspace, Meeting Pod, Breakroom, Server Rack, Analysis, Data Lab, Marketing, Sales, Datacenter',
+          'Click agent → Agent Inspector side panel with live action feed and quick controls',
+          'Team Roster panel with status-sorted agent list',
+        ]}
+      />
+
+      <h3 id="dashboard" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Dashboard
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Project-level analytics and status overview.
+      </p>
+      <FeatureList
+        items={[
+          'Agent count, active sessions, and fleet status at a glance',
+          'Recent activity feed with tool calls and agent actions',
+          'Cost and token usage summaries with trend indicators',
+          'Quick-action buttons to trigger agents and view workflows',
+        ]}
+      />
+
+      <h3 id="strategy-screen" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Strategy
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Define strategies, track KPIs, and review AI-generated insights.
+      </p>
+      <FeatureList
+        items={[
+          'Strategy types: growth, retention, brand, product with status tracking',
+          'KPIs with current value, target value, unit, and direction per strategy',
+          'Agent-generated learnings with confidence scores',
+          'Actionable recommendations that can be applied or dismissed',
+        ]}
+      />
+
+      <h3 id="calendar" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Calendar
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Schedule and track events, agent executions, and deadlines.
+      </p>
+      <FeatureList
+        items={[
+          'Calendar view with scheduled agent executions and workflow triggers',
+          'Google Calendar integration via schedule_event and sync_google_calendar tools',
+          'ATLAS can manage calendar events via the manage_calendar tool',
+        ]}
+      />
+
+      <h3 id="devops-screen" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        DevOps
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Manage deployment requests, PR reviews, and infrastructure tasks.
       </p>
       <FeatureList
         items={[
           'Request types: deploy, PR review, rollback, infra change',
           'Metadata: branch, commit SHA, PR URL, environment, repo URL',
           'Review workflow: pending → in review → approved/rejected → deployed',
-          'Priority levels: low, medium, high, critical',
+          'Human task board with priority levels (low, medium, high, urgent, critical)',
         ]}
       />
 
+      <h3 id="community" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Community
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Community hub and marketplace for sharing templates and configurations.
+      </p>
+      <FeatureList
+        items={[
+          'Browse shared workflow templates and agent configurations',
+          'Community-contributed content for common business use cases',
+          'Template import with one-click setup',
+        ]}
+      />
+
+      <h3 id="settings-screen" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Settings
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        8 configuration tabs for project and workspace management.
+      </p>
+      <div className="mb-6 flex flex-wrap gap-2">
+        {[
+          'General', 'Members', 'Models', 'API Keys',
+          'Tool Credentials', 'Billing', 'Notifications', 'Danger Zone',
+        ].map((tab) => (
+          <span key={tab} className="border border-border-default px-2 py-1 text-xs text-text-secondary">
+            {tab}
+          </span>
+        ))}
+      </div>
+      <FeatureList
+        items={[
+          'General: project name, sector, accent color, language (en/pt-BR), timezone',
+          'Members: team roster with roles (owner, admin, viewer), invite by email',
+          'Models: per-use-case model selection (agent execution, ATLAS, embeddings)',
+          'API Keys: encrypted Anthropic and OpenAI key management with validation',
+          'Tool Credentials: OAuth2 for Google/RD Station, API keys for WhatsApp/Email providers',
+          'Billing: current plan, resource usage meters, plan comparison grid',
+          'Notifications: toggle controls for 6 event types (agent complete, error, approval, etc.)',
+        ]}
+      />
+
+      <h3 id="onboarding-screen" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Onboarding
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        6-step animated setup wizard for first-time users.
+      </p>
+      <div className="mb-6 space-y-2">
+        {[
+          { step: '0', title: 'Welcome', desc: 'Animated typewriter intro with skip option' },
+          { step: '1', title: 'Create Company & Project', desc: 'Company name and project name inputs' },
+          { step: '2', title: 'Choose Template', desc: '22 industry/department templates with agent count display' },
+          { step: '3', title: 'Set Up Integration', desc: 'WhatsApp (recommended), Email, or skip' },
+          { step: '4', title: 'Create First Agent', desc: 'Name + archetype selector from 21 archetypes' },
+          { step: '5', title: 'Done!', desc: 'Confetti animation + "Go to Office" button' },
+        ].map((s) => (
+          <div key={s.step} className="flex gap-3 border border-border-default bg-bg-base p-3">
+            <span className="shrink-0 text-xs font-bold text-accent-cyan">{s.step}</span>
+            <div>
+              <p className="text-xs font-bold text-text-primary">{s.title}</p>
+              <p className="text-[10px] text-text-muted">{s.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <LimitationList
         items={[
-          'No task dependencies or subtasks',
-          'No sprint or planning features',
+          'Virtual Office: single floor only, no drag-and-drop repositioning',
+          'Community/Marketplace content is limited in alpha',
+          'No mobile-optimized layouts for touch devices',
         ]}
       />
     </section>
   ),
 
-  /* ---- Strategies & KPIs ----------------------------------------- */
-  strategies: (
+  /* ---- Architecture ---------------------------------------------- */
+  tech: (
     <section>
-      <SectionHeading id="strategies" icon={BarChart3} title="Strategies & KPIs" status="done" />
+      <SectionHeading id="tech" icon={Layers} title="Architecture" />
       <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        Define business strategies and track progress with KPIs. Agents can generate insights
-        and recommendations as they observe data and outcomes.
+        Built as a monorepo (Turborepo + pnpm) with clear separation between frontend, backend,
+        AI engine, and infrastructure packages. Designed for real-time collaboration with
+        Socket.IO and type-safe APIs end-to-end.
       </p>
 
-      <QuickStart
-        steps={[
-          'Navigate to Strategies from the sidebar',
-          'Create a strategy (e.g. "Q1 Growth") and choose a type (growth, retention, brand, product)',
-          'Add KPIs with target values, units, and direction (increase/decrease)',
-          'Agents with analytics tools will generate learnings and recommendations over time',
-          'Review and apply or dismiss agent recommendations',
-        ]}
-      />
+      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+        {[
+          {
+            id: 'frontend',
+            label: 'Frontend',
+            items: [
+              'Next.js 15 (App Router)',
+              'Tailwind CSS v4',
+              'Zustand (state management)',
+              'Framer Motion (animations)',
+              'next-intl (pt-BR / en-US)',
+              'React Three Fiber (3D office)',
+              'React Flow (workflow editor)',
+            ],
+          },
+          {
+            id: 'backend',
+            label: 'Backend',
+            items: [
+              'tRPC v11 (type-safe API)',
+              'Drizzle ORM',
+              'PostgreSQL + pgvector',
+              'BullMQ + Redis (job queue)',
+              'Socket.IO (real-time)',
+            ],
+          },
+          {
+            id: 'ai-stack',
+            label: 'AI',
+            items: [
+              'Claude (Anthropic) — agent execution & ATLAS',
+              'OpenAI embeddings (text-embedding-3-small)',
+              'Tool-use pattern with structured I/O',
+              'RAG pipeline (chunk → embed → search)',
+              'Agentic loop with multi-iteration reasoning',
+            ],
+          },
+          {
+            id: 'infrastructure',
+            label: 'Infrastructure',
+            items: [
+              'Vercel (frontend hosting)',
+              'Render (backend worker)',
+              'Neon (PostgreSQL)',
+              'Upstash (Redis)',
+              'Clerk (auth & SSO)',
+              'Stripe (billing)',
+            ],
+          },
+        ].map((group) => (
+          <div key={group.label} id={group.id} className="border border-border-default bg-bg-base p-4">
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-widest text-accent-cyan">
+              {group.label}
+            </h4>
+            <ul className="space-y-1 text-sm text-text-secondary">
+              {group.items.map((item) => (
+                <li key={item} className="flex gap-2">
+                  <span className="text-text-disabled">-</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
 
-      <h3 id="strategy-types" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Types
+      <h3 id="security" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Security
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Categorize strategies by business objective.
+        Security measures built into every layer.
       </p>
       <FeatureList
         items={[
-          'Four strategy types: growth, retention, brand, product',
-          'Status tracking: planned, active, at risk, completed',
-          'AI-refined strategy text (user draft + AI improvement)',
+          'Clerk authentication with JWT verification on every API call',
+          'API keys encrypted at rest — never displayed in full after saving',
+          'RBAC enforcement at the tRPC middleware level',
+          'Webhook signature verification (HMAC-SHA256/SHA1)',
+          'Project-scoped data isolation — no cross-tenant access',
+          'PII masking for sensitive Brazilian documents',
         ]}
       />
 
-      <h3 id="kpis" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        KPIs
+      <h3 id="realtime" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Real-time
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Track measurable outcomes tied to each strategy.
+        Live updates powered by Socket.IO.
       </p>
       <FeatureList
         items={[
-          'Current value, target value, unit, and direction per KPI',
-          'KPIs linked to their parent strategy',
-          'Visual progress indicators for at-a-glance status',
-        ]}
-      />
-
-      <h3 id="learnings" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Learnings
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Agent-generated insights based on observed data and outcomes.
-      </p>
-      <FeatureList
-        items={[
-          'Agents generate learnings with confidence scores',
-          'Learnings tied to specific strategies for context',
-          'Historical record of all agent-generated insights',
-        ]}
-      />
-
-      <h3 id="recommendations" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Recommendations
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Actionable suggestions from agents that you can apply or dismiss.
-      </p>
-      <FeatureList
-        items={[
-          'Agent-generated actionable recommendations',
-          'Apply or dismiss each recommendation individually',
-          'Applied recommendations update the parent strategy',
-        ]}
-      />
-
-      <LimitationList
-        items={[
-          'Insights are manually triggered — no automatic generation yet',
-          'No KPI trend charts or historical analysis',
-          'No strategy comparison dashboard',
+          'Socket.IO server on the backend worker for real-time events',
+          'Agent status updates pushed to connected clients',
+          'Workflow execution progress streamed in real time',
+          'ATLAS streaming responses with token-by-token delivery',
+          'Office agent avatar state synchronized across sessions',
         ]}
       />
     </section>
@@ -1165,10 +1519,10 @@ export const topicContent: Record<string, React.ReactNode> = {
   /* ---- Billing & Plans ------------------------------------------- */
   billing: (
     <section>
-      <SectionHeading id="billing" icon={CreditCard} title="Billing & Plans" status="partial" />
+      <SectionHeading id="billing" icon={CreditCard} title="Billing & Plans" status="done" />
       <p className="mb-4 text-sm leading-relaxed text-text-secondary">
         AI Office Sim offers tiered plans with resource limits. Payment is handled via Stripe
-        with Brazil-specific options.
+        with Brazil-specific options. Token usage is tracked per agent with real-time cost visibility.
       </p>
 
       <QuickStart
@@ -1218,708 +1572,115 @@ export const topicContent: Record<string, React.ReactNode> = {
           'Credit card (global)',
           'PIX instant payment (Brazil)',
           'Boleto bancário — annual plans only (Brazil)',
-          'Currencies: USD and BRL',
+          'Currencies: USD and BRL with locale-aware pricing',
         ]}
       />
 
-      <LimitationList
-        items={[
-          'Stripe integration is in stub mode for alpha',
-          'No usage-based billing yet',
-          'No free trial period management',
-        ]}
-      />
-    </section>
-  ),
-
-  /* ---- ATLAS ----------------------------------------------------- */
-  atlas: (
-    <section>
-      <SectionHeading id="atlas" icon={Radio} title="ATLAS — Agent Tracking & Live Advisory System" status="done" />
-      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        ATLAS is an interactive AI advisory interface that lets you query your project using voice or text.
-        Powered by a real Claude Sonnet agentic loop with 22 tools, ATLAS can read your project data,
-        analyze agent performance, and answer business intelligence questions with live data.
-      </p>
-
-      <QuickStart
-        steps={[
-          'Navigate to ATLAS from the sidebar',
-          'Type a question in the text field or click the microphone to use voice input',
-          'ATLAS runs a Claude agentic loop — read-only tools execute automatically, mutations require approval',
-          'Review the response in the transcript panel with full tool-use transparency',
-          'Use starter suggestions (MRR status, risk assessment, weekly priorities) for quick insights',
-        ]}
-      />
-
-      <h3 id="atlas-orb" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Orb Visualization
+      <h3 id="usage" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Usage & Tokens
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        A canvas-based animated orb that visually represents ATLAS&apos;s current state with dynamic effects.
-      </p>
-      <div className="mb-6 grid gap-3 sm:grid-cols-2">
-        {[
-          { state: 'Idle', color: '#00C8E0', desc: 'Cyan pulse — ready to listen' },
-          { state: 'Listening', color: '#34D399', desc: 'Green pulse — speak now' },
-          { state: 'Thinking', color: '#4493F8', desc: 'Blue pulse — analyzing context' },
-          { state: 'Speaking', color: '#FBBF24', desc: 'Amber pulse — delivering response' },
-        ].map((s) => (
-          <div key={s.state} className="flex items-center gap-3 border border-border-default bg-bg-base p-3">
-            <span
-              className="inline-block h-3 w-3 shrink-0"
-              style={{ backgroundColor: s.color, boxShadow: `0 0 8px ${s.color}` }}
-            />
-            <div>
-              <p className="text-xs font-bold text-text-primary">{s.state}</p>
-              <p className="text-[10px] text-text-muted">{s.desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      <FeatureList
-        items={[
-          'Pulsing orb with outer glow rings and wave distortion effects',
-          'Orbiting particles that increase with state activity (3–8 particles)',
-          'Intensity modulation responds to conversation flow in real time',
-          'Retina-ready rendering (2x canvas resolution)',
-        ]}
-      />
-
-      <h3 id="atlas-agentic-loop" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Agentic Loop
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        ATLAS runs a real Claude Sonnet agentic loop — not mock data.
+        Track token usage and costs across your fleet.
       </p>
       <FeatureList
         items={[
-          'Powered by Claude Sonnet 4.6 with tool-use capabilities',
-          'Up to 8 iterations per query for multi-step reasoning',
-          '22 tools available for reading project data, agents, activity, and more',
-          'Read-only tools auto-execute — no approval needed for data queries',
-          'Mutation tools (create, update, delete) trigger an approval popup before execution',
-          'Full tool-call transparency: every tool invocation is visible in the response',
-          'Streaming responses with real-time status updates in the orb',
-        ]}
-      />
-
-      <h3 id="atlas-tools" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Tool Categories
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        22 tools organized by domain, giving ATLAS full read access to your project.
-      </p>
-      <div className="mb-6 space-y-4">
-        {[
-          {
-            category: 'Agents',
-            tools: ['list_agents', 'get_agent_details', 'get_agent_memory', 'get_agent_sessions'],
-          },
-          {
-            category: 'Activity & Analytics',
-            tools: ['list_activity_logs', 'get_session_timeline', 'get_project_analytics', 'get_agent_analytics'],
-          },
-          {
-            category: 'Tasks & Approvals',
-            tools: ['list_tasks', 'list_approvals', 'list_devops_requests'],
-          },
-          {
-            category: 'Knowledge',
-            tools: ['search_documents', 'list_wiki_articles', 'list_wiki_categories'],
-          },
-          {
-            category: 'Communication',
-            tools: ['list_whatsapp_messages', 'list_email_messages', 'list_whatsapp_contacts'],
-          },
-          {
-            category: 'Strategy',
-            tools: ['list_strategies', 'get_strategy_kpis', 'list_workflows'],
-          },
-        ].map((group) => (
-          <div key={group.category} className="border border-border-default bg-bg-base p-3">
-            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-accent-cyan">
-              {group.category}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {group.tools.map((t) => (
-                <code key={t} className="text-xs text-text-secondary">{t}</code>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <h3 id="atlas-approval" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Approval Popup
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Mutation actions require explicit user approval before ATLAS executes them.
-      </p>
-      <FeatureList
-        items={[
-          'Popup appears when ATLAS wants to create, update, or delete data',
-          'Shows the tool name, full input payload, and risk level',
-          'Approve or reject with optional comment',
-          'Rejected actions are reported back to ATLAS for alternative approaches',
-        ]}
-      />
-
-      <h3 id="atlas-conversation" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Conversation
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Text-based conversational interface with voice input support.
-      </p>
-      <FeatureList
-        items={[
-          'Text input field for typing queries directly',
-          'Microphone button for voice input (speech-to-text)',
-          'Transcript panel with auto-scrolling message history and timestamps',
-          'Starter suggestions: MRR status, risk assessment, weekly priorities',
-          'User and ATLAS messages visually distinct (right-aligned vs cyan-bordered)',
-          'Mute toggle, reset button, and volume controls',
-        ]}
-      />
-
-      <LimitationList
-        items={[
-          'Voice input is UI-only — speech-to-text integration not yet wired',
-          'No proactive notifications — ATLAS only responds when queried',
-          'No persistent conversation memory across sessions',
-          'No audio playback during speaking state',
-        ]}
-      />
-    </section>
-  ),
-
-  /* ---- Activity Log ----------------------------------------------- */
-  activity: (
-    <section>
-      <SectionHeading id="activity" icon={Activity} title="Activity Log" status="done" />
-      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        A real-time monitoring dashboard that tracks all agent actions, API calls, LLM responses,
-        and approval requests within your project. All data is live from the database — no mocks.
-      </p>
-
-      <QuickStart
-        steps={[
-          'Navigate to Activity from the sidebar',
-          'Browse the paginated log table — most recent actions appear first',
-          'Use filters to narrow by agent or status (pending, completed, failed)',
-          'Click any row to open the detail drawer with full I/O payloads',
-          'Click "View Session" to see the full timeline of an agent\'s execution session',
-        ]}
-      />
-
-      <h3 id="activity-list" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Log List
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Paginated table of all agent actions with filtering and sorting.
-      </p>
-      <FeatureList
-        items={[
-          'Paginated table (50 items per page, max 100) with relative timestamps',
-          'Filter by agent or by status (pending, completed, failed, cancelled)',
-          'Three action types tracked: Tool Call, LLM Response, Approval Request',
-          'Per-action metrics: tokens used, duration (ms), cost (USD), status',
-          'Click any row to open the detail drawer',
-        ]}
-      />
-
-      <h3 id="activity-detail" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Action Detail
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        A slide-in side panel showing full context for any action.
-      </p>
-      <FeatureList
-        items={[
-          'Agent name, session ID, action type, tool name, and status',
-          'Token count, duration, and cost breakdown',
-          'Full input and output payloads as formatted JSON',
-          'Error messages highlighted in red when present',
-          '"View Session" link to jump to the session timeline',
-        ]}
-      />
-
-      <h3 id="activity-session" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Session Timeline
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Vertical timeline showing all actions within a single agent execution session.
-      </p>
-      <FeatureList
-        items={[
-          'Vertical timeline showing all actions within a single agent session',
-          'Color-coded nodes: green (completed), red (failed), cyan (pending)',
-          'Collapsible payloads for LLM responses and tool call I/O',
-          'Back button to return to the main log list',
-        ]}
-      />
-
-      <LimitationList
-        items={[
-          'No real-time streaming — requires manual refresh for new logs',
-          'No aggregate analytics (success rate, avg tokens, total cost)',
-          'No CSV/JSON export',
-          'No date range picker in the UI (available via query params only)',
-        ]}
-      />
-    </section>
-  ),
-
-  /* ---- Virtual Office ---------------------------------------------- */
-  office: (
-    <section>
-      <SectionHeading id="office" icon={Building2} title="Virtual Office" status="done" />
-      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        A 3D isometric virtual office built with React Three Fiber where your AI agents are
-        visualized working in real time. Orthographic camera with pan, zoom, and rotate controls.
-      </p>
-
-      <QuickStart
-        steps={[
-          'Navigate to Office from the sidebar — the 3D scene loads automatically',
-          'Pan, zoom, and rotate the camera to explore the office layout',
-          'Click any agent avatar to open the Agent Inspector side panel',
-          'Watch data flow particles stream from agents to the server room when they\'re working',
-          'Use the Team Roster panel to see all agents grouped by status',
-        ]}
-      />
-
-      <h3 id="office-agents" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Agent Avatars
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Agents rendered as capsule-shaped avatars with status-driven colors and animations.
-      </p>
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {[
-          { status: 'Idle', color: '#00FF88', desc: 'Subtle breathing bob' },
-          { status: 'Working', color: '#00C8FF', desc: 'Pulsing cyan glow' },
-          { status: 'Error', color: '#FF4444', desc: 'Fast red pulse' },
-          { status: 'Awaiting Approval', color: '#FFD700', desc: 'Steady gold glow' },
-          { status: 'Offline', color: '#666666', desc: 'Dim appearance' },
-        ].map((s) => (
-          <div key={s.status} className="flex items-center gap-3 border border-border-default bg-bg-base p-3">
-            <span
-              className="inline-block h-3 w-3 shrink-0"
-              style={{ backgroundColor: s.color, boxShadow: `0 0 6px ${s.color}` }}
-            />
-            <div>
-              <p className="text-xs font-bold text-text-primary">{s.status}</p>
-              <p className="text-[10px] text-text-muted">{s.desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      <FeatureList
-        items={[
-          'Floating name labels above each agent',
-          'Hover and click interactions (scale boost + glow)',
-          'Data flow particles: cyan streams from agents to server room when working',
-          'Agents assigned to desk slots by team affiliation',
-        ]}
-      />
-
-      <h3 id="office-rooms" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Rooms & Departments
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        A unified single-floor layout with 9 functional rooms.
-      </p>
-      <div className="mb-6 flex flex-wrap gap-2">
-        {[
-          'Open Workspace (6 desks)',
-          'Meeting Pod',
-          'Breakroom',
-          'Server Rack',
-          'Analysis Room (2 desks)',
-          'Data Lab (2 desks)',
-          'Marketing (3 desks)',
-          'Sales (3 desks)',
-          'Datacenter',
-        ].map((r) => (
-          <span key={r} className="border border-border-default px-2 py-1 text-xs text-text-secondary">
-            {r}
-          </span>
-        ))}
-      </div>
-      <FeatureList
-        items={[
-          'Team-to-room mapping: support/ops/finance → Open Workspace, dev → Data Lab, research → Analysis Room',
-          'Semi-transparent walls with cyan edge highlights and floating room labels',
-          'Point lights at room centers for ambient illumination',
-          'Furniture with LOD (Level of Detail) for rendering performance',
-        ]}
-      />
-
-      <h3 id="office-inspector" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Agent Inspector
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Click any agent to open a detailed side panel with live status and controls.
-      </p>
-      <FeatureList
-        items={[
-          'Click any agent to open a side panel (360px) with full details',
-          'Shows agent name, archetype, status, and current action',
-          'Live actions feed with tool name, input preview, and status icons',
-          'Recent activity history with success/failure indicators',
-          'Quick action buttons: Trigger, Pause, View Config',
-          'Team roster panel (280px) with status-sorted agent list and collapsed dot view',
-        ]}
-      />
-
-      <LimitationList
-        items={[
-          'Single floor only — multi-floor support deferred',
-          'Agent actions in inspector are mock data',
-          'No drag-and-drop agent repositioning',
-          'No touch-friendly controls for mobile',
-          'Desk slot wrapping: agents beyond capacity may visually overlap',
-        ]}
-      />
-    </section>
-  ),
-
-  /* ---- Settings ---------------------------------------------------- */
-  settings: (
-    <section>
-      <SectionHeading id="settings" icon={Settings} title="Settings" status="done" />
-      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        Project and workspace settings dashboard with configuration tabs for admins.
-        Manage general settings, team members, AI models, API keys, tool credentials, billing, and notifications.
-      </p>
-
-      <QuickStart
-        steps={[
-          'Navigate to Settings from the sidebar',
-          'Configure your project name, sector, and language in the General tab',
-          'Set up AI model preferences in the Models tab',
-          'Add your API keys (Anthropic, OpenAI) in the API Keys tab',
-          'Connect external services (WhatsApp, CRM, Google Sheets) in Tool Credentials',
-        ]}
-      />
-
-      <h3 id="settings-general" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        General
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Core project configuration and preferences.
-      </p>
-      <FeatureList
-        items={[
-          'Project name, sector selection (10 industry options), accent color picker',
-          'Language toggle (en-US / pt-BR) and timezone configuration',
-          'Danger zone: project deletion with typed confirmation',
-        ]}
-      />
-
-      <h3 id="settings-members" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Members
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Manage team access and roles.
-      </p>
-      <FeatureList
-        items={[
-          'Team member roster with role display (owner, admin, viewer)',
-          'Invite new members by email with role assignment',
-        ]}
-      />
-
-      <h3 id="settings-models" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Models
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Configure which AI models are used for different tasks across the platform.
-      </p>
-      <FeatureList
-        items={[
-          'Three-column layout: use case, current model, and change selector',
-          'Model selection per use case: agent execution, ATLAS queries, embeddings',
-          'Supported models: Claude Sonnet, Claude Haiku, Claude Opus',
-          'Model changes apply to new executions — in-flight sessions unaffected',
-        ]}
-      />
-
-      <h3 id="settings-api-keys" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        API Keys
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Manage API keys for AI providers and external services.
-      </p>
-      <FeatureList
-        items={[
-          'Add and manage Anthropic API key for Claude access',
-          'Add and manage OpenAI API key for embeddings',
-          'Keys are encrypted at rest and never displayed in full after saving',
-          'Key validation on save — invalid keys are rejected with clear error messages',
-        ]}
-      />
-
-      <h3 id="settings-tools-credentials" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Tool Credentials
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Connect external services via OAuth2 or API key credentials.
-      </p>
-      <FeatureList
-        items={[
-          'OAuth2 connection modal for Google Sheets and RD Station CRM',
-          'API key input for WhatsApp providers (Z-API, Twilio, Meta)',
-          'SMTP / SendGrid / AWS SES credentials for email',
-          'Connection status indicators (connected, expired, error)',
-          'Re-authorize flow for expired OAuth2 tokens',
-        ]}
-      />
-
-      <h3 id="settings-billing" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Billing
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Subscription management, plan comparison, and invoices.
-      </p>
-      <FeatureList
-        items={[
-          'Current plan badge with subscription status',
+          'Per-agent token usage tracking (input + output tokens)',
+          'Cost breakdown by model tier (Haiku, Sonnet, Opus)',
           'Resource usage meters: projects, agents, and workflows vs plan limits',
-          'Plan comparison grid with monthly/annual toggle',
-          'Locale-aware pricing (USD and BRL)',
           'Invoice history table with PDF download',
-        ]}
-      />
-
-      <h3 id="settings-notifications" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Notifications
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Control which events trigger notifications.
-      </p>
-      <FeatureList
-        items={[
-          'Toggle-based controls for 6 event types',
-          'Agent complete, agent error, approval request, workflow, team member, weekly report',
+          'Fleet-level cost reports via ATLAS',
         ]}
       />
 
       <LimitationList
         items={[
-          'Stripe checkout is stubbed for alpha (requires STRIPE_SECRET_KEY)',
-          'Language switching is display-only — full locale switch not wired',
-          'Member invitation backend may be incomplete',
+          'Stripe integration is in stub mode for alpha (requires STRIPE_SECRET_KEY)',
+          'No usage-based billing yet — plan-based limits only',
         ]}
       />
     </section>
   ),
 
-  /* ---- Help Center ------------------------------------------------- */
-  help: (
+  /* ---- Roadmap --------------------------------------------------- */
+  roadmap: (
     <section>
-      <SectionHeading id="help" icon={HelpCircle} title="Help Center — Alpha Playbook" status="done" />
+      <SectionHeading id="roadmap" icon={Map} title="Roadmap" />
       <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        A comprehensive accordion-based guide for alpha testers. Eight collapsible sections
-        with step-by-step instructions, tips, and known limitations.
+        Upcoming features and expansion plans for AI Office Sim. The platform roadmap is organized
+        into focused initiatives across localization, tools, enterprise, and compliance.
       </p>
 
-      <QuickStart
-        steps={[
-          'Navigate to Help from the sidebar',
-          'Browse the 8 accordion sections or use the sidebar navigation to jump to a topic',
-          'Follow the Quick Start guide to set up your first project and agent',
-          'Refer to the Alpha Playbook for detailed integration guides and troubleshooting',
-        ]}
-      />
-
-      <h3 id="help-guide" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Getting Started
+      <h3 id="upcoming" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Upcoming Features
       </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Five-step guide to get running with your first project and agent.
-      </p>
-      <FeatureList
-        items={[
-          '1. Create your account and organization',
-          '2. Set up your first project',
-          '3. Connect WhatsApp (Z-API recommended)',
-          '4. Create and configure your first agent',
-          '5. Test with a real conversation',
-        ]}
-      />
-
-      <h3 id="help-playbook" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Alpha Playbook
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Detailed guides organized into 8 sections covering every feature.
-      </p>
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-6 space-y-3">
         {[
-          'Quick Start (5 steps)',
-          'WhatsApp Integration (6 steps)',
-          'Creating Agents (4 subsections)',
-          'Approval System (3 subsections)',
-          'Monitoring (3 subsections)',
-          'Memory & Wiki (3 subsections)',
-          'Known Limitations (8 items)',
-          'Report Bugs (3 subsections)',
-        ].map((s) => (
-          <span key={s} className="border border-border-default px-2 py-1 text-xs text-text-secondary">
-            {s}
-          </span>
-        ))}
-      </div>
-      <FeatureList
-        items={[
-          'Sidebar navigation with 8 icon-labeled sections',
-          'Expand/collapse all toggle for quick browsing',
-          'Smooth scroll-to-section on nav click',
-          'Step blocks, bullet lists, and info boxes with cyan accents',
-        ]}
-      />
-
-      <LimitationList
-        items={[
-          'Content is static — not fetched from an API',
-          'No search functionality within help articles',
-          'WhatsApp screenshot placeholders not yet filled',
-        ]}
-      />
-    </section>
-  ),
-
-  /* ---- Onboarding -------------------------------------------------- */
-  onboarding: (
-    <section>
-      <SectionHeading id="onboarding" icon={Compass} title="Onboarding" status="done" />
-      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        A 6-step animated setup wizard for first-time users. Guides you from account creation
-        to a fully configured project with agents ready to work.
-      </p>
-
-      <QuickStart
-        steps={[
-          'Sign up for an account — the onboarding wizard starts automatically',
-          'Enter your company and project name',
-          'Choose an industry template to pre-configure agents',
-          'Optionally connect WhatsApp or Email',
-          'Create your first agent and click "Go to Office" to start',
-        ]}
-      />
-
-      <h3 id="onboarding-steps" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Setup Steps
-      </h3>
-      <p className="mb-3 text-sm text-text-secondary">
-        Six animated steps that guide first-time users through initial setup.
-      </p>
-      <div className="mb-6 space-y-2">
-        {[
-          { step: '0', title: 'Welcome', desc: 'Animated typewriter intro with skip option' },
-          { step: '1', title: 'Create Company & Project', desc: 'Company name and project name inputs' },
-          { step: '2', title: 'Choose Template', desc: 'Industry template grid with agent count display' },
-          { step: '3', title: 'Set Up Integration', desc: 'WhatsApp (recommended), Email, or skip' },
-          { step: '4', title: 'Create First Agent', desc: 'Name + archetype selector (Support, Sales, Content Writer, Finance, Data Analyst)' },
-          { step: '5', title: 'Done!', desc: 'Confetti animation + "Go to Office" button' },
-        ].map((s) => (
-          <div key={s.step} className="flex gap-3 border border-border-default bg-bg-base p-3">
-            <span className="shrink-0 text-xs font-bold text-accent-cyan">{s.step}</span>
-            <div>
-              <p className="text-xs font-bold text-text-primary">{s.title}</p>
-              <p className="text-[10px] text-text-muted">{s.desc}</p>
+          {
+            title: 'Custom Tool Builder',
+            desc: 'Let users define their own tools with custom API endpoints, schemas, and approval rules — no code required.',
+            status: 'Planned',
+          },
+          {
+            title: 'Marketplace',
+            desc: 'Share and discover workflow templates, agent configurations, and custom tools created by the community.',
+            status: 'Planned',
+          },
+          {
+            title: 'Multi-model Routing',
+            desc: 'Automatically route agent tasks to the optimal model based on complexity, cost, and latency requirements.',
+            status: 'Planned',
+          },
+          {
+            title: 'Advanced Analytics Dashboard',
+            desc: 'KPI trend charts, agent performance comparisons, cost forecasting, and historical analysis.',
+            status: 'Planned',
+          },
+        ].map((item) => (
+          <div key={item.title} className="border border-border-default bg-bg-base p-4">
+            <div className="mb-1 flex items-center gap-2">
+              <p className="text-xs font-bold text-text-primary">{item.title}</p>
+              <span className="border border-text-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                {item.status}
+              </span>
             </div>
+            <p className="text-xs text-text-muted">{item.desc}</p>
           </div>
         ))}
       </div>
 
-      <h3 id="onboarding-templates" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
-        Templates
+      <h3 id="latam" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        LatAm Expansion
       </h3>
       <p className="mb-3 text-sm text-text-secondary">
-        Industry-specific templates with pre-configured agent sets.
+        Deepening support for Latin American markets.
       </p>
       <FeatureList
         items={[
-          'Industry-specific templates with pre-configured agent sets',
-          'Locale-aware template names (en-US / pt-BR)',
-          'Template cards show agent count and description',
-          'Templates loaded from shared package (@ai-office/shared)',
+          'Spanish language support (es-MX, es-AR, es-CO)',
+          'Additional payment gateways for Latin American markets',
+          'Tax and compliance tools for Mexico, Argentina, and Colombia',
+          'Region-specific workflow templates for LatAm business practices',
         ]}
       />
 
+      <h3 id="enterprise" className="mb-2 text-sm font-bold uppercase tracking-wider text-text-primary">
+        Enterprise & Compliance
+      </h3>
+      <p className="mb-3 text-sm text-text-secondary">
+        Enterprise-grade features and international compliance.
+      </p>
       <FeatureList
         items={[
-          'Framer Motion slide transitions between steps',
-          'Visual progress indicator with 6 dots',
-          'Skip buttons on every step (no forced choices)',
-          'Back navigation on steps 1–5',
-          'Keyboard-friendly: Enter to submit, Shift+Enter for multiline',
-        ]}
-      />
-
-      <LimitationList
-        items={[
-          'Project/agent creation happens on navigation to /office, not during wizard steps',
-          'Templates are hardcoded — not editable by users',
-          'Email integration step has no further config UI',
+          'GDPR compliance for European Union deployment',
+          'SSO/SAML integration for enterprise identity providers',
+          'Dedicated infrastructure options for data residency requirements',
+          'Advanced RBAC with custom role definitions and granular permissions',
+          'SLA-backed uptime guarantees and priority support',
         ]}
       />
     </section>
   ),
 
-  /* ---- Tech Stack ------------------------------------------------ */
-  tech: (
-    <section>
-      <SectionHeading id="tech" icon={Layers} title="Tech Stack" />
-      <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-        Built as a monorepo (Turborepo + pnpm) with clear separation between frontend, backend,
-        AI engine, and infrastructure packages.
-      </p>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        {[
-          {
-            id: 'frontend',
-            label: 'Frontend',
-            items: ['Next.js 15', 'Tailwind CSS v4', 'Zustand', 'Framer Motion', 'next-intl (pt-BR / en-US)'],
-          },
-          {
-            id: 'backend',
-            label: 'Backend',
-            items: ['tRPC v11', 'Drizzle ORM', 'PostgreSQL + pgvector', 'BullMQ + Redis', 'Socket.IO'],
-          },
-          {
-            id: 'ai-stack',
-            label: 'AI',
-            items: ['Claude (Anthropic)', 'OpenAI embeddings', 'Tool-use pattern', 'RAG pipeline'],
-          },
-          {
-            id: 'infrastructure',
-            label: 'Infrastructure',
-            items: ['Clerk (auth)', 'Stripe (billing)', 'Vercel (hosting)', 'Turborepo + pnpm'],
-          },
-        ].map((group) => (
-          <div key={group.label} id={group.id} className="border border-border-default bg-bg-base p-4">
-            <h4 className="mb-2 text-xs font-bold uppercase tracking-widest text-accent-cyan">
-              {group.label}
-            </h4>
-            <ul className="space-y-1 text-sm text-text-secondary">
-              {group.items.map((item) => (
-                <li key={item} className="flex gap-2">
-                  <span className="text-text-disabled">-</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </section>
-  ),
-
-  /* ---- Agents & Capabilities --------------------------------------- */
+  /* ---- Agents & Capabilities ------------------------------------- */
   'agent-capabilities': agentCapabilitiesContent,
 };
