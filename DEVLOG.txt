@@ -7,6 +7,29 @@
 
 
 ================================================================================
+COMMIT #122 — Merge Blueprint into Docs + Coverage Update
+Date: 2026-03-04
+Hash: 0fc929d
+────────────────────────────────────────────────────────────────────────────────
+
+Blueprint → Docs Merge:
+  - Merged 14 Blueprint Empresarial topics into /docs sidebar as grouped section
+  - Added `group` field to ReferenceTopic type for sidebar section headers
+  - Updated ReferenceSidebar with useMemo grouping + styled group headers
+  - Moved ProcessCard + SimMapping to shared (public)/_components/
+  - Updated 12 blueprint content file imports to new paths
+  - Redirected /blueprint and /blueprint/[topic] routes to /docs equivalents
+  - Updated landing page Blueprint nav link to /docs/visao-geral
+
+Coverage Status Updates (76 processes):
+  - 9 parcial → automatizável: Anúncios pagos, DRE, Obrigações acessórias,
+    DCTF/DARF, Qualidade, OKRs, Admissão CLT, Contratos, Planejamento anual
+  - 2 planejado → parcial: SPED, eSocial
+  - New totals: 35 automatizável, 35 parcial, 6 planejado
+
+Files: 21 changed (2 new, 19 modified)
+
+================================================================================
 COMMIT #121 — Docs Rewrite (Post-Phase 9)
 Date: 2026-03-04
 Hash: af9d9d4
