@@ -20,3 +20,5 @@ export {
   RDSTATION_SCOPES,
 } from './oauth2.js';
 export type { OAuth2Provider, OAuth2Config, OAuth2Tokens } from './oauth2.js';
+export { validatePayload, cascadeRouteValid } from './payload-validator.js';
+export type { ValidationError, ValidationResult } from './payload-validator.js';

@@ -96,3 +96,6 @@ export interface CascadeContext {
   cascadePath: string[];
   cascadeStatus: CascadeStatus;
 }
+
+// Agent Communication
+export type { AgentMessage, AgentMessageType, AgentMessagePriority } from './agent-message.js';

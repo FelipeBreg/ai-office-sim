@@ -38,3 +38,4 @@ export * from './teams.js';
 export * from './agent-trust-scores.js';
 export * from './agent-performance.js';
 export * from './kpi-history.js';
+export * from './tool-payload-schemas.js';

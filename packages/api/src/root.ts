@@ -34,6 +34,7 @@ import { cascadesRouter } from './routers/cascades.js';
 import { complianceRouter } from './routers/compliance.js';
 import { teamsRouter } from './routers/teams.js';
 import { analyticsRouter } from './routers/analytics.js';
+import { toolSchemasRouter } from './routers/tool-schemas.js';
 
 export const appRouter = createTRPCRouter({
   agents: agentsRouter,
@@ -71,6 +72,7 @@ export const appRouter = createTRPCRouter({
   compliance: complianceRouter,
   teams: teamsRouter,
   analytics: analyticsRouter,
+  toolSchemas: toolSchemasRouter,
 });
 
 export type AppRouter = typeof appRouter;
