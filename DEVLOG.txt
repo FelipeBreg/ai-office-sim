@@ -6184,3 +6184,41 @@ VERIFICATION:
   - SQL migration: ready, pending Neon execution
 
 ================================================================================
+
+================================================================================
+COMMIT #129 — V5 Phase 2: Approval Mode System with Trust Escalation
+================================================================================
+DATE: 2026-03-05
+HASH: b507467
+PHASE: V5 Phase 2
+
+WHAT WAS BUILT:
+  - New enums: approval_mode (manual/supervised/autonomous),
+    approval_override (inherit/always_require/always_allow)
+  - orchestrator_config: added approvalMode + trustThreshold fields
+  - agents: added approvalOverride field (per-agent override)
+  - New agent_trust_scores table:
+    * Tracks per-agent per-tool consecutive success count
+    * Auto-approve flips to true when successCount >= threshold
+    * Failures reset counter to 0 and revoke auto-approve
+    * Threshold inherited from project config, cached per row
+  - Approvals router: listTrustScores + setTrust endpoints
+  - Agents router: accepts approvalOverride in create/update inputs
+  - SQL migrations 0007 + 0008 ran successfully against Neon
+
+FILES: 9 changed, +170 -2
+  - NEW: packages/db/src/schema/agent-trust-scores.ts
+  - NEW: packages/db/src/migrations/0008_approval_modes.sql
+  - MODIFIED: packages/db/src/schema/enums.ts
+  - MODIFIED: packages/db/src/schema/agents.ts
+  - MODIFIED: packages/db/src/schema/orchestrator-config.ts
+  - MODIFIED: packages/db/src/schema/index.ts
+  - MODIFIED: packages/api/src/routers/agents.ts
+  - MODIFIED: packages/api/src/routers/approvals.ts
+  - MODIFIED: packages/db/src/migrations/0007_agent_hierarchy.sql (fix)
+
+VERIFICATION:
+  - turbo typecheck --force: 0 errors (15/15 tasks)
+  - Migrations 0007 + 0008: executed on Neon ✓
+
+================================================================================
