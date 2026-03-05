@@ -36,3 +36,5 @@ export * from './agent-session-summaries.js';
 export * from './session-transcripts.js';
 export * from './teams.js';
 export * from './agent-trust-scores.js';
+export * from './agent-performance.js';
+export * from './kpi-history.js';
