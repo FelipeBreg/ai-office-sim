@@ -6304,3 +6304,35 @@ VERIFICATION:
   - turbo typecheck --force: 0 errors (15/15 tasks)
 
 ================================================================================
+
+COMMIT #133 ─────────────────────────────────────────────────────────────────────
+DATE: 2026-03-05
+HASH: (see git log)
+PHASE: V5 Phase 6
+
+WHAT WAS BUILT:
+  - tool_payload_schemas table: versioned JSON Schema for tool inputs/outputs
+  - AgentMessage interface: standardized agent-to-agent communication protocol
+    (type: task|report|escalation|query, priority, subject, body, context)
+  - Lightweight payload validator (validatePayload): supports type, required,
+    properties, enum, min/max, arrays — no external deps
+  - cascadeRouteValid(): hierarchy-aware routing check (CEO=global, leads=team,
+    members=same team or one level up)
+  - toolSchemas tRPC router: list, getByTool, upsert (auto-version-bump), delete
+  - Migration 0011 executed on Neon
+
+FILES: 9 changed
+  - NEW: packages/db/src/schema/tool-payload-schemas.ts
+  - NEW: packages/db/src/migrations/0011_tool_payload_schemas.sql
+  - NEW: packages/shared/src/types/agent-message.ts
+  - NEW: packages/shared/src/utils/payload-validator.ts
+  - NEW: packages/api/src/routers/tool-schemas.ts
+  - MODIFIED: packages/db/src/schema/index.ts
+  - MODIFIED: packages/shared/src/types/index.ts
+  - MODIFIED: packages/shared/src/utils/index.ts
+  - MODIFIED: packages/api/src/root.ts
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors (shared, db, api, web all clean)
+
+================================================================================
