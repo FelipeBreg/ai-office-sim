@@ -65,6 +65,8 @@ export const agents = pgTable(
     reportsToAgentId: uuid('reports_to_agent_id'),
     /** Hierarchy: 0 = CEO, 1 = team lead, 2 = member */
     hierarchyLevel: integer('hierarchy_level').notNull().default(2),
+    /** Structured learnings persisted across heartbeat rewrites (max 20 k/v pairs) */
+    lessons: jsonb('lessons').$type<Record<string, string>>(),
     /** Heartbeat: self-programmed instructions executed on each heartbeat (max 500 chars) */
     heartbeatInstructions: text('heartbeat_instructions'),
     /** Heartbeat: interval in minutes (null = disabled, min 5, max 1440) */
