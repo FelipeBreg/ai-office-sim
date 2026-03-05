@@ -6379,3 +6379,28 @@ NOTE: Web scraping (cheerio, robots-parser) is stubbed — returns empty profile
       Full scraping implementation deferred until worker infra is ready.
 
 ================================================================================
+
+COMMIT #135 ─────────────────────────────────────────────────────────────────────
+DATE: 2026-03-05
+HASH: (see git log)
+
+WHAT WAS BUILT:
+  - Organization page: visual org chart (Chart view, default) + List view toggle
+  - Org chart shows: CEO node at top -> vertical trunk -> teams horizontally ->
+    agents below each team with lead/member/observer roles + status dots
+  - Unassigned agents section with dashed borders + warning icon
+  - New teams.orgChart tRPC endpoint: returns CEO + teams with members + unassigned
+  - Tab toggle (Chart | List) in header with GitFork/List icons
+  - Status dots: idle=gray, working=green+pulse, awaiting=yellow, error=red, offline=dim
+  - 3 new i18n keys per locale (chartView, listView, unassigned)
+
+FILES: 4 changed
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/organization/page.tsx
+  - MODIFIED: packages/api/src/routers/teams.ts (orgChart endpoint)
+  - MODIFIED: apps/web/messages/en-US.json
+  - MODIFIED: apps/web/messages/pt-BR.json
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors (api + web)
+
+================================================================================
