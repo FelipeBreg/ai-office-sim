@@ -6222,3 +6222,36 @@ VERIFICATION:
   - Migrations 0007 + 0008: executed on Neon ✓
 
 ================================================================================
+
+================================================================================
+COMMIT #130 — V5 Phase 3: Performance Metrics & Data Analysis Layer
+================================================================================
+DATE: 2026-03-05
+HASH: e914d58
+PHASE: V5 Phase 3
+
+WHAT WAS BUILT:
+  - New agent_performance_snapshots table (daily rollup per agent):
+    sessionsRun, actionsExecuted/Succeeded/Failed, tokensUsed, costUsd,
+    avgSessionDurationMs, toolBreakdown (jsonb), outcomeSignals (jsonb)
+  - New kpi_history table (time-series): kpiId, value, source, recordedAt
+  - New kpi_source enum: agent | manual | sync | system
+  - New analyticsRouter (3 endpoints):
+    * getAgentPerformance — N-day snapshots for one agent
+    * getKpiHistory — time-series for one KPI
+    * getFleetPerformance — all agent snapshots for fleet overview
+  - SQL migration 0009 executed on Neon
+
+FILES: 6 changed, +202 -0
+  - NEW: packages/db/src/schema/agent-performance.ts
+  - NEW: packages/db/src/schema/kpi-history.ts
+  - NEW: packages/api/src/routers/analytics.ts
+  - NEW: packages/db/src/migrations/0009_performance_metrics.sql
+  - MODIFIED: packages/db/src/schema/index.ts
+  - MODIFIED: packages/api/src/root.ts
+
+VERIFICATION:
+  - turbo typecheck --force: 0 errors (15/15 tasks)
+  - Migration 0009: executed on Neon ✓
+
+================================================================================
