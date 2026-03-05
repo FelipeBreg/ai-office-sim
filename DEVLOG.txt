@@ -6134,3 +6134,53 @@ VERIFICATION:
   - Documentation only — no code changes
 
 ================================================================================
+
+================================================================================
+COMMIT #128 — V5 Phase 1: Agent Hierarchy & Chain of Command
+================================================================================
+DATE: 2026-03-05
+HASH: 28041fb
+PHASE: V5 Phase 1
+
+WHAT WAS BUILT:
+  - New `teams` table: name, slug, description, parentTeamId (nested teams),
+    leadAgentId, priority (critical/high/normal/low), maxConcurrency
+  - New `agent_team_memberships` table: agentId, teamId, role (lead/member/observer)
+  - New enums: team_member_role, team_priority
+  - Added to agents: reportsToAgentId (uuid FK), hierarchyLevel (int, 0=CEO)
+  - CEO Agent auto-set to hierarchyLevel 0 on project creation
+  - New `teamsRouter` (8 endpoints): list, getById, create, update, delete,
+    listMembers, addMember, removeMember, listWithCounts
+  - Agents router accepts reportsToAgentId + hierarchyLevel in create/update
+  - New Organization page (/organization):
+    * CEO Agent indicator at top (level 0, system agent)
+    * Team cards with expand/collapse showing members
+    * Create/Edit team modals (name, slug, priority, concurrency)
+    * Add/remove member modals with role selection
+    * Real-time member count badges
+  - Sidebar: Organization link added under AI Capabilities (Network icon)
+  - Agent detail overview: shows hierarchy level and team assignment
+  - SQL migration ready: 0007_agent_hierarchy.sql (run against Neon)
+  - i18n: 39 new keys per locale (en-US + pt-BR) in "organization" namespace
+
+FILES: 14 changed, +864 -0
+  - NEW: packages/db/src/schema/teams.ts
+  - NEW: packages/api/src/routers/teams.ts
+  - NEW: apps/web/src/app/[locale]/(auth)/organization/page.tsx
+  - NEW: packages/db/src/migrations/0007_agent_hierarchy.sql
+  - MODIFIED: packages/db/src/schema/agents.ts (hierarchy fields)
+  - MODIFIED: packages/db/src/schema/enums.ts (new enums)
+  - MODIFIED: packages/db/src/schema/index.ts (export teams)
+  - MODIFIED: packages/api/src/root.ts (register teamsRouter)
+  - MODIFIED: packages/api/src/routers/agents.ts (hierarchy in create/update)
+  - MODIFIED: packages/api/src/routers/projects.ts (CEO level 0)
+  - MODIFIED: apps/web/src/components/layout/sidebar.tsx (org link)
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/agents/[id]/page.tsx (hierarchy)
+  - MODIFIED: apps/web/messages/en-US.json
+  - MODIFIED: apps/web/messages/pt-BR.json
+
+VERIFICATION:
+  - turbo typecheck --force: 0 errors (15/15 tasks)
+  - SQL migration: ready, pending Neon execution
+
+================================================================================
