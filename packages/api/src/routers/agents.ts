@@ -68,6 +68,8 @@ export const agentsRouter = createTRPCRouter({
           maxTokens: z.number().min(1).max(200_000),
           budget: z.number().min(0),
         }).optional(),
+        reportsToAgentId: z.string().uuid().nullish(),
+        hierarchyLevel: z.number().int().min(0).max(5).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -106,6 +108,8 @@ export const agentsRouter = createTRPCRouter({
           maxTokens: z.number().min(1).max(200_000),
           budget: z.number().min(0),
         }).optional(),
+        reportsToAgentId: z.string().uuid().nullish(),
+        hierarchyLevel: z.number().int().min(0).max(5).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

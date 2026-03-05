@@ -34,3 +34,4 @@ export * from './cascade-events.js';
 export * from './agent-heartbeat-history.js';
 export * from './agent-session-summaries.js';
 export * from './session-transcripts.js';
+export * from './teams.js';

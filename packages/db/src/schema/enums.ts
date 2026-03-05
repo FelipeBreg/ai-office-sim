@@ -181,6 +181,21 @@ export const agentTeamEnum = pgEnum('agent_team', [
   'operations',
 ]);
 
+// Team Member Roles
+export const teamMemberRoleEnum = pgEnum('team_member_role', [
+  'lead',
+  'member',
+  'observer',
+]);
+
+// Team Priority
+export const teamPriorityEnum = pgEnum('team_priority', [
+  'critical',
+  'high',
+  'normal',
+  'low',
+]);
+
 // Feedback
 export const feedbackCategoryEnum = pgEnum('feedback_category', [
   'bug',

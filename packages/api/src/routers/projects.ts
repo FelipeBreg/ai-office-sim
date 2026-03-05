@@ -60,6 +60,7 @@ export const projectsRouter = createTRPCRouter({
             status: 'idle',
             isSystemAgent: true,
             isActive: true,
+            hierarchyLevel: 0,
             heartbeatIntervalMin: 120,
             maxActionsPerSession: 30,
             config: {

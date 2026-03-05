@@ -58,6 +58,10 @@ export const agents = pgTable(
     cooldownUntil: timestamp('cooldown_until', { withTimezone: true }),
     /** Auto-recovery: how many consecutive recovery attempts have been made */
     recoveryAttempts: integer('recovery_attempts').notNull().default(0),
+    /** Hierarchy: direct supervisor agent (nullable, null = reports to CEO) */
+    reportsToAgentId: uuid('reports_to_agent_id'),
+    /** Hierarchy: 0 = CEO, 1 = team lead, 2 = member */
+    hierarchyLevel: integer('hierarchy_level').notNull().default(2),
     /** Heartbeat: self-programmed instructions executed on each heartbeat (max 500 chars) */
     heartbeatInstructions: text('heartbeat_instructions'),
     /** Heartbeat: interval in minutes (null = disabled, min 5, max 1440) */

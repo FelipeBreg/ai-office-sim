@@ -442,6 +442,31 @@ function OverviewTab({ agent }: { agent: Agent }) {
 
       <Separator />
 
+      {/* Hierarchy */}
+      <div>
+        <div className="mb-2 text-[8px] uppercase tracking-[0.15em] text-text-muted">
+          Hierarchy
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="border border-border-default bg-bg-base p-3">
+            <div className="text-[8px] uppercase tracking-[0.15em] text-text-muted">Level</div>
+            <div className="mt-1 text-xs text-text-primary">
+              {(agent as any).hierarchyLevel === 0 ? 'CEO (Level 0)' :
+               (agent as any).hierarchyLevel === 1 ? 'Team Lead (Level 1)' :
+               `Member (Level ${(agent as any).hierarchyLevel ?? 2})`}
+            </div>
+          </div>
+          <div className="border border-border-default bg-bg-base p-3">
+            <div className="text-[8px] uppercase tracking-[0.15em] text-text-muted">{t('team')}</div>
+            <div className="mt-1 text-xs text-text-primary">
+              {teamKey ? tAgents(teamKey as any) : t('placeholder')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
       {/* Created */}
       <div className="text-[10px] text-text-muted">
         {t('createdAt')}: {formatDate(agent.createdAt)}

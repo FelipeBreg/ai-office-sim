@@ -22,6 +22,7 @@ import {
   ChevronRight,
   ChevronDown,
   Cpu,
+  Network,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/ui-store';
 import { Badge } from '@/components/ui/badge';
@@ -60,6 +61,7 @@ const NAV_GROUPS: NavGroup[] = [
     labelKey: 'groupAiCapabilities',
     items: [
       { href: '/agents', labelKey: 'agents', icon: Users },
+      { href: '/organization', labelKey: 'organization', icon: Network },
       { href: '/workflows', labelKey: 'workflows', icon: GitBranch },
       { href: '/tools', labelKey: 'tools', icon: Wrench },
     ],
