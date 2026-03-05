@@ -220,4 +220,18 @@ export const billingRouter = createTRPCRouter({
       message: 'Stripe portal session creation requires STRIPE_SECRET_KEY environment variable.',
     };
   }),
+
+  /** Estimate agent cost based on configuration */
+  simulateAgentCost: projectProcedure
+    .input(z.object({
+      model: z.string(),
+      toolCount: z.number().int().min(0).max(50),
+      triggerType: z.enum(['always_on', 'scheduled', 'event', 'manual', 'agent']),
+      heartbeatIntervalMin: z.number().int().min(5).max(1440).nullish(),
+      cronFrequencyPerDay: z.number().int().min(1).max(1440).optional(),
+    }))
+    .query(({ input }) => {
+      const { estimateAgentCost } = require('@ai-office/shared') as typeof import('@ai-office/shared');
+      return estimateAgentCost(input);
+    }),
 });
