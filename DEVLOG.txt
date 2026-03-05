@@ -6102,3 +6102,35 @@ VERIFICATION:
   - turbo typecheck --force: 0 errors (15/15 tasks)
 
 ================================================================================
+
+================================================================================
+COMMIT #127 — Docs: SOFTWARE_SPEC v5 — Intelligence & Usability Layer
+================================================================================
+DATE: 2026-03-05
+HASH: 7157730
+PHASE: V5 Planning
+
+WHAT CHANGED:
+  - Upgraded SOFTWARE_SPEC.html from v4 to v5 with 9 new sections (28-36):
+    * Agent Hierarchy & Chain of Command (teams, lead/member roles, org chart)
+    * Approval Mode System (manual/supervised/autonomous + trust escalation)
+    * Performance Metrics Layer (daily rollups, KPI time-series, agent tools)
+    * Heartbeat Learning Upgrade (structured lessons + performance injection)
+    * Cost Simulation (token estimation x LLM pricing)
+    * Inter-Agent Payload Validation (schema registry, hierarchy routing)
+    * Smart Onboarding (5-step wizard with web scraping)
+    * Interleaved V4+V5 build order (15 items in dependency order)
+    * Dependency graph + estimated scope per phase
+  - Added 10 new glossary terms (chain of command, trust escalation, etc.)
+  - Updated nav sidebar with V5 section group
+  - Created ROADMAP_V5.md with detailed implementation plan
+  - 561 new lines in spec, 622 new lines in roadmap
+
+FILES: 2 changed, +1183 -8
+  - MODIFIED: SOFTWARE_SPEC.html
+  - NEW: ROADMAP_V5.md
+
+VERIFICATION:
+  - Documentation only — no code changes
+
+================================================================================
