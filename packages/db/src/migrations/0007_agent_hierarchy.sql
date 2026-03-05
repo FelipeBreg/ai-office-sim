@@ -48,4 +48,4 @@ ALTER TABLE agents ADD COLUMN IF NOT EXISTS reports_to_agent_id uuid;
 ALTER TABLE agents ADD COLUMN IF NOT EXISTS hierarchy_level integer NOT NULL DEFAULT 2;
 
 -- Set CEO agents to hierarchy level 0
-UPDATE agents SET hierarchy_level = 0 WHERE is_system_agent = true AND archetype = 'ceo_strategist';
+UPDATE agents SET hierarchy_level = 0 WHERE is_system_agent = true;

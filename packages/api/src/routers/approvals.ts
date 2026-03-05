@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
-import { db, approvals, approvalRules, agents, eq, and, desc } from '@ai-office/db';
+import { db, approvals, approvalRules, agents, agentTrustScores, eq, and, desc } from '@ai-office/db';
 import { getAgentExecutionQueue, getNotificationQueue, toBullMQPriority } from '@ai-office/queue';
 import { TRPCError } from '@trpc/server';
 
@@ -255,5 +255,64 @@ export const approvalsRouter = createTRPCRouter({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Approval rule not found' });
       }
       return { deleted: true };
+    }),
+
+  // ── Trust Scores (V5 Phase 2) ──
+
+  listTrustScores: projectProcedure
+    .input(z.object({ agentId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      return db
+        .select()
+        .from(agentTrustScores)
+        .where(
+          and(
+            eq(agentTrustScores.projectId, ctx.project!.id),
+            eq(agentTrustScores.agentId, input.agentId),
+          ),
+        )
+        .orderBy(agentTrustScores.toolName);
+    }),
+
+  /** Manually grant or revoke auto-approve for a specific agent+tool */
+  setTrust: adminProcedure
+    .input(z.object({
+      agentId: z.string().uuid(),
+      toolName: z.string().min(1),
+      autoApproved: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Upsert trust score
+      const existing = await db
+        .select()
+        .from(agentTrustScores)
+        .where(
+          and(
+            eq(agentTrustScores.agentId, input.agentId),
+            eq(agentTrustScores.toolName, input.toolName),
+          ),
+        )
+        .limit(1);
+
+      if (existing.length > 0) {
+        const [updated] = await db
+          .update(agentTrustScores)
+          .set({ autoApproved: input.autoApproved })
+          .where(eq(agentTrustScores.id, existing[0]!.id))
+          .returning();
+        return updated!;
+      }
+
+      const [created] = await db
+        .insert(agentTrustScores)
+        .values({
+          projectId: ctx.project!.id,
+          agentId: input.agentId,
+          toolName: input.toolName,
+          autoApproved: input.autoApproved,
+          successCount: input.autoApproved ? 999 : 0,
+        })
+        .returning();
+      return created!;
     }),
 });

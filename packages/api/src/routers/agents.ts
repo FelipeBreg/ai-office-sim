@@ -70,6 +70,7 @@ export const agentsRouter = createTRPCRouter({
         }).optional(),
         reportsToAgentId: z.string().uuid().nullish(),
         hierarchyLevel: z.number().int().min(0).max(5).optional(),
+        approvalOverride: z.enum(['inherit', 'always_require', 'always_allow']).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -110,6 +111,7 @@ export const agentsRouter = createTRPCRouter({
         }).optional(),
         reportsToAgentId: z.string().uuid().nullish(),
         hierarchyLevel: z.number().int().min(0).max(5).optional(),
+        approvalOverride: z.enum(['inherit', 'always_require', 'always_allow']).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

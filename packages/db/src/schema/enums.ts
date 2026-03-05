@@ -181,6 +181,20 @@ export const agentTeamEnum = pgEnum('agent_team', [
   'operations',
 ]);
 
+// Approval Mode (project-level)
+export const approvalModeEnum = pgEnum('approval_mode', [
+  'manual',
+  'supervised',
+  'autonomous',
+]);
+
+// Approval Override (per-agent)
+export const approvalOverrideEnum = pgEnum('approval_override', [
+  'inherit',
+  'always_require',
+  'always_allow',
+]);
+
 // Team Member Roles
 export const teamMemberRoleEnum = pgEnum('team_member_role', [
   'lead',

@@ -35,3 +35,4 @@ export * from './agent-heartbeat-history.js';
 export * from './agent-session-summaries.js';
 export * from './session-transcripts.js';
 export * from './teams.js';
+export * from './agent-trust-scores.js';

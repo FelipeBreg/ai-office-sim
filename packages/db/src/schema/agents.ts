@@ -15,6 +15,7 @@ import {
   triggerTypeEnum,
   memoryScopeEnum,
   agentTeamEnum,
+  approvalOverrideEnum,
 } from './enums.js';
 import { projects } from './projects.js';
 import { vector } from './custom-types.js';
@@ -58,6 +59,8 @@ export const agents = pgTable(
     cooldownUntil: timestamp('cooldown_until', { withTimezone: true }),
     /** Auto-recovery: how many consecutive recovery attempts have been made */
     recoveryAttempts: integer('recovery_attempts').notNull().default(0),
+    /** Approval override: inherit (follow project mode), always_require, always_allow */
+    approvalOverride: approvalOverrideEnum('approval_override').notNull().default('inherit'),
     /** Hierarchy: direct supervisor agent (nullable, null = reports to CEO) */
     reportsToAgentId: uuid('reports_to_agent_id'),
     /** Hierarchy: 0 = CEO, 1 = team lead, 2 = member */
