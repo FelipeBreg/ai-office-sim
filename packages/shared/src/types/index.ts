@@ -99,3 +99,13 @@ export interface CascadeContext {
 
 // Agent Communication
 export type { AgentMessage, AgentMessageType, AgentMessagePriority } from './agent-message.js';
+
+// Onboarding
+export type {
+  CompanyProfile,
+  OnboardingCompanyInput,
+  OnboardingStrategyInput,
+  FleetRecommendation,
+  ScrapeResult,
+  OnboardingStep,
+} from './onboarding.js';

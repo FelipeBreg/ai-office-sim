@@ -229,9 +229,6 @@
     "publishToCommunity": "Publicar na Comunidade",
     "publishDialogTitle": "Publicar Agente na Comunidade",
     "publishDialogDesc": "Isso publicará um snapshot da configuração deste agente no marketplace da comunidade. Outros poderão navegar e instalá-lo.",
-    "name": "Nome",
-    "archetype": "Arquétipo",
-    "tools": "Ferramentas",
     "trigger": "Gatilho",
     "publishing": "Publicando...",
     "confirmPublish": "Publicar",
@@ -931,18 +928,15 @@
     "creating": "Criando...",
     "createSuccess": "Agente criado com sucesso.",
     "createError": "Falha ao criar agente.",
-
     "stepIdentity": "Identidade",
     "stepBehavior": "Comportamento",
     "stepReview": "Revisão",
-
     "nameLabel": "Nome do Agente",
     "namePlaceholder": "ex: Bot de Suporte",
     "slugLabel": "Slug",
     "slugHint": "gerado automaticamente a partir do nome",
     "archetypeLabel": "Arquétipo",
     "archetypeHint": "Selecione um arquétipo para pré-preencher a configuração",
-
     "modeTemplate": "A partir de Modelo",
     "modeScratch": "Do Zero",
     "deptAll": "Todos",
@@ -963,7 +957,6 @@
     "templateRagCount": "{count} docs",
     "templateSelected": "Selecionado",
     "templateHint": "Escolha um modelo de agente para pré-preencher todos os campos",
-
     "archetypeSupport": "Suporte",
     "archetypeSupportDesc": "Atendimento ao cliente e gestão de tickets",
     "archetypeSales": "Vendas",
@@ -1004,13 +997,11 @@
     "archetypeDeploymentMonitorDesc": "PRs do GitHub, deploys e rastreamento de mudancas",
     "archetypeCustom": "Customizado",
     "archetypeCustomDesc": "Construa do zero com controle total",
-
     "promptLabel": "Prompt do Sistema",
     "promptHint": "Defina como este agente se comporta e responde",
     "promptTabEn": "EN-US",
     "promptTabPtBr": "PT-BR",
     "promptPlaceholder": "Você é um assistente útil que...",
-
     "toolsLabel": "Ferramentas Disponíveis",
     "toolsHint": "Selecione as ferramentas que este agente pode usar",
     "toolSendWhatsapp": "Enviar Mensagem WhatsApp",
@@ -1065,7 +1056,6 @@
     "toolMetaMarketingDesc": "Gerenciar campanhas do Meta/Facebook",
     "toolSendConversation": "Enviar Mensagem Interna",
     "toolSendConversationDesc": "Enviar mensagens em conversas internas",
-
     "memoryLabel": "Acesso à Memória",
     "memoryHint": "Configure como o agente interage com a memória",
     "memoryReadOnly": "Somente Leitura",
@@ -1074,7 +1064,6 @@
     "memoryReadWriteDesc": "Agente pode ler e escrever na memória",
     "maxActionsLabel": "Máximo de Ações por Sessão",
     "maxActionsHint": "Limite o número de ações por sessão (padrão: 20)",
-
     "triggerLabel": "Tipo de Gatilho",
     "triggerHint": "Como este agente é ativado",
     "triggerAlwaysOn": "Sempre Ativo",
@@ -1093,7 +1082,6 @@
     "eventNamePlaceholder": "ex: novo_ticket",
     "sourceAgentLabel": "Agente de Origem",
     "sourceAgentPlaceholder": "Selecione um agente...",
-
     "teamLabel": "Atribuição de Equipe",
     "teamHint": "Atribua este agente a uma equipe",
     "teamNone": "Sem Equipe",
@@ -1112,7 +1100,6 @@
     "teamFinanceDesc": "Equipe de finanças e contabilidade",
     "teamOperations": "Operações",
     "teamOperationsDesc": "Equipe de operações e logística",
-
     "reviewLabel": "Revisar Configuração",
     "reviewHint": "Revise a configuração do agente antes de criar",
     "reviewName": "Nome",
@@ -1159,24 +1146,20 @@
     "skipStep": "Pular",
     "getStarted": "Começar",
     "goToOffice": "Ir para o Escritório",
-
     "welcomeHeading": "Bem-vindo ao AI Office",
     "welcomeDescription": "Seu escritório virtual com IA está pronto. Vamos configurar seu espaço de trabalho em poucos passos — crie sua empresa, escolha um template e lance seu primeiro agente.",
     "welcomeHint": "Isso leva apenas um minuto",
-
     "companyTitle": "Crie seu Espaço de Trabalho",
     "companyDescription": "Configure sua organização e primeiro projeto para começar.",
     "companyNameLabel": "Nome da Empresa",
     "companyNamePlaceholder": "ex: Acme Corp",
     "projectNameLabel": "Nome do Projeto",
     "projectNamePlaceholder": "ex: Operações de Atendimento",
-
     "templateTitle": "Escolha um Template",
     "templateDescription": "Escolha um template pronto para seu setor ou comece do zero.",
     "templateAgentCount": "{count} agentes incluídos",
     "templateNoAgents": "Sem agentes — adicione os seus",
     "templateSector": "Setor: {sector}",
-
     "integrationTitle": "Configurar Integração",
     "integrationDescription": "Conecte um canal de comunicação para que seus agentes possam interagir com o mundo.",
     "integrationWhatsapp": "WhatsApp",
@@ -1186,7 +1169,6 @@
     "integrationSkip": "Pular por Agora",
     "integrationSkipDesc": "Você pode configurar integrações depois em Configurações.",
     "recommended": "Recomendado",
-
     "agentTitle": "Crie seu Primeiro Agente",
     "agentDescription": "Dê um nome ao seu agente e escolha uma função. Você pode personalizá-lo depois.",
     "agentNameLabel": "Nome do Agente",
@@ -1202,17 +1184,54 @@
     "archetypeFinanceDesc": "Faturamento e relatórios financeiros",
     "archetypeDataAnalyst": "Analista de Dados",
     "archetypeDataAnalystDesc": "Processamento de dados e insights",
-
     "doneHeading": "Tudo Pronto!",
     "doneDescription": "Seu espaço de trabalho AI Office está pronto. Vá para o escritório para ver seus agentes em ação, configure workflows e comece a automatizar.",
     "doneHint": "Sistema online",
-    "atlasFirstRun": "Bem-vindo! Sou o ATLAS, seu centro de comando de IA. Vou ajudar a configurar seu primeiro workflow autonomo. Clique abaixo para me conhecer e eu guio voce por tudo."
+    "atlasFirstRun": "Bem-vindo! Sou o ATLAS, seu centro de comando de IA. Vou ajudar a configurar seu primeiro workflow autonomo. Clique abaixo para me conhecer e eu guio voce por tudo.",
+    "smartTitle": "ONBOARDING INTELIGENTE",
+    "smartCompanyTitle": "Perfil da Empresa",
+    "smartCompanyDesc": "Conte-nos sobre sua empresa para montar o time de IA perfeito.",
+    "smartCompanyNameLabel": "Nome da Empresa",
+    "smartCompanyNamePlaceholder": "Sua Empresa Ltda.",
+    "smartSectorLabel": "Setor / Industria",
+    "smartSizeLabel": "Tamanho da Empresa (funcionarios)",
+    "smartWebsiteLabel": "URL do Site (opcional)",
+    "smartWebsiteHint": "Vamos analisar seu site para personalizar as recomendacoes.",
+    "smartScanTitle": "Analisando Sua Empresa...",
+    "smartScanWebsite": "Escaneando website",
+    "smartScanSocial": "Analisando presenca social",
+    "smartScanAnalyze": "Construindo perfil da empresa",
+    "smartScanRecommend": "Gerando recomendacoes",
+    "smartStrategyTitle": "Objetivos Estrategicos",
+    "smartStrategyDesc": "Qual e o objetivo principal do seu time de IA?",
+    "smartGoalLabel": "Objetivo Principal",
+    "smartGoalGrowRevenue": "Aumentar Receita",
+    "smartGoalReduceChurn": "Reduzir Churn",
+    "smartGoalExpandMarket": "Expandir Mercado",
+    "smartGoalImproveSupport": "Melhorar Suporte",
+    "smartGoalAutomateOps": "Automatizar Operacoes",
+    "smartGoalBrandAwareness": "Reconhecimento de Marca",
+    "smartTimelineLabel": "Prazo",
+    "smartTimelineMonths": "meses",
+    "smartFleetTitle": "Time de IA Recomendado",
+    "smartFleetDesc": "Com base no perfil da sua empresa, recomendamos a seguinte equipe de agentes. Ative/desative agentes.",
+    "smartFleetCost": "Custo mensal estimado: ${cost} USD",
+    "smartFleetAgents": "agentes",
+    "smartDeployBtn": "Implantar Equipe",
+    "smartDeployTitle": "Pronto para Implantar",
+    "smartDeployDesc": "Clique para criar seus times e agentes. Voce pode personaliza-los depois.",
+    "smartDeployConfirm": "Confirmar e Implantar",
+    "smartDeployingTitle": "Implantando Seu Time de IA...",
+    "smartDeployingDesc": "Criando times, agentes e configuracoes. Aguarde um momento.",
+    "smartDeployedTitle": "Equipe Implantada!",
+    "smartDeployedTeams": "Times Criados",
+    "smartDeployedAgents": "Agentes Criados",
+    "smartDeployedDesc": "Seu time de IA esta pronto. Va para o dashboard para ve-los em acao."
   },
   "help": {
     "title": "Playbook Alpha",
     "subtitle": "guia de teste para empresas parceiras",
     "searchPlaceholder": "buscar no playbook...",
-
     "sectionQuickStart": "Início Rápido",
     "sectionWhatsApp": "Conectando o WhatsApp",
     "sectionAgents": "Criando Agentes",
@@ -1221,7 +1240,6 @@
     "sectionMemory": "Memória e Wiki",
     "sectionLimitations": "Limitações Conhecidas",
     "sectionBugs": "Reportar Bugs",
-
     "quickStartTitle": "Início Rápido",
     "quickStartDesc": "Configure seu espaço de trabalho em poucos minutos.",
     "quickStartStep1Title": "1. Criar conta",
@@ -1234,7 +1252,6 @@
     "quickStartStep4": "O wizard pedirá nome, arquétipo e função do agente. Para o primeiro teste, recomendamos o arquétipo 'Suporte' com as ferramentas 'Enviar WhatsApp' e 'Ler WhatsApp' habilitadas.",
     "quickStartStep5Title": "5. Testar",
     "quickStartStep5": "Envie uma mensagem para o número do WhatsApp conectado. O agente deve responder automaticamente dentro de 10-30 segundos. Acompanhe tudo no Log de Atividade.",
-
     "whatsAppTitle": "Conectando o WhatsApp",
     "whatsAppDesc": "O AI Office usa o Z-API como provedor de WhatsApp Business API. Siga os passos abaixo para configurar.",
     "whatsAppStep1Title": "1. Criar conta no Z-API",
@@ -1250,7 +1267,6 @@
     "whatsAppStep6Title": "6. Atribuir agente",
     "whatsAppStep6": "Selecione o agente responsável por responder mensagens no dropdown 'Agente Responsável'. Apenas agentes com a ferramenta 'Enviar WhatsApp' habilitada aparecerão.",
     "whatsAppScreenshotPlaceholder": "[Screenshots do processo serão adicionados aqui]",
-
     "agentsTitle": "Criando Agentes",
     "agentsDesc": "Agentes são unidades autônomas de IA que executam tarefas específicas na sua empresa.",
     "agentsWizardTitle": "Wizard de Criação",
@@ -1268,7 +1284,6 @@
     "agentsTriggersTitle": "Tipos de Gatilho",
     "agentsTriggersDesc": "Define como o agente é ativado: 'Sempre Ativo' (roda continuamente), 'Agendado' (cron), 'Evento' (webhook/evento interno), 'Manual' (você inicia) ou 'Por Agente' (disparado por outro agente).",
     "agentsTip": "Dica: Para o teste alpha, recomendamos começar com um agente de Suporte no modo 'Sempre Ativo' com WhatsApp habilitado.",
-
     "approvalsTitle": "Sistema de Aprovações",
     "approvalsDesc": "O sistema de aprovações garante que ações de alto risco sejam revisadas por um humano antes de serem executadas.",
     "approvalsHowTitle": "Como funciona",
@@ -1281,7 +1296,6 @@
     "approvalsRiskCritical": "Crítico — Exclusão de dados, operações financeiras grandes. Sempre requer aprovação.",
     "approvalsWhereTitle": "Onde revisar",
     "approvalsWhereDesc": "Acesse a página 'Aprovações' no menu lateral. A aba 'Pendentes' mostra ações aguardando sua revisão. A aba 'Todas' mostra o histórico completo.",
-
     "monitoringTitle": "Monitoramento",
     "monitoringDesc": "Acompanhe tudo que seus agentes fazem em tempo real.",
     "monitoringActivityTitle": "Log de Atividade",
@@ -1291,7 +1305,6 @@
     "monitoringAgentDetailTitle": "Detalhe do Agente",
     "monitoringAgentDetailDesc": "Na página de cada agente, a aba 'Log de Atividade' mostra apenas as ações daquele agente. A aba 'Memória' mostra os pares chave-valor armazenados pelo agente.",
     "monitoringTip": "Dica: Fique de olho no consumo de tokens e no número de ações por sessão. Se um agente estiver gastando muitos tokens, revise o prompt do sistema.",
-
     "memoryTitle": "Memória e Wiki",
     "memoryDesc": "O AI Office tem três camadas de conhecimento para seus agentes.",
     "memoryAgentTitle": "Memória Individual do Agente",
@@ -1301,7 +1314,6 @@
     "memoryWikiTitle": "Wiki da Empresa",
     "memoryWikiDesc": "A Wiki é um repositório colaborativo de artigos organizados por categorias. Ideal para procedimentos operacionais, políticas internas, e informações que mudam com frequência. Agentes também podem consultar a Wiki.",
     "memoryTip": "Dica: Para o teste alpha, faça upload de pelo menos um documento com FAQs ou informações do produto. Isso melhora drasticamente a qualidade das respostas do agente.",
-
     "limitationsTitle": "Limitações Conhecidas",
     "limitationsDesc": "Esta é uma versão alpha. As seguintes limitações são conhecidas e serão resolvidas em versões futuras:",
     "limitation1": "Latência de resposta: O tempo médio de resposta do agente via WhatsApp é de 10-30 segundos. Em horários de pico, pode chegar a 60 segundos.",
@@ -1312,7 +1324,6 @@
     "limitation6": "Escritório Virtual: A visualização do escritório é uma representação estática. Animações em tempo real serão adicionadas em versão futura.",
     "limitation7": "Busca semântica: A qualidade da busca depende da qualidade dos documentos ingeridos. Documentos muito longos podem ter chunks mal segmentados.",
     "limitation8": "Reconexão WhatsApp: Se o Z-API perder conexão, é necessário escanear o QR code novamente manualmente no painel do Z-API.",
-
     "bugsTitle": "Reportar Bugs",
     "bugsDesc": "Encontrou um problema? Use o widget de feedback para nos informar.",
     "bugsWidgetTitle": "Widget de Feedback",
@@ -1332,7 +1343,6 @@
     "bugsInclude6": "Print da tela (se possível, envie por email para o time)",
     "bugsEmailTitle": "Contato direto",
     "bugsEmailDesc": "Para bugs críticos que impedem o uso do sistema, entre em contato direto pelo email: suporte@aioffice.dev",
-
     "expandAll": "Expandir tudo",
     "collapseAll": "Recolher tudo",
     "webhookUrlPlaceholder": "https://seu-dominio.com/api/webhooks/whatsapp"
@@ -1518,7 +1528,7 @@
     "placeholderCompany": "Empresa...",
     "placeholderValue": "0,00",
     "placeholderNotes": "Notas...",
-    "totalCost": "Custo Total",
+    "totalCost": "Custo",
     "totalTokens": "Total de Tokens",
     "totalActions": "Total de Ações",
     "dailyCost": "Custo Diário",
@@ -1575,7 +1585,6 @@
     "cascadeId": "ID da Cascata",
     "events": "Eventos",
     "depth": "Profundidade",
-    "totalCost": "Custo",
     "duration": "Duração",
     "trigger": "Gatilho",
     "status": "Status",
@@ -1583,10 +1592,8 @@
     "creating": "Criando...",
     "create": "Criar",
     "createDealError": "Falha ao criar negócio.",
-
     "tabGeneral": "Geral",
     "tabBranding": "Marca",
-
     "genRevenue": "Receita",
     "genProfit": "Lucro",
     "genAiCost": "Custo IA",
@@ -1599,7 +1606,6 @@
     "viewAgents": "Agentes",
     "teamAgents": "Agentes da Equipe",
     "noAgentsTeam": "Nenhum agente nesta equipe.",
-
     "kpiPipelineValue": "Pipeline",
     "kpiWon": "Ganhos",
     "kpiLost": "Perdidos",
@@ -1608,7 +1614,6 @@
     "manageStages": "Etapas",
     "stageManager": "Gerenciar Etapas do Pipeline",
     "newStageName": "Nome da etapa...",
-
     "finRevenue": "Receita",
     "finProfit": "Lucro",
     "finEbitda": "EBITDA",
@@ -1623,7 +1628,6 @@
     "recAmount": "Valor",
     "recType": "Tipo",
     "recCategory": "Categoria",
-
     "costForecast": "Projeção de Custos (média 7 dias)",
     "dailyAvg": "Média Diária",
     "projectedMonthly": "Projeção Mensal",
@@ -1632,10 +1636,8 @@
     "perAgentCost": "Projeção por Agente",
     "agentName": "Agente",
     "budgetWarning": "Gasto projetado está em {pct}% do limite mensal de orçamento.",
-
     "agentActivityHour": "Atividade dos Agentes por Hora",
     "actionsByDay": "Ações por Dia",
-
     "marketingFunnel": "Funil de Marketing",
     "funnelTop": "Topo do Funil",
     "funnelMiddle": "Meio do Funil",
@@ -1653,7 +1655,6 @@
     "campImpressions": "Impressões",
     "campClicks": "Cliques",
     "campConversions": "Conversões",
-
     "touchpointCount": "{count, plural, =0 {Nenhum ponto de contato} one {1 ponto de contato} other {# pontos de contato}}",
     "noTouchpoints": "Nenhum ponto de contato da marca ainda.",
     "addTouchpoint": "Adicionar Ponto",

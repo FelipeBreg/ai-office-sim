@@ -30,7 +30,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter, Link } from '@/i18n/navigation';
 import { getTemplatesForLocale, type CompanyTemplateDefinition } from '@ai-office/shared';
 
 /* -------------------------------------------------------------------------- */
@@ -205,6 +205,13 @@ function StepWelcome({ t }: { t: (key: string) => string }) {
         <span className="inline-block h-1.5 w-1.5 bg-accent-cyan" />
         <span className="uppercase tracking-[0.15em]">{t('welcomeHint')}</span>
       </div>
+
+      <Link
+        href="/onboarding/smart"
+        className="mt-4 border border-accent-cyan/30 bg-accent-cyan/5 px-4 py-2 text-[10px] uppercase tracking-[0.12em] text-accent-cyan transition-colors hover:bg-accent-cyan/10"
+      >
+        {t('smartTitle')}
+      </Link>
     </div>
   );
 }

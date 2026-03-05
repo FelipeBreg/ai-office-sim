@@ -229,9 +229,6 @@
     "publishToCommunity": "Publish to Community",
     "publishDialogTitle": "Publish Agent to Community",
     "publishDialogDesc": "This will publish a snapshot of this agent's configuration to the community marketplace. Others can browse and install it.",
-    "name": "Name",
-    "archetype": "Archetype",
-    "tools": "Tools",
     "trigger": "Trigger",
     "publishing": "Publishing...",
     "confirmPublish": "Publish",
@@ -931,18 +928,15 @@
     "creating": "Creating...",
     "createSuccess": "Agent created successfully.",
     "createError": "Failed to create agent.",
-
     "stepIdentity": "Identity",
     "stepBehavior": "Behavior",
     "stepReview": "Review",
-
     "nameLabel": "Agent Name",
     "namePlaceholder": "e.g. Support Bot",
     "slugLabel": "Slug",
     "slugHint": "auto-generated from name",
     "archetypeLabel": "Archetype",
     "archetypeHint": "Select an archetype to pre-fill configuration",
-
     "modeTemplate": "From Template",
     "modeScratch": "From Scratch",
     "deptAll": "All",
@@ -963,7 +957,6 @@
     "templateRagCount": "{count} docs",
     "templateSelected": "Selected",
     "templateHint": "Pick a process agent template to pre-fill all fields",
-
     "archetypeSupport": "Support",
     "archetypeSupportDesc": "Customer support and ticket handling",
     "archetypeSales": "Sales",
@@ -1004,13 +997,11 @@
     "archetypeDeploymentMonitorDesc": "GitHub PRs, deployments, and change tracking",
     "archetypeCustom": "Custom",
     "archetypeCustomDesc": "Build from scratch with full control",
-
     "promptLabel": "System Prompt",
     "promptHint": "Define how this agent behaves and responds",
     "promptTabEn": "EN-US",
     "promptTabPtBr": "PT-BR",
     "promptPlaceholder": "You are a helpful assistant that...",
-
     "toolsLabel": "Available Tools",
     "toolsHint": "Select the tools this agent can use",
     "toolSendWhatsapp": "Send WhatsApp Message",
@@ -1065,7 +1056,6 @@
     "toolMetaMarketingDesc": "Manage Meta/Facebook ad campaigns",
     "toolSendConversation": "Send Conversation Message",
     "toolSendConversationDesc": "Send messages in internal conversations",
-
     "memoryLabel": "Memory Access",
     "memoryHint": "Configure how the agent interacts with memory",
     "memoryReadOnly": "Read Only",
@@ -1074,7 +1064,6 @@
     "memoryReadWriteDesc": "Agent can read and write to memory",
     "maxActionsLabel": "Max Actions Per Session",
     "maxActionsHint": "Limit the number of actions per session (default: 20)",
-
     "triggerLabel": "Trigger Type",
     "triggerHint": "How this agent is activated",
     "triggerAlwaysOn": "Always On",
@@ -1093,7 +1082,6 @@
     "eventNamePlaceholder": "e.g. new_ticket",
     "sourceAgentLabel": "Source Agent",
     "sourceAgentPlaceholder": "Select an agent...",
-
     "teamLabel": "Team Assignment",
     "teamHint": "Assign this agent to a team",
     "teamNone": "No Team",
@@ -1112,7 +1100,6 @@
     "teamFinanceDesc": "Finance and accounting team",
     "teamOperations": "Operations",
     "teamOperationsDesc": "Operations and logistics team",
-
     "reviewLabel": "Review Configuration",
     "reviewHint": "Review your agent configuration before creating",
     "reviewName": "Name",
@@ -1159,24 +1146,20 @@
     "skipStep": "Skip",
     "getStarted": "Get Started",
     "goToOffice": "Go to Office",
-
     "welcomeHeading": "Welcome to AI Office",
     "welcomeDescription": "Your AI-powered virtual office is ready. Let's set up your workspace in a few quick steps -- create your company, pick a template, and launch your first agent.",
     "welcomeHint": "This will only take a minute",
-
     "companyTitle": "Create Your Workspace",
     "companyDescription": "Set up your organization and first project to get started.",
     "companyNameLabel": "Company Name",
     "companyNamePlaceholder": "e.g. Acme Corp",
     "projectNameLabel": "Project Name",
     "projectNamePlaceholder": "e.g. Customer Operations",
-
     "templateTitle": "Choose a Template",
     "templateDescription": "Pick a pre-built template for your industry or start from scratch.",
     "templateAgentCount": "{count} agents included",
     "templateNoAgents": "No agents — add your own",
     "templateSector": "Sector: {sector}",
-
     "integrationTitle": "Set Up Integration",
     "integrationDescription": "Connect a communication channel so your agents can interact with the world.",
     "integrationWhatsapp": "WhatsApp",
@@ -1186,7 +1169,6 @@
     "integrationSkip": "Skip for Now",
     "integrationSkipDesc": "You can set up integrations later in Settings.",
     "recommended": "Recommended",
-
     "agentTitle": "Create Your First Agent",
     "agentDescription": "Give your agent a name and choose a role. You can customize it further later.",
     "agentNameLabel": "Agent Name",
@@ -1202,17 +1184,54 @@
     "archetypeFinanceDesc": "Invoicing & financial reports",
     "archetypeDataAnalyst": "Data Analyst",
     "archetypeDataAnalystDesc": "Data processing & insights",
-
     "doneHeading": "You're All Set!",
     "doneDescription": "Your AI Office workspace is ready to go. Head to the office to see your agents in action, configure workflows, and start automating.",
     "doneHint": "System online",
-    "atlasFirstRun": "Welcome! I'm ATLAS, your AI command center. I'll help you set up your first autonomous workflow. Click below to meet me and I'll guide you through everything."
+    "atlasFirstRun": "Welcome! I'm ATLAS, your AI command center. I'll help you set up your first autonomous workflow. Click below to meet me and I'll guide you through everything.",
+    "smartTitle": "SMART ONBOARDING",
+    "smartCompanyTitle": "Company Profile",
+    "smartCompanyDesc": "Tell us about your company so we can build the perfect AI team.",
+    "smartCompanyNameLabel": "Company Name",
+    "smartCompanyNamePlaceholder": "Your Company Inc.",
+    "smartSectorLabel": "Sector / Industry",
+    "smartSizeLabel": "Company Size (employees)",
+    "smartWebsiteLabel": "Website URL (optional)",
+    "smartWebsiteHint": "We will analyze your website to personalize recommendations.",
+    "smartScanTitle": "Analyzing Your Company...",
+    "smartScanWebsite": "Scanning website",
+    "smartScanSocial": "Analyzing social presence",
+    "smartScanAnalyze": "Building company profile",
+    "smartScanRecommend": "Generating recommendations",
+    "smartStrategyTitle": "Strategic Goals",
+    "smartStrategyDesc": "What is the primary goal for your AI-powered team?",
+    "smartGoalLabel": "Primary Business Goal",
+    "smartGoalGrowRevenue": "Grow Revenue",
+    "smartGoalReduceChurn": "Reduce Churn",
+    "smartGoalExpandMarket": "Expand Market",
+    "smartGoalImproveSupport": "Improve Support",
+    "smartGoalAutomateOps": "Automate Operations",
+    "smartGoalBrandAwareness": "Brand Awareness",
+    "smartTimelineLabel": "Timeline",
+    "smartTimelineMonths": "months",
+    "smartFleetTitle": "Recommended AI Team",
+    "smartFleetDesc": "Based on your company profile, we recommend the following agent fleet. Toggle agents on/off.",
+    "smartFleetCost": "Estimated monthly cost: ${cost} USD",
+    "smartFleetAgents": "agents",
+    "smartDeployBtn": "Deploy Fleet",
+    "smartDeployTitle": "Ready to Deploy",
+    "smartDeployDesc": "Click confirm to create your teams and agents. You can customize them later.",
+    "smartDeployConfirm": "Confirm & Deploy",
+    "smartDeployingTitle": "Deploying Your AI Team...",
+    "smartDeployingDesc": "Creating teams, agents, and configurations. This will take a moment.",
+    "smartDeployedTitle": "Fleet Deployed!",
+    "smartDeployedTeams": "Teams Created",
+    "smartDeployedAgents": "Agents Created",
+    "smartDeployedDesc": "Your AI team is ready. Head to the dashboard to see them in action."
   },
   "help": {
     "title": "Alpha Playbook",
     "subtitle": "testing guide for partner companies",
     "searchPlaceholder": "search playbook...",
-
     "sectionQuickStart": "Quick Start",
     "sectionWhatsApp": "Connecting WhatsApp",
     "sectionAgents": "Creating Agents",
@@ -1221,7 +1240,6 @@
     "sectionMemory": "Memory & Wiki",
     "sectionLimitations": "Known Limitations",
     "sectionBugs": "Report Bugs",
-
     "quickStartTitle": "Quick Start",
     "quickStartDesc": "Set up your workspace in a few minutes.",
     "quickStartStep1Title": "1. Create account",
@@ -1234,7 +1252,6 @@
     "quickStartStep4": "The wizard will ask for name, archetype, and function. For the first test, we recommend the 'Support' archetype with 'Send WhatsApp' and 'Read WhatsApp' tools enabled.",
     "quickStartStep5Title": "5. Test",
     "quickStartStep5": "Send a message to the connected WhatsApp number. The agent should respond automatically within 10-30 seconds. Monitor everything in the Activity Log.",
-
     "whatsAppTitle": "Connecting WhatsApp",
     "whatsAppDesc": "AI Office uses Z-API as the WhatsApp Business API provider. Follow the steps below to configure.",
     "whatsAppStep1Title": "1. Create Z-API account",
@@ -1250,7 +1267,6 @@
     "whatsAppStep6Title": "6. Assign agent",
     "whatsAppStep6": "Select the agent responsible for answering messages in the 'Handler Agent' dropdown. Only agents with the 'Send WhatsApp' tool enabled will appear.",
     "whatsAppScreenshotPlaceholder": "[Process screenshots will be added here]",
-
     "agentsTitle": "Creating Agents",
     "agentsDesc": "Agents are autonomous AI units that execute specific tasks in your company.",
     "agentsWizardTitle": "Creation Wizard",
@@ -1268,7 +1284,6 @@
     "agentsTriggersTitle": "Trigger Types",
     "agentsTriggersDesc": "Defines how the agent is activated: 'Always On' (runs continuously), 'Scheduled' (cron), 'Event' (webhook/internal event), 'Manual' (you start it), or 'Agent-triggered' (triggered by another agent).",
     "agentsTip": "Tip: For alpha testing, we recommend starting with a Support agent in 'Always On' mode with WhatsApp enabled.",
-
     "approvalsTitle": "Approval System",
     "approvalsDesc": "The approval system ensures that high-risk actions are reviewed by a human before being executed.",
     "approvalsHowTitle": "How it works",
@@ -1281,7 +1296,6 @@
     "approvalsRiskCritical": "Critical — Data deletion, large financial operations. Always requires approval.",
     "approvalsWhereTitle": "Where to review",
     "approvalsWhereDesc": "Access the 'Approvals' page in the sidebar. The 'Pending' tab shows actions awaiting your review. The 'All' tab shows the complete history.",
-
     "monitoringTitle": "Monitoring",
     "monitoringDesc": "Track everything your agents do in real time.",
     "monitoringActivityTitle": "Activity Log",
@@ -1291,7 +1305,6 @@
     "monitoringAgentDetailTitle": "Agent Detail",
     "monitoringAgentDetailDesc": "On each agent's page, the 'Activity Log' tab shows only that agent's actions. The 'Memory' tab shows key-value pairs stored by the agent.",
     "monitoringTip": "Tip: Keep an eye on token consumption and actions per session. If an agent is using too many tokens, review the system prompt.",
-
     "memoryTitle": "Memory & Wiki",
     "memoryDesc": "AI Office has three knowledge layers for your agents.",
     "memoryAgentTitle": "Individual Agent Memory",
@@ -1301,7 +1314,6 @@
     "memoryWikiTitle": "Company Wiki",
     "memoryWikiDesc": "The Wiki is a collaborative article repository organized by categories. Ideal for operating procedures, internal policies, and frequently changing information. Agents can also query the Wiki.",
     "memoryTip": "Tip: For alpha testing, upload at least one document with FAQs or product information. This dramatically improves agent response quality.",
-
     "limitationsTitle": "Known Limitations",
     "limitationsDesc": "This is an alpha version. The following limitations are known and will be resolved in future versions:",
     "limitation1": "Response latency: Average agent response time via WhatsApp is 10-30 seconds. During peak times, it may reach 60 seconds.",
@@ -1312,7 +1324,6 @@
     "limitation6": "Virtual Office: The office view is a static representation. Real-time animations will be added in a future version.",
     "limitation7": "Semantic search: Search quality depends on the quality of ingested documents. Very long documents may have poorly segmented chunks.",
     "limitation8": "WhatsApp reconnection: If Z-API loses connection, you need to scan the QR code again manually in the Z-API dashboard.",
-
     "bugsTitle": "Report Bugs",
     "bugsDesc": "Found an issue? Use the feedback widget to let us know.",
     "bugsWidgetTitle": "Feedback Widget",
@@ -1332,13 +1343,12 @@
     "bugsInclude6": "Screenshot (if possible, send by email to the team)",
     "bugsEmailTitle": "Direct contact",
     "bugsEmailDesc": "For critical bugs that prevent system use, contact us directly at: suporte@aioffice.dev",
-
     "expandAll": "Expand all",
     "collapseAll": "Collapse all",
     "webhookUrlPlaceholder": "https://your-domain.com/api/webhooks/whatsapp"
   },
   "teamRoster": {
-    "header": "Team \u2014 {count} agents",
+    "header": "Team — {count} agents",
     "show": "Roster",
     "hide": "Hide",
     "collapse": "Collapse",
@@ -1518,7 +1528,7 @@
     "placeholderCompany": "Company...",
     "placeholderValue": "0.00",
     "placeholderNotes": "Notes...",
-    "totalCost": "Total Cost",
+    "totalCost": "Cost",
     "totalTokens": "Total Tokens",
     "totalActions": "Total Actions",
     "dailyCost": "Daily Cost",
@@ -1575,7 +1585,6 @@
     "cascadeId": "Cascade ID",
     "events": "Events",
     "depth": "Depth",
-    "totalCost": "Cost",
     "duration": "Duration",
     "trigger": "Trigger",
     "status": "Status",
@@ -1583,10 +1592,8 @@
     "creating": "Creating...",
     "create": "Create",
     "createDealError": "Failed to create deal.",
-
     "tabGeneral": "General",
     "tabBranding": "Branding",
-
     "genRevenue": "Revenue",
     "genProfit": "Profit",
     "genAiCost": "AI Cost",
@@ -1599,7 +1606,6 @@
     "viewAgents": "Agents",
     "teamAgents": "Team Agents",
     "noAgentsTeam": "No agents in this team.",
-
     "kpiPipelineValue": "Pipeline",
     "kpiWon": "Won",
     "kpiLost": "Lost",
@@ -1608,7 +1614,6 @@
     "manageStages": "Stages",
     "stageManager": "Manage Pipeline Stages",
     "newStageName": "Stage name...",
-
     "finRevenue": "Revenue",
     "finProfit": "Profit",
     "finEbitda": "EBITDA",
@@ -1623,7 +1628,6 @@
     "recAmount": "Amount",
     "recType": "Type",
     "recCategory": "Category",
-
     "costForecast": "Cost Forecast (7-day average)",
     "dailyAvg": "Daily Avg",
     "projectedMonthly": "Projected Monthly",
@@ -1632,10 +1636,8 @@
     "perAgentCost": "Per-Agent Projection",
     "agentName": "Agent",
     "budgetWarning": "Projected spend is at {pct}% of your monthly budget limit.",
-
     "agentActivityHour": "Agent Activity by Hour",
     "actionsByDay": "Actions by Day",
-
     "marketingFunnel": "Marketing Funnel",
     "funnelTop": "Top of Funnel",
     "funnelMiddle": "Middle of Funnel",
@@ -1653,7 +1655,6 @@
     "campImpressions": "Impressions",
     "campClicks": "Clicks",
     "campConversions": "Conversions",
-
     "touchpointCount": "{count, plural, =0 {No touchpoints} one {1 touchpoint} other {# touchpoints}}",
     "noTouchpoints": "No brand touchpoints yet.",
     "addTouchpoint": "Add Touchpoint",

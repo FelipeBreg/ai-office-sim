@@ -35,6 +35,7 @@ import { complianceRouter } from './routers/compliance.js';
 import { teamsRouter } from './routers/teams.js';
 import { analyticsRouter } from './routers/analytics.js';
 import { toolSchemasRouter } from './routers/tool-schemas.js';
+import { onboardingRouter } from './routers/onboarding.js';
 
 export const appRouter = createTRPCRouter({
   agents: agentsRouter,
@@ -73,6 +74,7 @@ export const appRouter = createTRPCRouter({
   teams: teamsRouter,
   analytics: analyticsRouter,
   toolSchemas: toolSchemasRouter,
+  onboarding: onboardingRouter,
 });
 
 export type AppRouter = typeof appRouter;
