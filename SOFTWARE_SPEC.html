@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Office Sim — Software Specification v4</title>
+  <title>AI Office Sim — Software Specification v5</title>
   <style>
     :root {
       --bg: #0A0E14;
@@ -150,7 +150,7 @@
 <body>
 
 <nav>
-  <h2>Software Spec v4</h2>
+  <h2>Software Spec v5</h2>
 
   <div class="nav-group">
     <div class="nav-group-title">Overview</div>
@@ -217,6 +217,19 @@
     <a href="#build-order">P0 Build Order</a>
     <a href="#gap-summary">Gap Summary Matrix</a>
     <a href="#attribution">Attribution</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">V5 — Intelligence Layer (NEW)</div>
+    <a href="#v5-overview">V5 Overview</a>
+    <a href="#v5-hierarchy">Agent Hierarchy &amp; Chain of Command</a>
+    <a href="#v5-approvals">Approval Mode System</a>
+    <a href="#v5-metrics">Performance Metrics Layer</a>
+    <a href="#v5-learning">Heartbeat Learning Upgrade</a>
+    <a href="#v5-cost-sim">Cost Simulation</a>
+    <a href="#v5-validation">Payload Validation</a>
+    <a href="#v5-onboarding">Smart Onboarding</a>
+    <a href="#v5-build-order">V5 Build Order</a>
   </div>
 </nav>
 
@@ -2155,8 +2168,539 @@ STYLE:
 </table>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
+<!-- V5 INTELLIGENCE LAYER ADDITIONS                               -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<h2 id="v5-overview">28. V5 — INTELLIGENCE &amp; USABILITY LAYER <span class="badge badge-new">NEW v5</span></h2>
+
+<div class="insight-block">
+  <div class="label">Why V5 exists</div>
+  <p>V4 defined the autonomous engine (heartbeat, KPI triggers, cascade, CEO Agent). V5 adds the <strong>intelligence and usability layers</strong> that make the vision actually viable in production: agent hierarchy with chain of command, flexible approval modes, structured performance metrics that enable real learning, cost simulation, inter-agent communication safety, and a smart onboarding system that uses web scraping to auto-configure an entire AI company from a URL.</p>
+</div>
+
+<div class="spec-block">
+  <p><strong>7 new phases</strong>, each ships independently. Builds on top of the V4 P0 gaps (which remain the foundation). Interleaved execution order detailed in section 35.</p>
+  <table>
+    <tr><th>Phase</th><th>Name</th><th>What It Adds</th></tr>
+    <tr><td>V5-1</td><td><strong>Agent Hierarchy &amp; Chain of Command</strong></td><td>Teams table, lead/member roles, reporting structure, org chart, cascade routing rules</td></tr>
+    <tr><td>V5-2</td><td><strong>Approval Mode System</strong></td><td>manual/supervised/autonomous modes, per-agent override, trust escalation</td></tr>
+    <tr><td>V5-3</td><td><strong>Performance Metrics Layer</strong></td><td>Daily rollup snapshots, KPI time-series, agent-queryable metrics tools</td></tr>
+    <tr><td>V5-4</td><td><strong>Heartbeat Learning Upgrade</strong></td><td>Structured lessons field, performance injection into heartbeat context</td></tr>
+    <tr><td>V5-5</td><td><strong>Cost Simulation</strong></td><td>Token estimation x LLM pricing, per-agent + fleet projections</td></tr>
+    <tr><td>V5-6</td><td><strong>Inter-Agent Payload Validation</strong></td><td>Schema registry, hierarchy-aware routing, standardized message protocol</td></tr>
+    <tr><td>V5-7</td><td><strong>Smart Onboarding with Web Scraping</strong></td><td>5-step wizard: company profile, URL scraping, strategy setup, fleet recommendation, one-click deploy</td></tr>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="v5-hierarchy">29. AGENT HIERARCHY &amp; CHAIN OF COMMAND <span class="badge badge-new">NEW v5</span></h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">Why this is foundational</div>
+  <p>Every other V5 phase references "who reports to whom." Onboarding creates agents inside this hierarchy. Approvals flow through it. Cascades respect it. The CEO Agent delegates through it. Without explicit structure, the agent fleet is a flat list — not an organization.</p>
+</div>
+
+<h3>29.1 Data Model</h3>
+
+<div class="spec-block">
+  <h4>New table: <code>teams</code></h4>
+  <p>Replaces the current flat <code>agentTeamEnum</code> with a proper relational structure supporting nested teams.</p>
+  <pre><code>teams
+  id              uuid PK
+  projectId       uuid FK &rarr; projects
+  name            text NOT NULL
+  slug            text NOT NULL
+  description     text
+  parentTeamId    uuid FK &rarr; teams (nullable, for nested teams)
+  leadAgentId     uuid FK &rarr; agents (nullable, the team's manager agent)
+  priority        enum: critical | high | normal | low (default: normal)
+  maxConcurrency  integer (default: 3)
+  createdAt       timestamp
+  updatedAt       timestamp
+  UNIQUE(projectId, slug)</code></pre>
+
+  <h4>New table: <code>agent_team_memberships</code></h4>
+  <pre><code>agent_team_memberships
+  id        uuid PK
+  agentId   uuid FK &rarr; agents
+  teamId    uuid FK &rarr; teams
+  role      enum: lead | member | observer
+  joinedAt  timestamp
+  UNIQUE(agentId, teamId)</code></pre>
+
+  <h4>Modified: <code>agents</code> table</h4>
+  <ul>
+    <li>Keep <code>team</code> enum for backward compat (deprecated, migrate to memberships)</li>
+    <li>Add <code>reportsToAgentId uuid FK &rarr; agents</code> (direct supervisor, nullable)</li>
+    <li>Add <code>hierarchyLevel integer</code> (0 = CEO, 1 = team lead, 2 = member)</li>
+  </ul>
+</div>
+
+<h3>29.2 Chain of Command Structure</h3>
+
+<div class="spec-block">
+  <pre><code>CEO Agent (level 0, isSystemAgent: true)
+  |
+  +-- Sales Team Lead (level 1, role: lead in sales team)
+  |     +-- Sales Agent A (level 2, reportsTo: Sales Lead)
+  |     +-- Sales Agent B (level 2, reportsTo: Sales Lead)
+  |
+  +-- Marketing Team Lead (level 1, role: lead in marketing team)
+  |     +-- Content Writer (level 2)
+  |     +-- Ad Analyst (level 2)
+  |
+  +-- Support Team Lead (level 1)
+        +-- Support Agent A (level 2)</code></pre>
+</div>
+
+<h3>29.3 Cascade Routing Rules</h3>
+
+<div class="spec-block">
+  <ul>
+    <li>Agent can only <code>trigger_agent</code> within its team OR one level up/down</li>
+    <li>CEO Agent can trigger anyone (level 0 privilege)</li>
+    <li>Team leads can trigger any member of their team</li>
+    <li>Cross-team triggers require routing through a common ancestor (or CEO)</li>
+    <li>Adds <code>cascadeRouteValid(sourceAgentId, targetAgentId)</code> check to trigger_agent tool</li>
+  </ul>
+</div>
+
+<h3>29.4 UI Changes</h3>
+
+<div class="spec-block">
+  <ul>
+    <li>New "Organization" page with drag-and-drop org chart visualization</li>
+    <li>Agent detail page shows "Reports to" and "Direct reports" sections</li>
+    <li>Team management: create teams, assign leads, move agents between teams</li>
+    <li>Sidebar: teams shown as collapsible groups under Agents</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="v5-approvals">30. APPROVAL MODE SYSTEM <span class="badge badge-new">NEW v5</span></h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">The problem</div>
+  <p>With 55 agents, some on 5-minute heartbeats, and tools like <code>send_email</code> requiring approval — users get buried in approval requests within hours. The system needs flexible control: from full manual to full autonomous, with intelligent trust in between.</p>
+</div>
+
+<h3>30.1 Three Approval Modes</h3>
+
+<div class="spec-block">
+  <p><strong>Project-level mode</strong> (new field on <code>orchestrator_config</code>):</p>
+  <table>
+    <tr><th>Mode</th><th>Behavior</th><th>Use Case</th></tr>
+    <tr><td><strong>manual</strong></td><td>All tools marked <code>requiresApproval</code> pause for human review</td><td>New users, high-risk operations, regulatory environments</td></tr>
+    <tr><td><strong>supervised</strong></td><td>Trust escalation active — agents earn auto-approve after N consecutive successes</td><td>Growing companies, balanced autonomy</td></tr>
+    <tr><td><strong>autonomous</strong></td><td>All actions auto-approved (user accepts full risk, shown warning)</td><td>Experienced users, low-risk operations, testing</td></tr>
+  </table>
+
+  <p><strong>Per-agent override</strong> (new field on <code>agents</code>):</p>
+  <table>
+    <tr><th>Override</th><th>Behavior</th></tr>
+    <tr><td><code>inherit</code></td><td>Follow project-level mode (default)</td></tr>
+    <tr><td><code>always_require</code></td><td>Always pause for approval regardless of mode</td></tr>
+    <tr><td><code>always_allow</code></td><td>Never pause — user explicitly trusts this agent</td></tr>
+  </table>
+</div>
+
+<h3>30.2 Trust Escalation (supervised mode)</h3>
+
+<div class="spec-block">
+  <h4>New table: <code>agent_trust_scores</code></h4>
+  <pre><code>agent_trust_scores
+  id              uuid PK
+  projectId       uuid FK
+  agentId         uuid FK &rarr; agents
+  toolName        text
+  successCount    integer (default: 0)
+  failureCount    integer (default: 0)
+  lastFailureAt   timestamp
+  autoApproved    boolean (default: false, flips true at threshold)
+  threshold       integer (default: 10, configurable per project)
+  UNIQUE(agentId, toolName)</code></pre>
+
+  <ul>
+    <li>After N consecutive successes with a tool, that tool becomes auto-approved for that agent</li>
+    <li>Any failure resets the counter to 0 and revokes auto-approve</li>
+    <li>Trust score visible on agent detail page (progress bar toward auto-approve)</li>
+    <li>Team leads (from Phase 1) can manually grant/revoke trust for their team</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="v5-metrics">31. PERFORMANCE METRICS &amp; DATA ANALYSIS LAYER <span class="badge badge-new">NEW v5</span></h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">Why this matters</div>
+  <p>Before agents can "learn" they need structured data to learn FROM. Before the CEO Agent can make good strategic decisions, it needs real metrics — not just agent prose. This is the data foundation for intelligent autonomy.</p>
+</div>
+
+<h3>31.1 Data Model</h3>
+
+<div class="spec-block">
+  <h4>New table: <code>agent_performance_snapshots</code> (daily rollup)</h4>
+  <pre><code>agent_performance_snapshots
+  id                    uuid PK
+  projectId             uuid FK
+  agentId               uuid FK &rarr; agents
+  snapshotDate          date
+  sessionsRun           integer
+  actionsExecuted       integer
+  actionsSucceeded      integer
+  actionsFailed         integer
+  tokensUsed            integer
+  costUsd               numeric(10,6)
+  avgSessionDurationMs  integer
+  toolBreakdown         jsonb   -- { "send_email": { success: 10, fail: 1 }, ... }
+  outcomeSignals        jsonb   -- { "emails_sent": 15, "replies_received": 2, ... }
+  createdAt             timestamp
+  UNIQUE(agentId, snapshotDate)</code></pre>
+
+  <h4>New table: <code>kpi_history</code> (time-series)</h4>
+  <pre><code>kpi_history
+  id          uuid PK
+  projectId   uuid FK
+  kpiId       uuid FK &rarr; strategy_kpis
+  value       numeric
+  source      enum: agent | manual | sync | system
+  sourceId    text
+  recordedAt  timestamp
+  INDEX(kpiId, recordedAt)</code></pre>
+</div>
+
+<h3>31.2 New Agent Tools</h3>
+
+<div class="spec-block">
+  <table>
+    <tr><th>Tool</th><th>Access</th><th>Returns</th></tr>
+    <tr><td><code>get_my_performance</code></td><td>Any agent (own stats only)</td><td>Success rate, sessions run, top tools, failure reasons for last N days</td></tr>
+    <tr><td><code>query_team_metrics</code></td><td>Team leads + CEO Agent only</td><td>Per-agent performance, team success rate, cost, busiest agents</td></tr>
+  </table>
+</div>
+
+<h3>31.3 Rollup Worker</h3>
+
+<div class="spec-block">
+  <ul>
+    <li>New BullMQ job: <code>performance-rollup</code> (runs daily at midnight)</li>
+    <li>Aggregates <code>action_logs</code> from past day into <code>agent_performance_snapshots</code></li>
+    <li>Snapshots <code>strategy_kpis.currentValue</code> into <code>kpi_history</code></li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="v5-learning">32. HEARTBEAT LEARNING UPGRADE <span class="badge badge-new">NEW v5</span></h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">From prose planning to data-informed planning</div>
+  <p>The OpenClaw heartbeat.md pattern is great for planning but lacks data. An agent that sends 50 emails with 0 replies might still write "continue outreach" because it has no outcome signal. This upgrade injects structured performance data alongside the prose so agents can make data-informed decisions about their own behavior.</p>
+</div>
+
+<h3>32.1 Before vs After</h3>
+
+<div class="spec-block">
+  <table>
+    <tr><th>Before (v4)</th><th>After (v5)</th></tr>
+    <tr>
+      <td>Agent runs &rarr; writes <code>heartbeatInstructions</code> (prose) &rarr; next run reads it</td>
+      <td>Agent runs &rarr; sees own performance stats + previous lessons &rarr; writes <code>heartbeatInstructions</code> (plan) + structured <code>lessons</code> (data) &rarr; next run gets both</td>
+    </tr>
+  </table>
+</div>
+
+<h3>32.2 Structured Lessons</h3>
+
+<div class="spec-block">
+  <p><strong>New field on <code>agents</code>:</strong> <code>lessons jsonb</code> — structured key-value learnings that persist across heartbeat rewrites.</p>
+  <p>Example: <code>{ "best_send_time": "10am-11am weekdays", "low_reply_segment": "cold leads older than 30 days", "effective_subject_lines": "questions outperform statements 3:1" }</code></p>
+
+  <h4>New tool: <code>update_my_lessons</code></h4>
+  <pre><code>update_my_lessons({
+  set: Record&lt;string, string&gt;,  // upsert key-value pairs
+  remove: string[],              // delete keys no longer relevant
+})
+// Max 20 lesson pairs per agent (oldest auto-pruned)
+// Logged to action_logs for audit trail</code></pre>
+</div>
+
+<h3>32.3 Enhanced Context Injection for Heartbeat Sessions</h3>
+
+<div class="spec-block">
+  <p>When building agent context for a heartbeat-triggered session, inject (~300 tokens):</p>
+  <pre><code>## Your Recent Performance (7d)
+Sessions: 14 | Success rate: 87% | Tokens: 12,430
+Top tools: send_email (10 ok, 2 fail), search_contacts (8 ok)
+
+## Your Lessons
+best_send_time: 10am-11am weekdays
+low_reply_segment: cold leads older than 30 days
+effective_subject_lines: questions outperform statements 3:1
+
+## Your Current Plan
+[heartbeatInstructions content here]</code></pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="v5-cost-sim">33. COST SIMULATION <span class="badge badge-new">NEW v5</span></h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">Prevent bill shock</div>
+  <p>A user enables 10 agents with heartbeats, wakes up to a $200 bill, and churns. Cost simulation shows projected costs BEFORE activation so users make informed decisions.</p>
+</div>
+
+<h3>33.1 Estimation Formula</h3>
+
+<div class="spec-block">
+  <pre><code>estimatedTokensPerSession = baseTokens(model)
+                          + toolSchemaTokens(tools.length)
+                          + contextOverhead
+                          + avgResponseTokens(archetype)
+
+sessionsPerDay = based on trigger type:
+  heartbeat:  1440 / heartbeatIntervalMin
+  scheduled:  cron frequency
+  event/manual: historical average OR default (3/day)
+
+dailyCostUsd = estimatedTokensPerSession * sessionsPerDay * pricePerToken(model)
+monthlyCostUsd = dailyCostUsd * 30</code></pre>
+</div>
+
+<h3>33.2 LLM Pricing Table</h3>
+
+<div class="spec-block">
+  <table>
+    <tr><th>Model</th><th>Input / 1M tokens</th><th>Output / 1M tokens</th></tr>
+    <tr><td>Claude Sonnet 4</td><td>$3.00</td><td>$15.00</td></tr>
+    <tr><td>Claude Haiku 4.5</td><td>$0.80</td><td>$4.00</td></tr>
+    <tr><td>Claude Opus 4</td><td>$15.00</td><td>$75.00</td></tr>
+  </table>
+  <p>Maintained in <code>packages/shared/src/constants/llm-pricing.ts</code>. Updated when Anthropic changes pricing.</p>
+</div>
+
+<h3>33.3 Where It Shows</h3>
+
+<div class="spec-block">
+  <ul>
+    <li><strong>Agent wizard:</strong> "Estimated cost" card after tool/trigger selection</li>
+    <li><strong>Agent detail &gt; Configuration:</strong> Live cost estimate updates as settings change</li>
+    <li><strong>Settings &gt; Billing:</strong> Fleet cost projection dashboard (all agents summed)</li>
+    <li><strong>Warning toast:</strong> When enabling agent whose cost would exceed remaining budget</li>
+    <li><strong>Onboarding:</strong> Fleet cost projection before one-click deploy</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="v5-validation">34. INTER-AGENT PAYLOAD VALIDATION <span class="badge badge-new">NEW v5</span></h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">Garbage in, garbage cascading out</div>
+  <p>When Agent A triggers Agent B with a hallucinated contact ID, Agent B tries to update a nonexistent CRM record, fails, triggers an error cascade. Payload validation + hierarchy-aware routing prevents cascading failures from bad data.</p>
+</div>
+
+<h3>34.1 Standardized Message Protocol</h3>
+
+<div class="spec-block">
+  <pre><code>interface AgentMessage {
+  from: string;           // source agentId
+  to: string;             // target agentId
+  type: 'task' | 'report' | 'escalation' | 'query';
+  priority: 'low' | 'normal' | 'high' | 'critical';
+  subject: string;        // short description
+  body: string;           // detailed content
+  context?: Record&lt;string, unknown&gt;; // structured data
+  expectsReply: boolean;
+  replyToMessageId?: string; // for threaded conversations
+}</code></pre>
+</div>
+
+<h3>34.2 Schema Registry</h3>
+
+<div class="spec-block">
+  <h4>New table: <code>tool_payload_schemas</code></h4>
+  <pre><code>tool_payload_schemas
+  id          uuid PK
+  projectId   uuid FK
+  toolName    text
+  inputSchema jsonb   -- JSON Schema for expected input
+  outputSchema jsonb  -- JSON Schema for expected output
+  version     integer
+  UNIQUE(projectId, toolName, version)</code></pre>
+
+  <h4>Validation flow in <code>trigger_agent</code>:</h4>
+  <ol>
+    <li>Check <code>cascadeRouteValid()</code> — is this agent allowed to trigger that agent? (hierarchy rules from section 29.3)</li>
+    <li>Validate payload against target agent's expected input schema (if defined)</li>
+    <li>If validation fails: return structured error to calling agent ("Payload rejected: field X expected string, got number") — agent can self-correct and retry</li>
+    <li>If no schema defined: pass through (backward compatible)</li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="v5-onboarding">35. SMART ONBOARDING WITH WEB SCRAPING <span class="badge badge-new">NEW v5</span></h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">The cold start problem</div>
+  <p>A user creates a project and gets an empty office. Without guided setup, they stare at a blank screen and churn. Smart onboarding scrapes the user's website and social media, synthesizes a company profile, and auto-configures an entire AI company — hierarchy, agents, strategies, wiki — in minutes.</p>
+</div>
+
+<h3>35.1 Five-Step Wizard</h3>
+
+<div class="spec-block">
+  <table>
+    <tr><th>Step</th><th>Name</th><th>What Happens</th></tr>
+    <tr>
+      <td><strong>1</strong></td>
+      <td>Company Profile</td>
+      <td>User provides: company name, sector, size, website URL, social media links (LinkedIn, Instagram, Facebook, X, TikTok), primary language</td>
+    </tr>
+    <tr>
+      <td><strong>2</strong></td>
+      <td>Web Scraping &amp; Analysis</td>
+      <td>Async: scrape all provided URLs, extract company description, products, brand voice, content themes. Claude Haiku synthesizes into a structured <code>CompanyProfile</code></td>
+    </tr>
+    <tr>
+      <td><strong>3</strong></td>
+      <td>Strategy Setup</td>
+      <td>Pre-filled from scraped data. User confirms/edits: primary goal, 3-5 KPIs with targets, timeline</td>
+    </tr>
+    <tr>
+      <td><strong>4</strong></td>
+      <td>Fleet Recommendation</td>
+      <td>Based on profile + strategy: recommend teams, agents per team, team leads, approval mode, cost estimate. User can toggle agents on/off, change assignments</td>
+    </tr>
+    <tr>
+      <td><strong>5</strong></td>
+      <td>Deploy &amp; Go Live</td>
+      <td>One-click: create hierarchy, create agents with auto-generated prompts, seed wiki with scraped content, create strategies + KPIs, configure CEO Agent with company context</td>
+    </tr>
+  </table>
+</div>
+
+<h3>35.2 CompanyProfile Schema</h3>
+
+<div class="spec-block">
+  <pre><code>interface CompanyProfile {
+  description: string;        // 2-3 sentence company summary
+  products: string[];         // main products/services
+  targetAudience: string;     // who they sell to
+  brandVoice: string;         // formal, casual, technical, friendly
+  channels: string[];         // active channels detected
+  teamSize: string;           // from LinkedIn or user input
+  techStack: string[];        // if detectable
+  competitors: string[];      // if mentioned on site
+  contentThemes: string[];    // from social media analysis
+}</code></pre>
+</div>
+
+<h3>35.3 Web Scraping Implementation</h3>
+
+<div class="spec-block">
+  <p><strong>New package:</strong> <code>packages/scraper/</code></p>
+  <ul>
+    <li>Uses <code>fetch</code> + <code>cheerio</code> for HTML parsing (no headless browser)</li>
+    <li>Respects <code>robots.txt</code></li>
+    <li>Rate limit: max 2 requests/second per domain</li>
+    <li>Timeout: 10s per URL</li>
+    <li>Max content: 50KB text per URL (truncate, Haiku summarizes)</li>
+    <li>Extractors: website (generic), LinkedIn (public), Instagram (public), Facebook (public)</li>
+    <li>Fallback: if scraping fails, user manually fills the profile</li>
+  </ul>
+  <p><strong>BullMQ job:</strong> <code>onboarding-scrape</code> (async processing with Socket.IO progress events)</p>
+</div>
+
+<h3>35.4 Agent Prompt Generation</h3>
+
+<div class="spec-block">
+  <p>Claude Haiku generates bilingual system prompts per agent from: company profile + archetype + team + brand voice + strategy.</p>
+  <p>Example for a sales agent at a SaaS company:</p>
+  <pre><code>You are a sales agent for [CompanyName], a [description].
+Your targets are [audience]. Communicate in a [brandVoice] tone.
+Your primary KPI is [kpi]. Focus on [products].
+Use WhatsApp for warm leads and email for cold outreach.</code></pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<h2 id="v5-build-order">36. V5 BUILD ORDER &amp; INTERLEAVED TIMELINE <span class="badge badge-new">NEW v5</span></h2>
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="insight-block">
+  <div class="label">Merged execution with V4 P0 gaps</div>
+  <p>The V4 P0 gaps and V5 phases interleave. Some can run in parallel, some have strict dependencies. This is the correct build order.</p>
+</div>
+
+<div class="spec-block">
+  <table>
+    <tr><th>Order</th><th>Item</th><th>Source</th><th>Depends On</th></tr>
+    <tr><td>1</td><td><strong>Token Budget System</strong></td><td>V4 P0-A</td><td>None (start now)</td></tr>
+    <tr><td>2</td><td><strong>Wire Scheduled Agent Worker</strong></td><td>V4 P0-B</td><td>None (start now)</td></tr>
+    <tr><td>3</td><td><strong>Strategy Context Injection</strong></td><td>V4 P0-C</td><td>None (start now)</td></tr>
+    <tr><td>4</td><td><strong>Agent Hierarchy &amp; Chain of Command</strong></td><td>V5-1</td><td>None (start now)</td></tr>
+    <tr><td>5</td><td><strong>Cascade Depth Tracking</strong></td><td>V4 P0-D</td><td>#4 (respects hierarchy routing)</td></tr>
+    <tr><td>6</td><td><strong>Approval Mode System</strong></td><td>V5-2</td><td>#4 (team lead trust management)</td></tr>
+    <tr><td>7</td><td><strong>Performance Metrics Layer</strong></td><td>V5-3</td><td>#2 (needs running agents to aggregate)</td></tr>
+    <tr><td>8</td><td><strong>Heartbeat System</strong></td><td>V4 P0-E</td><td>#5 (cascade safety)</td></tr>
+    <tr><td>9</td><td><strong>KPI Monitor + Trigger System</strong></td><td>V4 P0-F</td><td>#8 (heartbeat)</td></tr>
+    <tr><td>10</td><td><strong>Heartbeat Learning Upgrade</strong></td><td>V5-4</td><td>#7 + #8 (metrics + heartbeat)</td></tr>
+    <tr><td>11</td><td><strong>Cost Simulation</strong></td><td>V5-5</td><td>None (independent, slot anytime)</td></tr>
+    <tr><td>12</td><td><strong>Session Logs &rarr; Wiki</strong></td><td>V4 P0-G</td><td>#9 (KPI triggers)</td></tr>
+    <tr><td>13</td><td><strong>Inter-Agent Payload Validation</strong></td><td>V5-6</td><td>#4 (hierarchy routing)</td></tr>
+    <tr><td>14</td><td><strong>CEO Agent</strong></td><td>V4 P0-H</td><td>ALL above</td></tr>
+    <tr><td>15</td><td><strong>Smart Onboarding</strong></td><td>V5-7</td><td>ALL above (capstone)</td></tr>
+  </table>
+</div>
+
+<h3>36.1 Dependency Graph</h3>
+
+<div class="spec-block">
+  <pre><code>V4-P0A (tokens) ──────────────────────────────────────────────┐
+V4-P0B (scheduler) ────────────────> V5-3 (metrics) ─────┐   |
+V4-P0C (strategy) ──────────────────────────────────────┐ |   |
+V5-1 (hierarchy) ──┬──> V4-P0D (cascade) ──> V4-P0E ─┐ | |   |
+                   |                        (heartbeat)| | |   |
+                   ├──> V5-2 (approvals)              | | |   |
+                   |                                  v v v   |
+                   └──> V5-6 (validation)    V4-P0F (KPI)    |
+                                               |             |
+                              V5-4 (learning) &lt;┘             |
+                                               |             |
+                              V4-P0G (sessions)              |
+                                               |             |
+                              V4-P0H (CEO Agent) &lt;───────────┘
+                                               |
+                              V5-5 (cost sim)  |  (independent)
+                                               |
+                              V5-7 (onboarding) = CAPSTONE</code></pre>
+</div>
+
+<h3>36.2 Estimated Scope</h3>
+
+<div class="spec-block">
+  <table>
+    <tr><th>Phase</th><th>New Tables</th><th>New Files</th><th>Modify Existing</th><th>Risk</th></tr>
+    <tr><td>V5-1 Hierarchy</td><td>2</td><td>~8</td><td>~6</td><td>Medium (data model migration)</td></tr>
+    <tr><td>V5-2 Approvals</td><td>1</td><td>~4</td><td>~5</td><td>Low (additive)</td></tr>
+    <tr><td>V5-3 Metrics</td><td>2</td><td>~5</td><td>~2</td><td>Low (new worker)</td></tr>
+    <tr><td>V5-4 Learning</td><td>0</td><td>~2</td><td>~3</td><td>Low (extends context builder)</td></tr>
+    <tr><td>V5-5 Cost Sim</td><td>0</td><td>~3</td><td>~4</td><td>Low (pure functions + UI)</td></tr>
+    <tr><td>V5-6 Validation</td><td>1</td><td>~4</td><td>~2</td><td>Low (additive)</td></tr>
+    <tr><td>V5-7 Onboarding</td><td>0</td><td>~12</td><td>~4</td><td>Medium (new package, LLM calls)</td></tr>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
 <hr>
-<h2>28. GLOSSARY</h2>
+
+<!-- Updated glossary terms for V5 -->
+
+<h2 id="glossary">37. GLOSSARY</h2>
 <!-- ══════════════════════════════════════════════════════════════ -->
 
 <table>
@@ -2179,10 +2723,19 @@ STYLE:
   <tr><td><strong>Cascade Trace</strong></td><td>A UI visualization showing the full chain of agents/workflows triggered in a cascade, with status, cost, and duration per node.</td></tr>
   <tr><td><strong>Approval Expiry</strong></td><td>Automatic timeout on pending approvals (default 48h). Prevents agents from being stuck indefinitely waiting for human response.</td></tr>
   <tr><td><strong>Auto-Recovery</strong></td><td>Automatic re-enablement of disabled agents after a cooldown period, using a health check execution to verify the agent works again.</td></tr>
+  <tr><td><strong>Chain of Command</strong></td><td>The hierarchy defining which agents report to whom and who can trigger whom. CEO Agent at level 0, team leads at level 1, members at level 2. Enforced in cascade routing. <span class="badge badge-new">v5</span></td></tr>
+  <tr><td><strong>Trust Escalation</strong></td><td>In supervised approval mode, agents earn auto-approve privileges for specific tools after N consecutive successful uses. Failures reset the counter. <span class="badge badge-new">v5</span></td></tr>
+  <tr><td><strong>Approval Mode</strong></td><td>Project-level setting (manual/supervised/autonomous) controlling how tool approvals are handled. Per-agent overrides available. <span class="badge badge-new">v5</span></td></tr>
+  <tr><td><strong>Performance Snapshot</strong></td><td>Daily aggregation of an agent's actions, success rate, tokens, cost, and tool breakdown. Stored in agent_performance_snapshots. <span class="badge badge-new">v5</span></td></tr>
+  <tr><td><strong>Lessons</strong></td><td>Structured key-value pairs an agent writes about what it has learned (separate from heartbeat prose plans). Max 20 pairs, persists across sessions. <span class="badge badge-new">v5</span></td></tr>
+  <tr><td><strong>Cost Simulation</strong></td><td>Pre-activation estimate of an agent's monthly cost based on token usage, trigger frequency, and LLM pricing. Prevents bill shock. <span class="badge badge-new">v5</span></td></tr>
+  <tr><td><strong>Payload Validation</strong></td><td>JSON Schema-based validation of data passed between agents via trigger_agent. Prevents cascading failures from bad data. <span class="badge badge-new">v5</span></td></tr>
+  <tr><td><strong>Smart Onboarding</strong></td><td>Five-step wizard that scrapes a company's website and social media, synthesizes a company profile, and auto-configures agents, teams, strategies, and wiki content. <span class="badge badge-new">v5</span></td></tr>
+  <tr><td><strong>CompanyProfile</strong></td><td>Structured data extracted from web scraping: description, products, audience, brand voice, channels, team size, tech stack, competitors, content themes. <span class="badge badge-new">v5</span></td></tr>
 </table>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<h2 id="attribution">29. ATTRIBUTION</h2>
+<h2 id="attribution">38. ATTRIBUTION</h2>
 <!-- ══════════════════════════════════════════════════════════════ -->
 
 <div class="spec-block">
@@ -2200,10 +2753,10 @@ STYLE:
 
 <hr>
 <p style="text-align: center; color: var(--text-dim); font-size: 11px; margin-top: 48px;">
-  AI OFFICE SIM — SOFTWARE SPECIFICATION v4<br>
-  Generated 2026-03-03 &nbsp;|&nbsp; 110 commits analyzed &nbsp;|&nbsp; OpenClaw architecture patterns integrated<br>
-  25 gaps identified &nbsp;|&nbsp; 12 design flaws documented &nbsp;|&nbsp; 8 P0 priorities with explicit build order<br>
-  6 pillars &nbsp;|&nbsp; CEO Agent with two-pass triage &nbsp;|&nbsp; All v3 architectural flaws resolved
+  AI OFFICE SIM — SOFTWARE SPECIFICATION v5<br>
+  Generated 2026-03-03, updated 2026-03-05 &nbsp;|&nbsp; 126 commits &nbsp;|&nbsp; OpenClaw architecture patterns integrated<br>
+  V4: 25 gaps identified &nbsp;|&nbsp; 12 design flaws &nbsp;|&nbsp; 8 P0 priorities &nbsp;|&nbsp; 6 pillars &nbsp;|&nbsp; CEO Agent with two-pass triage<br>
+  V5: 7 intelligence layer phases &nbsp;|&nbsp; Agent hierarchy &nbsp;|&nbsp; Trust escalation &nbsp;|&nbsp; Smart onboarding with web scraping
 </p>
 
 </main>
