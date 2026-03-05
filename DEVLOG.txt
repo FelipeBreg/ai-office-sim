@@ -6255,3 +6255,28 @@ VERIFICATION:
   - Migration 0009: executed on Neon ✓
 
 ================================================================================
+
+================================================================================
+COMMIT #131 — V5 Phase 4: Heartbeat Learning Upgrade
+================================================================================
+DATE: 2026-03-05
+HASH: (see git log)
+PHASE: V5 Phase 4
+
+WHAT WAS BUILT:
+  - Added `lessons` jsonb field to agents schema
+  - Stores structured key-value learnings (max 20 pairs)
+  - Separate from heartbeatInstructions prose — data vs plan
+  - Example: { "best_send_time": "10am", "low_reply_segment": "cold leads" }
+  - Context builder will inject performance stats + lessons before heartbeat
+  - SQL migration 0010 executed on Neon
+
+FILES: 2 changed
+  - MODIFIED: packages/db/src/schema/agents.ts
+  - NEW: packages/db/src/migrations/0010_heartbeat_learning.sql
+
+VERIFICATION:
+  - turbo typecheck --force: 0 errors (15/15 tasks)
+  - Migration 0010: executed on Neon ✓
+
+================================================================================
