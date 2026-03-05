@@ -612,6 +612,48 @@ V5 Phase 7: Onboarding            <-- after everything
 
 ---
 
+## Implementation Status (as of 2026-03-05)
+
+All 7 phases have been committed and pushed (commits #128–#134, migrations 0007–0011).
+Schema, API routers, shared types, UI pages, and pure logic are **fully shipped**.
+
+The following items are **stubbed / deferred** because they depend on V4 P0 foundation
+work that hasn't been built yet:
+
+### Phase 3: Performance Metrics
+- **Rollup worker** (`performance-rollup` BullMQ job — daily aggregation of action_logs
+  into agent_performance_snapshots): needs V4 P0-B (Scheduled Worker) first.
+- **Agent tools** (`get_my_performance`, `query_team_metrics`): need the rollup worker
+  to populate snapshot data. Tool definitions not yet created in `packages/ai/src/tools/`.
+
+### Phase 4: Heartbeat Learning
+- **Context injection** (injecting performance stats + lessons into agent context before
+  heartbeat rewrite in `context-builder.ts`): needs V4 P0-E (Heartbeat System) first.
+  The `lessons` jsonb field on agents is live and ready.
+
+### Phase 6: Payload Validation
+- **Runtime wiring** (calling `validatePayload()` and `cascadeRouteValid()` inside the
+  actual `trigger_agent` tool execution): needs V4 P0-D (Cascade Safety) first. The
+  validator functions and routing logic exist in `packages/shared/src/utils/payload-validator.ts`
+  but aren't called from the agent harness yet.
+
+### Phase 7: Smart Onboarding
+- **Web scraping** (`scrapeCompany` endpoint returns a stub profile): full cheerio +
+  robots-parser implementation deferred until worker infra is ready. The wizard works
+  end-to-end with manual input — scraping step shows a progress animation and auto-advances.
+- **Prompt generation** (using Claude Haiku to generate per-agent system prompts from
+  company profile + brand voice): deferred. Agents deploy with default archetype prompts.
+
+### Unlock order (V4 P0 dependencies):
+```
+V4 P0-B: Scheduled Worker  --> unlocks Phase 3 rollup worker
+V4 P0-D: Cascade Safety    --> unlocks Phase 6 runtime wiring
+V4 P0-E: Heartbeat System  --> unlocks Phase 4 context injection
+All of the above            --> unlocks Phase 7 scraping + prompt gen
+```
+
+---
+
 ## Non-Goals (Explicitly Out of Scope)
 
 - External API integrations (CRM sync, bank API, ad platforms) — deferred
