@@ -144,6 +144,61 @@ export const teamsRouter = createTRPCRouter({
       return { removed: true };
     }),
 
+  /** Get full org chart data: CEO + teams + members with agent details */
+  orgChart: projectProcedure.query(async ({ ctx }) => {
+    const projectId = ctx.project!.id;
+
+    // Get CEO agent
+    const [ceo] = await db
+      .select({ id: agents.id, name: agents.name, status: agents.status, archetype: agents.archetype })
+      .from(agents)
+      .where(and(eq(agents.projectId, projectId), eq(agents.isSystemAgent, true)))
+      .limit(1);
+
+    // Get all teams
+    const allTeams = await db
+      .select()
+      .from(teams)
+      .where(eq(teams.projectId, projectId))
+      .orderBy(teams.name);
+
+    // Get all memberships with agent info
+    const memberships = await db
+      .select({
+        teamId: agentTeamMemberships.teamId,
+        role: agentTeamMemberships.role,
+        agentId: agents.id,
+        agentName: agents.name,
+        agentStatus: agents.status,
+        agentArchetype: agents.archetype,
+      })
+      .from(agentTeamMemberships)
+      .innerJoin(agents, eq(agentTeamMemberships.agentId, agents.id))
+      .where(eq(agents.projectId, projectId));
+
+    // Get unassigned agents (not in any team, not CEO)
+    const assignedIds = new Set(memberships.map((m) => m.agentId));
+    if (ceo) assignedIds.add(ceo.id);
+
+    const allAgents = await db
+      .select({ id: agents.id, name: agents.name, status: agents.status, archetype: agents.archetype })
+      .from(agents)
+      .where(eq(agents.projectId, projectId));
+
+    const unassigned = allAgents.filter((a) => !assignedIds.has(a.id));
+
+    return {
+      ceo: ceo ?? null,
+      teams: allTeams.map((team) => ({
+        ...team,
+        members: memberships
+          .filter((m) => m.teamId === team.id)
+          .map((m) => ({ id: m.agentId, name: m.agentName, status: m.agentStatus, archetype: m.agentArchetype, role: m.role })),
+      })),
+      unassigned,
+    };
+  }),
+
   /** Get all teams with their member counts */
   listWithCounts: projectProcedure.query(async ({ ctx }) => {
     const allTeams = await db

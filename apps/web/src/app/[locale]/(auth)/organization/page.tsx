@@ -14,6 +14,10 @@ import {
   ChevronRight,
   Users,
   X,
+  List,
+  GitFork,
+  Bot,
+  AlertCircle,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
@@ -361,13 +365,243 @@ function TeamCard({
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Status Dot                                                                 */
+/* -------------------------------------------------------------------------- */
+
+const STATUS_COLOR: Record<string, string> = {
+  idle: 'bg-text-muted',
+  working: 'bg-status-success',
+  awaiting_approval: 'bg-status-warning',
+  error: 'bg-status-error',
+  offline: 'bg-border-default',
+};
+
+function StatusDot({ status }: { status: string }) {
+  return (
+    <span
+      className={`inline-block h-1.5 w-1.5 shrink-0 ${STATUS_COLOR[status] ?? 'bg-text-muted'} ${
+        status === 'working' ? 'animate-pulse' : ''
+      }`}
+    />
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Org Chart Node                                                             */
+/* -------------------------------------------------------------------------- */
+
+function ChartNode({
+  icon,
+  label,
+  sublabel,
+  status,
+  variant = 'default',
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sublabel?: string;
+  status?: string;
+  variant?: 'ceo' | 'team' | 'agent' | 'default';
+  children?: React.ReactNode;
+}) {
+  const borderClass =
+    variant === 'ceo'
+      ? 'border-accent-cyan bg-accent-cyan/5'
+      : variant === 'team'
+        ? 'border-border-hover bg-bg-raised'
+        : 'border-border-default bg-bg-base';
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className={`flex items-center gap-2 border px-3 py-2 ${borderClass}`}>
+        {icon}
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            {status && <StatusDot status={status} />}
+            <span
+              className={`text-[10px] font-medium ${
+                variant === 'ceo' ? 'text-accent-cyan' : 'text-text-primary'
+              }`}
+            >
+              {label}
+            </span>
+          </div>
+          {sublabel && <span className="text-[8px] text-text-muted">{sublabel}</span>}
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Org Chart View                                                             */
+/* -------------------------------------------------------------------------- */
+
+function OrgChartView({ t }: { t: (key: string, values?: Record<string, string | number>) => string }) {
+  const orgQuery = trpc.teams.orgChart.useQuery();
+
+  if (orgQuery.isLoading) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-12">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-px w-px" />
+        <div className="flex gap-8">
+          <Skeleton className="h-32 w-40" />
+          <Skeleton className="h-32 w-40" />
+          <Skeleton className="h-32 w-40" />
+        </div>
+      </div>
+    );
+  }
+
+  const data = orgQuery.data;
+  if (!data) return null;
+
+  const hasTeams = data.teams.length > 0;
+  const hasUnassigned = data.unassigned.length > 0;
+
+  return (
+    <div className="overflow-auto p-6">
+      <div className="flex min-w-max flex-col items-center gap-0">
+        {/* CEO Node */}
+        <ChartNode
+          icon={<Crown size={14} strokeWidth={1.5} className="text-accent-cyan" />}
+          label={data.ceo?.name ?? 'CEO Agent'}
+          sublabel={t('level', { level: 0 })}
+          status={data.ceo?.status ?? 'offline'}
+          variant="ceo"
+        />
+
+        {/* Trunk line from CEO down */}
+        {(hasTeams || hasUnassigned) && (
+          <div className="h-6 w-px bg-accent-cyan/40" />
+        )}
+
+        {/* Horizontal connector + team branches */}
+        {hasTeams && (
+          <>
+            {/* Horizontal bar */}
+            <div className="relative flex items-start">
+              {/* The horizontal connector line */}
+              {data.teams.length > 1 && (
+                <div
+                  className="absolute top-0 h-px bg-border-hover"
+                  style={{
+                    left: `calc(${100 / (2 * data.teams.length)}%)`,
+                    right: `calc(${100 / (2 * data.teams.length)}%)`,
+                  }}
+                />
+              )}
+
+              {/* Teams */}
+              <div className="flex gap-6">
+                {data.teams.map((team) => {
+                  const lead = team.members.find((m) => m.role === 'lead');
+                  const members = team.members.filter((m) => m.role !== 'lead');
+
+                  return (
+                    <div key={team.id} className="flex flex-col items-center">
+                      {/* Vertical line into team */}
+                      <div className="h-4 w-px bg-border-hover" />
+
+                      {/* Team node */}
+                      <ChartNode
+                        icon={<Users size={12} strokeWidth={1.5} className="text-accent-cyan" />}
+                        label={team.name}
+                        sublabel={`${team.members.length} ${t('members').toLowerCase()}`}
+                        variant="team"
+                      />
+
+                      {/* Members below */}
+                      {team.members.length > 0 && (
+                        <>
+                          <div className="h-3 w-px bg-border-default" />
+
+                          <div className="flex flex-col items-center gap-1">
+                            {/* Lead first */}
+                            {lead && (
+                              <div className="flex items-center gap-2 border border-accent-cyan/30 bg-accent-cyan/5 px-2.5 py-1.5">
+                                <Crown size={9} strokeWidth={1.5} className="text-accent-cyan" />
+                                <StatusDot status={lead.status} />
+                                <span className="text-[9px] font-medium text-accent-cyan">
+                                  {lead.name}
+                                </span>
+                                <Badge variant="success">{t('lead')}</Badge>
+                              </div>
+                            )}
+
+                            {/* Other members */}
+                            {members.map((member) => (
+                              <div
+                                key={member.id}
+                                className="flex items-center gap-2 border border-border-default bg-bg-base px-2.5 py-1.5"
+                              >
+                                <Bot size={9} strokeWidth={1.5} className="text-text-muted" />
+                                <StatusDot status={member.status} />
+                                <span className="text-[9px] text-text-primary">{member.name}</span>
+                                <Badge variant="default">{t(member.role as any)}</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Unassigned agents */}
+        {hasUnassigned && (
+          <div className="mt-8 w-full">
+            <div className="mb-2 flex items-center gap-2">
+              <AlertCircle size={10} className="text-status-warning" />
+              <span className="text-[9px] uppercase tracking-[0.12em] text-status-warning">
+                {t('unassigned')} ({data.unassigned.length})
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {data.unassigned.map((agent) => (
+                <div
+                  key={agent.id}
+                  className="flex items-center gap-1.5 border border-border-default border-dashed bg-bg-base px-2 py-1"
+                >
+                  <Bot size={9} strokeWidth={1.5} className="text-text-muted" />
+                  <StatusDot status={agent.status} />
+                  <span className="text-[9px] text-text-muted">{agent.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!hasTeams && !hasUnassigned && !data.ceo && (
+          <div className="mt-8 text-center">
+            <Network size={32} strokeWidth={1} className="mx-auto mb-3 text-text-muted" />
+            <p className="text-[11px] text-text-muted">{t('noTeams')}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Page                                                                       */
 /* -------------------------------------------------------------------------- */
+
+type ViewMode = 'list' | 'chart';
 
 export default function OrganizationPage() {
   const t = useTranslations('organization');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingTeam, setEditingTeam] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('chart');
 
   const teamsQuery = trpc.teams.listWithCounts.useQuery();
   const deleteMutation = trpc.teams.delete.useMutation({
@@ -378,6 +612,7 @@ export default function OrganizationPage() {
   const handleSaved = useCallback(() => {
     teamsQuery.refetch();
     utils.teams.listWithCounts.invalidate();
+    utils.teams.orgChart.invalidate();
   }, [teamsQuery, utils]);
 
   return (
@@ -393,51 +628,88 @@ export default function OrganizationPage() {
           </div>
           <p className="mt-0.5 text-[10px] text-text-muted">{t('subtitle')}</p>
         </div>
-        <Button size="sm" onClick={() => setShowCreateModal(true)}>
-          <Plus size={12} className="mr-1" />
-          {t('createTeam')}
-        </Button>
+
+        <div className="flex items-center gap-3">
+          {/* View toggle */}
+          <div className="flex border border-border-default">
+            <button
+              type="button"
+              onClick={() => setViewMode('chart')}
+              className={`flex items-center gap-1 px-2.5 py-1.5 text-[9px] uppercase tracking-[0.1em] transition-colors ${
+                viewMode === 'chart'
+                  ? 'bg-accent-cyan/10 text-accent-cyan'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <GitFork size={10} />
+              {t('chartView')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`flex items-center gap-1 border-l border-border-default px-2.5 py-1.5 text-[9px] uppercase tracking-[0.1em] transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-accent-cyan/10 text-accent-cyan'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <List size={10} />
+              {t('listView')}
+            </button>
+          </div>
+
+          <Button size="sm" onClick={() => setShowCreateModal(true)}>
+            <Plus size={12} className="mr-1" />
+            {t('createTeam')}
+          </Button>
+        </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-4">
-        {/* CEO Agent indicator */}
-        <div className="mb-4 flex items-center gap-3 border border-accent-cyan/20 bg-accent-cyan/5 px-4 py-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-accent-cyan/30 bg-bg-base">
-            <Crown size={14} strokeWidth={1.5} className="text-accent-cyan" />
-          </div>
-          <div>
-            <div className="text-[11px] font-medium text-accent-cyan">{t('ceoAgent')}</div>
-            <div className="text-[9px] text-text-muted">{t('level', { level: 0 })} — System Agent</div>
-          </div>
+      {viewMode === 'chart' ? (
+        <div className="flex-1 overflow-auto">
+          <OrgChartView t={t} />
         </div>
+      ) : (
+        <div className="flex-1 overflow-auto p-4">
+          {/* CEO Agent indicator */}
+          <div className="mb-4 flex items-center gap-3 border border-accent-cyan/20 bg-accent-cyan/5 px-4 py-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-accent-cyan/30 bg-bg-base">
+              <Crown size={14} strokeWidth={1.5} className="text-accent-cyan" />
+            </div>
+            <div>
+              <div className="text-[11px] font-medium text-accent-cyan">{t('ceoAgent')}</div>
+              <div className="text-[9px] text-text-muted">{t('level', { level: 0 })} — System Agent</div>
+            </div>
+          </div>
 
-        {/* Teams */}
-        {teamsQuery.isLoading ? (
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
-          </div>
-        ) : (teamsQuery.data?.length ?? 0) === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <Network size={32} strokeWidth={1} className="mb-3 text-text-muted" />
-            <p className="text-[11px] text-text-muted">{t('noTeams')}</p>
-            <p className="mt-1 text-[9px] text-text-muted">{t('noTeamsDescription')}</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {teamsQuery.data?.map((team) => (
-              <TeamCard
-                key={team.id}
-                team={team as any}
-                onEdit={() => setEditingTeam(team)}
-                onDelete={() => deleteMutation.mutate({ id: team.id })}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {/* Teams */}
+          {teamsQuery.isLoading ? (
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ) : (teamsQuery.data?.length ?? 0) === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <Network size={32} strokeWidth={1} className="mb-3 text-text-muted" />
+              <p className="text-[11px] text-text-muted">{t('noTeams')}</p>
+              <p className="mt-1 text-[9px] text-text-muted">{t('noTeamsDescription')}</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {teamsQuery.data?.map((team) => (
+                <TeamCard
+                  key={team.id}
+                  team={team as any}
+                  onEdit={() => setEditingTeam(team)}
+                  onDelete={() => deleteMutation.mutate({ id: team.id })}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Modals */}
       {showCreateModal && (

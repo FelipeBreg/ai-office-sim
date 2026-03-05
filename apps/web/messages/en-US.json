@@ -484,8 +484,10 @@
     "memberRemoved": "Member removed.",
     "selectAgent": "Select an agent",
     "selectRole": "Select role",
-    "unassigned": "Unassigned",
-    "level": "Level {level}"
+    "unassigned": "Unassigned Agents",
+    "level": "Level {level}",
+    "chartView": "Chart",
+    "listView": "List"
   },
   "toolsPage": {
     "title": "Tools",

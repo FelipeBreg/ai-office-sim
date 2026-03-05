@@ -484,8 +484,10 @@
     "memberRemoved": "Membro removido.",
     "selectAgent": "Selecione um agente",
     "selectRole": "Selecione o papel",
-    "unassigned": "Não atribuído",
-    "level": "Nível {level}"
+    "unassigned": "Agentes Sem Equipe",
+    "level": "Nível {level}",
+    "chartView": "Organograma",
+    "listView": "Lista"
   },
   "toolsPage": {
     "title": "Ferramentas",
