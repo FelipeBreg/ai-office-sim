@@ -6336,3 +6336,46 @@ VERIFICATION:
   - tsc --noEmit: 0 errors (shared, db, api, web all clean)
 
 ================================================================================
+
+COMMIT #134 ─────────────────────────────────────────────────────────────────────
+DATE: 2026-03-05
+HASH: (see git log)
+PHASE: V5 Phase 7
+
+WHAT WAS BUILT:
+  - Smart Onboarding wizard (5-step flow at /onboarding/smart):
+    Step 0: Company Profile (name, sector, size, website URL)
+    Step 1: Scanning animation (progress bar, auto-advances)
+    Step 2: Strategy Setup (primary goal, timeline)
+    Step 3: Fleet Recommendation (toggle agents, cost preview)
+    Step 4: Deploy (creates teams + agents + sets approval mode)
+  - Fleet recommender engine (pure function, 3 sector configs + default)
+    Sector matching: saas/software/tech, ecommerce/retail, agency/marketing
+    Per-sector teams + agents with tools, triggers, heartbeat intervals
+  - Onboarding tRPC router: scrapeCompany (stub), getFleetRecommendation, deployFleet
+  - deployFleet creates teams, agents with configs, team memberships, sets approval mode
+  - Shared types: OnboardingCompanyInput, CompanyProfile, FleetRecommendation,
+    ScrapeResult, OnboardingStep
+  - AgentMessage interface (from Phase 6) + Onboarding types exported from shared
+  - 39 new i18n keys (en-US + pt-BR) under "onboarding" namespace
+  - Link from existing onboarding welcome step to smart onboarding
+
+FILES: 10 changed
+  - NEW: apps/web/src/app/[locale]/(auth)/onboarding/smart/page.tsx
+  - NEW: packages/api/src/routers/onboarding.ts
+  - NEW: packages/shared/src/types/onboarding.ts
+  - NEW: packages/shared/src/utils/fleet-recommender.ts
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/onboarding/page.tsx (smart link)
+  - MODIFIED: packages/api/src/root.ts (register onboardingRouter)
+  - MODIFIED: packages/shared/src/types/index.ts (export onboarding types)
+  - MODIFIED: packages/shared/src/utils/index.ts (export recommendFleet)
+  - MODIFIED: apps/web/messages/en-US.json (39 smart keys)
+  - MODIFIED: apps/web/messages/pt-BR.json (39 smart keys)
+
+VERIFICATION:
+  - tsc --noEmit: 0 errors (shared, db, api, web all clean)
+
+NOTE: Web scraping (cheerio, robots-parser) is stubbed — returns empty profile.
+      Full scraping implementation deferred until worker infra is ready.
+
+================================================================================
