@@ -6069,3 +6069,36 @@ VERIFICATION:
   - tsc --noEmit: 0 errors
 
 ================================================================================
+
+================================================================================
+COMMIT #126 — Fix: Sync Tools Across Agent Detail & Tools Catalog
+================================================================================
+DATE: 2026-03-05
+HASH: 512cea3
+PHASE: Post-Phase 3 — Polish & Consistency
+
+WHAT WAS FIXED:
+  - Agent detail [id]/page.tsx had 16 shorthand tool names (e.g. send_whatsapp,
+    search_memory) that didn't match the wizard's 26 full IDs (e.g.
+    send_whatsapp_message, search_company_memory). Tools selected during
+    agent creation didn't display correctly on the detail view.
+  - Updated ALL_TOOLS from flat string[] to { id, nameKey }[] matching the
+    wizard's 26 tools exactly — overview badges and config checkboxes now
+    show i18n labels instead of raw IDs
+  - Tools catalog page was missing 4 categories that existed in the wizard:
+    Documents (create_document, generate_document),
+    Calendar & Logging (schedule_event, log_message),
+    Ads & Marketing (google_ads, meta_marketing),
+    Internal Comms (send_conversation_message)
+  - Added matching i18n category keys in en-US and pt-BR
+
+FILES: 4 changed, +86 -30
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/agents/[id]/page.tsx
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/tools/page.tsx
+  - MODIFIED: apps/web/messages/en-US.json
+  - MODIFIED: apps/web/messages/pt-BR.json
+
+VERIFICATION:
+  - turbo typecheck --force: 0 errors (15/15 tasks)
+
+================================================================================
