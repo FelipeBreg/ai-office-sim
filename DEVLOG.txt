@@ -6280,3 +6280,27 @@ VERIFICATION:
   - Migration 0010: executed on Neon ✓
 
 ================================================================================
+
+================================================================================
+COMMIT #132 — V5 Phase 5: Cost Simulation
+================================================================================
+DATE: 2026-03-05
+HASH: (see git log)
+PHASE: V5 Phase 5
+
+WHAT WAS BUILT:
+  - LLM pricing table (llm-pricing.ts): 5 models with input/output per 1M
+  - estimateAgentCost() function: tokens/session, sessions/day, daily/monthly
+  - Based on: model, toolCount, triggerType, heartbeatIntervalMin
+  - New billing.simulateAgentCost tRPC endpoint
+  - Will be displayed in agent wizard + detail config + billing page
+
+FILES: 3 changed
+  - NEW: packages/shared/src/constants/llm-pricing.ts
+  - MODIFIED: packages/shared/src/constants/index.ts
+  - MODIFIED: packages/api/src/routers/billing.ts
+
+VERIFICATION:
+  - turbo typecheck --force: 0 errors (15/15 tasks)
+
+================================================================================
