@@ -479,7 +479,11 @@
       "crm": "CRM (RD Station)",
       "sheets": "Google Sheets",
       "finance": "Financeiro",
-      "devops": "DevOps"
+      "devops": "DevOps",
+      "documents": "Documentos",
+      "calendar": "Calendário & Logs",
+      "marketing": "Anúncios & Marketing",
+      "conversations": "Comunicação Interna"
     }
   },
   "finance": {

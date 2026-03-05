@@ -145,23 +145,33 @@ const TABS: { id: Tab; labelKey: string; icon: typeof Eye }[] = [
   { id: 'knowledgeBase', labelKey: 'tabKnowledgeBase', icon: FileText },
 ];
 
-const ALL_TOOLS = [
-  'send_whatsapp',
-  'read_whatsapp',
-  'send_email',
-  'read_email',
-  'search_web',
-  'search_memory',
-  'search_contacts',
-  'create_contact',
-  'update_contact',
-  'list_deals',
-  'create_deal',
-  'read_spreadsheet',
-  'write_spreadsheet',
-  'append_spreadsheet',
-  'monitor_pix',
-  'check_nfe',
+const ALL_TOOLS: { id: string; nameKey: string }[] = [
+  { id: 'send_whatsapp_message', nameKey: 'toolSendWhatsapp' },
+  { id: 'read_whatsapp_messages', nameKey: 'toolReadWhatsapp' },
+  { id: 'send_email', nameKey: 'toolSendEmail' },
+  { id: 'read_email', nameKey: 'toolReadEmail' },
+  { id: 'search_web', nameKey: 'toolSearchWeb' },
+  { id: 'search_company_memory', nameKey: 'toolSearchMemory' },
+  { id: 'search_contacts', nameKey: 'toolSearchContacts' },
+  { id: 'create_contact', nameKey: 'toolCreateContact' },
+  { id: 'update_contact', nameKey: 'toolUpdateContact' },
+  { id: 'list_deals', nameKey: 'toolListDeals' },
+  { id: 'create_deal', nameKey: 'toolCreateDeal' },
+  { id: 'read_spreadsheet', nameKey: 'toolReadSpreadsheet' },
+  { id: 'write_spreadsheet', nameKey: 'toolWriteSpreadsheet' },
+  { id: 'append_to_spreadsheet', nameKey: 'toolAppendSpreadsheet' },
+  { id: 'monitor_pix_transactions', nameKey: 'toolMonitorPix' },
+  { id: 'check_nfe_status', nameKey: 'toolCheckNfe' },
+  { id: 'create_document', nameKey: 'toolCreateDocument' },
+  { id: 'generate_document', nameKey: 'toolGenerateDocument' },
+  { id: 'schedule_event', nameKey: 'toolScheduleEvent' },
+  { id: 'log_message', nameKey: 'toolLogMessage' },
+  { id: 'create_human_task', nameKey: 'toolCreateHumanTask' },
+  { id: 'create_deploy_request', nameKey: 'toolCreateDeployRequest' },
+  { id: 'create_pr_review_request', nameKey: 'toolCreatePrReview' },
+  { id: 'google_ads', nameKey: 'toolGoogleAds' },
+  { id: 'meta_marketing', nameKey: 'toolMetaMarketing' },
+  { id: 'send_conversation_message', nameKey: 'toolSendConversation' },
 ];
 
 const ALL_TEAMS: (Team | '')[] = ['', 'development', 'research', 'marketing', 'sales', 'support', 'finance', 'operations'];
@@ -411,18 +421,21 @@ function OverviewTab({ agent }: { agent: Agent }) {
       {/* Tools */}
       <div>
         <div className="mb-2 text-[8px] uppercase tracking-[0.15em] text-text-muted">
-          {t('tools')}
+          {t('tools')} ({agent.tools?.length ?? 0})
         </div>
         {(!agent.tools || agent.tools.length === 0) ? (
           <p className="text-[10px] text-text-muted">{t('noTools')}</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
-            {agent.tools.map((tool) => (
-              <Badge key={tool} variant="default">
-                <Wrench size={8} strokeWidth={1.5} className="mr-0.5" />
-                {tool}
-              </Badge>
-            ))}
+            {agent.tools.map((tool) => {
+              const def = ALL_TOOLS.find((t) => t.id === tool);
+              return (
+                <Badge key={tool} variant="default">
+                  <Wrench size={8} strokeWidth={1.5} className="mr-0.5" />
+                  {def ? tAgents(def.nameKey as any) : tool}
+                </Badge>
+              );
+            })}
           </div>
         )}
       </div>
@@ -552,12 +565,12 @@ function ConfigurationTab({ agent, onSaved }: { agent: Agent; onSaved: () => voi
         </label>
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
           {ALL_TOOLS.map((tool) => {
-            const isChecked = selectedTools.includes(tool);
+            const isChecked = selectedTools.includes(tool.id);
             return (
               <button
-                key={tool}
+                key={tool.id}
                 type="button"
-                onClick={() => toggleTool(tool)}
+                onClick={() => toggleTool(tool.id)}
                 className={`flex items-center gap-2 border px-2.5 py-1.5 text-left text-[10px] transition-colors ${
                   isChecked
                     ? 'border-accent-cyan bg-accent-cyan/5 text-accent-cyan'
@@ -571,7 +584,7 @@ function ConfigurationTab({ agent, onSaved }: { agent: Agent; onSaved: () => voi
                 >
                   {isChecked && <Check size={8} strokeWidth={2} className="text-bg-deepest" />}
                 </span>
-                {tool}
+                {tAgents(tool.nameKey as any)}
               </button>
             );
           })}

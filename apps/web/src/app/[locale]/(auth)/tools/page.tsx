@@ -17,6 +17,10 @@ import {
   Link2,
   Unlink,
   X,
+  FileText,
+  CalendarDays,
+  Megaphone,
+  MessagesSquare,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
@@ -116,6 +120,37 @@ const TOOL_CATALOG: ToolCategory[] = [
       { name: 'create_deploy_request', description: 'Request a deployment or rollback', requiresApproval: true },
       { name: 'create_pr_review_request', description: 'Request a PR code review', requiresApproval: false },
       { name: 'create_human_task', description: 'Create a task for human team members', requiresApproval: false },
+    ],
+  },
+  {
+    key: 'documents',
+    icon: FileText,
+    tools: [
+      { name: 'create_document', description: 'Create structured documents and reports', requiresApproval: false },
+      { name: 'generate_document', description: 'AI-generate documents from templates', requiresApproval: false },
+    ],
+  },
+  {
+    key: 'calendar',
+    icon: CalendarDays,
+    tools: [
+      { name: 'schedule_event', description: 'Create calendar events and reminders', requiresApproval: false },
+      { name: 'log_message', description: 'Write entries to the activity log', requiresApproval: false },
+    ],
+  },
+  {
+    key: 'marketing',
+    icon: Megaphone,
+    tools: [
+      { name: 'google_ads', description: 'Manage and analyze Google Ads campaigns', requiresApproval: false },
+      { name: 'meta_marketing', description: 'Manage Meta/Facebook ad campaigns', requiresApproval: false },
+    ],
+  },
+  {
+    key: 'conversations',
+    icon: MessagesSquare,
+    tools: [
+      { name: 'send_conversation_message', description: 'Send messages in internal agent conversations', requiresApproval: false },
     ],
   },
 ];
