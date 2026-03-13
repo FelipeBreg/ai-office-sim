@@ -2,6 +2,7 @@
 
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { trpc } from '@/lib/trpc/client';
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -16,19 +17,6 @@ interface KpiMetric {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Mock data — replaced with real tRPC data in Phase 4                       */
-/* -------------------------------------------------------------------------- */
-
-const MOCK_KPIS: KpiMetric[] = [
-  { labelKey: 'kpiMrr', value: 'R$ 45.2k', trend: '+12%', direction: 'up' },
-  { labelKey: 'kpiLeads', value: '342', trend: '+8%', direction: 'up' },
-  { labelKey: 'kpiChurn', value: '2.1%', trend: '-0.3%', direction: 'down', invertColor: true },
-  { labelKey: 'kpiNps', value: '72', trend: '+5', direction: 'up' },
-  { labelKey: 'kpiActions', value: '1,847', trend: '+23%', direction: 'up' },
-  { labelKey: 'kpiStrategies', value: '4/6', trend: 'on track', direction: 'neutral' },
-];
-
-/* -------------------------------------------------------------------------- */
 /*  Trend helpers                                                             */
 /* -------------------------------------------------------------------------- */
 
@@ -39,6 +27,12 @@ function TrendIcon({ direction, isGood }: { direction: KpiMetric['direction']; i
   return <Icon size={10} strokeWidth={2} className={color} />;
 }
 
+function formatNumber(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return n.toLocaleString();
+}
+
 /* -------------------------------------------------------------------------- */
 /*  KpiBar component                                                          */
 /* -------------------------------------------------------------------------- */
@@ -46,9 +40,62 @@ function TrendIcon({ direction, isGood }: { direction: KpiMetric['direction']; i
 export function KpiBar() {
   const t = useTranslations('strategy');
 
+  const { data: strategies } = trpc.strategies.list.useQuery();
+  const { data: usage } = trpc.billing.currentPeriodUsage.useQuery();
+  const { data: learnings } = trpc.strategies.listPendingLearnings.useQuery();
+
+  const totalStrategies = strategies?.length ?? 0;
+  const activeStrategies = strategies?.filter((s) => s.status === 'active').length ?? 0;
+  const completedStrategies = strategies?.filter((s) => s.status === 'completed').length ?? 0;
+  const atRiskStrategies = strategies?.filter((s) => s.status === 'at_risk').length ?? 0;
+  const actionCount = usage?.actionCount ?? 0;
+  const totalCost = Number(usage?.totalCostUsd ?? 0);
+  const totalTokens = usage?.totalTokens ?? 0;
+  const pendingLearnings = learnings?.length ?? 0;
+
+  const kpis: KpiMetric[] = [
+    {
+      labelKey: 'kpiStrategies',
+      value: `${activeStrategies}/${totalStrategies}`,
+      trend: completedStrategies > 0 ? `${completedStrategies} done` : 'active',
+      direction: activeStrategies > 0 ? 'up' : 'neutral',
+    },
+    {
+      labelKey: 'kpiActions',
+      value: formatNumber(actionCount),
+      trend: `${formatNumber(totalTokens)} tokens`,
+      direction: actionCount > 0 ? 'up' : 'neutral',
+    },
+    {
+      labelKey: 'kpiCost',
+      value: `$${totalCost.toFixed(2)}`,
+      trend: 'this month',
+      direction: 'neutral',
+    },
+    {
+      labelKey: 'kpiLearnings',
+      value: String(pendingLearnings),
+      trend: pendingLearnings > 0 ? 'pending review' : 'none',
+      direction: pendingLearnings > 0 ? 'up' : 'neutral',
+    },
+    {
+      labelKey: 'kpiAtRisk',
+      value: String(atRiskStrategies),
+      trend: atRiskStrategies > 0 ? 'need attention' : 'all clear',
+      direction: atRiskStrategies > 0 ? 'up' : 'neutral',
+      invertColor: true,
+    },
+    {
+      labelKey: 'kpiCompleted',
+      value: String(completedStrategies),
+      trend: totalStrategies > 0 ? `${Math.round((completedStrategies / totalStrategies) * 100)}%` : '0%',
+      direction: completedStrategies > 0 ? 'up' : 'neutral',
+    },
+  ];
+
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-      {MOCK_KPIS.map((metric) => {
+      {kpis.map((metric) => {
         const isGood = metric.invertColor
           ? metric.direction === 'down'
           : metric.direction === 'up';

@@ -6475,3 +6475,60 @@ ENV VARS REQUIRED (new):
   - STRIPE_PRICE_PRO_ANNUAL_USD: Price ID for Pro annual USD
 
 ================================================================================
+COMMIT #137 — 2026-03-13 — Post-V5: Production Wiring (vector search, crons, real data)
+================================================================================
+
+PHASE: Post-V5 — Production Readiness
+
+WHAT CHANGED:
+
+  1. Agent Memory: pgvector cosine similarity search (packages/ai/src/memory/individual.ts)
+    - saveMemory() now generates embeddings via OpenAI text-embedding-3-small before storing
+    - searchMemory() uses pgvector <=> operator for semantic search, ranked by cosine similarity
+    - Graceful fallback: if embeddings unavailable, returns all entries (no crash)
+    - Non-blocking embedding generation: saves even if OpenAI is down
+
+  2. Worker Cron Jobs: wired 3 missing repeatable jobs (apps/worker/src/index.ts)
+    - Calendar reminders: every 60s, type='send_reminders'
+    - Calendar recurrence: every hour, horizonDays=30
+    - Cleanup: daily at 3am, type='old_action_logs', olderThanDays=90
+    - Fixed job payloads to match queue schemas (type enums, field names)
+
+  3. Analytics via Orchestrator (apps/worker/src/workers/orchestrator.worker.ts)
+    - Orchestrator tick now enqueues daily_aggregation + learning_detection per project
+    - Redis-based deduplication: one analytics run per project per day (90s TTL key)
+    - Imports getAnalyticsQueue from @ai-office/queue
+
+  4. Strategy KPI Bar: real data (apps/web/src/components/strategy/kpi-bar.tsx)
+    - Removed MOCK_KPIS hardcoded array
+    - Added tRPC queries: strategies.list, billing.currentPeriodUsage, strategies.listPendingLearnings
+    - 6 real KPIs: active/total strategies, agent actions, cost, pending learnings, at-risk, completed
+    - Added formatNumber() helper for compact display (1.2k, 3.4M)
+    - Added i18n keys: kpiCost, kpiLearnings, kpiAtRisk, kpiCompleted (en-US + pt-BR)
+
+  5. Office Inspector Panel: real action logs (apps/web/src/components/office/AgentInspectPanel.tsx)
+    - Removed MOCK_RECENT_ACTIVITY and MOCK_ACTION_SEQUENCES arrays
+    - Added tRPC query: actionLogs.list (filtered by agent, limit 10)
+    - Auto-refetch every 3s when agent status is 'working'
+    - Live action feed derived from real action_logs instead of fake timers
+    - Added timeAgo() helper for relative timestamps (2m, 5h, 3d)
+    - Removed unused useMemo import
+
+  Review Fixes:
+    1. Worker job payloads fixed: 'check' → 'send_reminders', 'generate' removed (no type field),
+       'action_logs' → 'old_action_logs', 'retentionDays' → 'olderThanDays'
+    2. Goals section already wired to real tRPC — no changes needed
+
+FILES: 7 changed
+  - MODIFIED: packages/ai/src/memory/individual.ts (vector search + embeddings)
+  - MODIFIED: apps/worker/src/index.ts (3 cron jobs)
+  - MODIFIED: apps/worker/src/workers/orchestrator.worker.ts (analytics enqueue)
+  - MODIFIED: apps/web/src/components/strategy/kpi-bar.tsx (real KPIs)
+  - MODIFIED: apps/web/src/components/office/AgentInspectPanel.tsx (real action logs)
+  - MODIFIED: apps/web/messages/en-US.json (+4 i18n keys)
+  - MODIFIED: apps/web/messages/pt-BR.json (+4 i18n keys)
+
+VERIFICATION:
+  - turbo typecheck: 15/15 packages pass, 0 errors
+
+================================================================================

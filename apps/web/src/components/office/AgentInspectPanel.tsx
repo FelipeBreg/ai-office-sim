@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { trpc } from '@/lib/trpc/client';
 import type { AgentStatus } from './AgentAvatar';
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -36,64 +37,16 @@ const STATUS_COLORS: Record<AgentStatus, string> = {
   offline: '#444444',
 };
 
-// ── Mock recent activity ─────────────────────────────────────────────
-const MOCK_RECENT_ACTIVITY = [
-  { id: 'act-1', action: 'search_memory', result: 'completed', time: '2m' },
-  { id: 'act-2', action: 'send_whatsapp', result: 'completed', time: '5m' },
-  { id: 'act-3', action: 'read_email', result: 'completed', time: '8m' },
-  { id: 'act-4', action: 'search_web', result: 'failed', time: '12m' },
-  { id: 'act-5', action: 'update_contact', result: 'completed', time: '15m' },
-];
-
-// ── Mock live action sequences per agent ─────────────────────────────
-const MOCK_ACTION_SEQUENCES: ActionFeedItem[][] = [
-  [
-    {
-      id: 'live-1',
-      toolName: 'search_memory',
-      status: 'completed',
-      inputPreview: 'query: "FAQ produto"',
-      timestamp: Date.now() - 8000,
-    },
-    {
-      id: 'live-2',
-      toolName: 'read_whatsapp',
-      status: 'completed',
-      inputPreview: 'from: +5511999...',
-      timestamp: Date.now() - 5000,
-    },
-    {
-      id: 'live-3',
-      toolName: 'send_whatsapp',
-      status: 'running',
-      inputPreview: 'to: +5511999...',
-      timestamp: Date.now() - 1000,
-    },
-  ],
-  [
-    {
-      id: 'live-4',
-      toolName: 'search_contacts',
-      status: 'completed',
-      inputPreview: 'name: "Maria Silva"',
-      timestamp: Date.now() - 6000,
-    },
-    {
-      id: 'live-5',
-      toolName: 'list_deals',
-      status: 'completed',
-      inputPreview: 'pipeline: vendas',
-      timestamp: Date.now() - 3000,
-    },
-    {
-      id: 'live-6',
-      toolName: 'create_deal',
-      status: 'running',
-      inputPreview: 'value: R$ 15.000',
-      timestamp: Date.now() - 500,
-    },
-  ],
-];
+// ── Time ago helper ──────────────────────────────────────────────────
+function timeAgo(date: Date | string): string {
+  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(hours / 24)}d`;
+}
 
 // ── Action status icon ───────────────────────────────────────────────
 function ActionStatusIcon({ status }: { status: ActionFeedItem['status'] }) {
@@ -139,38 +92,38 @@ export function AgentInspectPanel({ agent, onClose }: AgentInspectPanelProps) {
   const t = useTranslations('agentPanel');
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // ── Live action feed (mock) ──────────────────────────────────────
+  // ── Real action logs from tRPC ──────────────────────────────────
+  const { data: actionData } = trpc.actionLogs.list.useQuery(
+    { agentId: agent?.id, limit: 10 },
+    { enabled: !!agent, refetchInterval: agent?.status === 'working' ? 3000 : false },
+  );
+
+  const recentActivity = (actionData?.items ?? []).map((item) => ({
+    id: item.id,
+    action: item.toolName ?? item.actionType ?? 'unknown',
+    result: item.status === 'completed' ? 'completed' : item.status === 'failed' ? 'failed' : 'running',
+    time: timeAgo(item.createdAt),
+  }));
+
+  // ── Live action feed: show most recent actions with "running" status ──
   const [liveActions, setLiveActions] = useState<ActionFeedItem[]>([]);
 
-  // Deterministic mock sequence based on agent id
-  const actionSequence = useMemo(() => {
-    if (!agent) return [];
-    const idx =
-      agent.id.charCodeAt(agent.id.length - 1) % MOCK_ACTION_SEQUENCES.length;
-    return MOCK_ACTION_SEQUENCES[idx]!;
-  }, [agent]);
-
-  // Simulate actions appearing one-by-one when agent is working
   useEffect(() => {
-    if (!agent || agent.status !== 'working') {
+    if (!agent || agent.status !== 'working' || !actionData?.items) {
       setLiveActions([]);
       return;
     }
 
-    setLiveActions([]);
-    const timers: ReturnType<typeof setTimeout>[] = [];
+    const recent = actionData.items.slice(0, 5).map((item) => ({
+      id: item.id,
+      toolName: item.toolName ?? item.actionType ?? 'action',
+      status: (item.status === 'completed' ? 'completed' : item.status === 'failed' ? 'failed' : 'running') as ActionFeedItem['status'],
+      inputPreview: item.toolName ? `tool: ${item.toolName}` : '',
+      timestamp: new Date(item.createdAt).getTime(),
+    }));
 
-    actionSequence.forEach((action, i) => {
-      const timer = setTimeout(() => {
-        setLiveActions((prev) => [...prev, { ...action, timestamp: Date.now() }]);
-      }, (i + 1) * 1200);
-      timers.push(timer);
-    });
-
-    return () => {
-      for (const timer of timers) clearTimeout(timer);
-    };
-  }, [agent, actionSequence]);
+    setLiveActions(recent);
+  }, [agent, actionData]);
 
   // ── Click outside to close ───────────────────────────────────────
   const handleBackdropClick = useCallback(
@@ -378,7 +331,7 @@ export function AgentInspectPanel({ agent, onClose }: AgentInspectPanelProps) {
                 {t('recentActivity')}
               </span>
               <div className="flex flex-col gap-1">
-                {MOCK_RECENT_ACTIVITY.map((item) => (
+                {recentActivity.map((item) => (
                   <div
                     key={item.id}
                     className="flex items-center justify-between py-1"

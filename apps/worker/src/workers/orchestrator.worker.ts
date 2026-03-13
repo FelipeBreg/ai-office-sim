@@ -1,4 +1,4 @@
-import { QUEUE_NAMES, orchestratorJobSchema, getAgentExecutionQueue, getRedisClient } from '@ai-office/queue';
+import { QUEUE_NAMES, orchestratorJobSchema, getAgentExecutionQueue, getAnalyticsQueue, getRedisClient } from '@ai-office/queue';
 import type { OrchestratorJob } from '@ai-office/queue';
 import { createTypedWorker } from './create-worker.js';
 import {
@@ -349,6 +349,28 @@ async function processOrchestratorTick() {
         agentId: hbAgent.id,
         agentName: hbAgent.name,
       });
+    }
+
+    // 9. Analytics: enqueue daily aggregation + learning detection once per day
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const analyticsJobKey = `analytics:${projectId}:${todayStr}`;
+    const redis = getRedisClient();
+    const alreadyRan = await redis.get(analyticsJobKey);
+    if (!alreadyRan) {
+      const analyticsQueue = getAnalyticsQueue();
+      await analyticsQueue.add(`daily-agg-${projectId}-${todayStr}`, {
+        type: 'daily_aggregation',
+        projectId,
+        date: todayStr,
+      });
+      await analyticsQueue.add(`learning-${projectId}-${todayStr}`, {
+        type: 'learning_detection',
+        projectId,
+        date: todayStr,
+      });
+      // Mark as done for today (expire at midnight + 1h buffer)
+      await redis.set(analyticsJobKey, '1', 'EX', 90_000);
+      console.log(`[orchestrator] Enqueued analytics jobs for project ${projectId} (${todayStr})`);
     }
   }
 

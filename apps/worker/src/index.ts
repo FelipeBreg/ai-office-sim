@@ -13,7 +13,14 @@ import { registerAllScheduledWorkflows } from './scheduler/workflow-cron-schedul
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
-import { getAllQueues, getOrchestratorQueue, getRedisClient } from '@ai-office/queue';
+import {
+  getAllQueues,
+  getOrchestratorQueue,
+  getCalendarReminderQueue,
+  getCalendarRecurrenceQueue,
+  getCleanupQueue,
+  getRedisClient,
+} from '@ai-office/queue';
 import { hostname } from 'os';
 import { createHmac, timingSafeEqual } from 'crypto';
 import {
@@ -242,6 +249,24 @@ getOrchestratorQueue()
   .add('orchestrator-tick', { type: 'tick' }, { repeat: { every: 60_000 }, jobId: 'orchestrator-tick' })
   .then(() => console.log('[worker] Orchestrator tick registered (every 60s)'))
   .catch((err) => console.error('[worker] Failed to register orchestrator tick:', err));
+
+// ── Calendar reminders: check every minute for due reminders ──
+getCalendarReminderQueue()
+  .add('calendar-reminder-tick', { type: 'send_reminders' }, { repeat: { every: 60_000 }, jobId: 'calendar-reminder-tick' })
+  .then(() => console.log('[worker] Calendar reminder tick registered (every 60s)'))
+  .catch((err) => console.error('[worker] Failed to register calendar reminder tick:', err));
+
+// ── Calendar recurrence: generate recurring events every hour ──
+getCalendarRecurrenceQueue()
+  .add('calendar-recurrence-tick', { horizonDays: 30 }, { repeat: { pattern: '0 * * * *' }, jobId: 'calendar-recurrence-tick' })
+  .then(() => console.log('[worker] Calendar recurrence tick registered (every hour)'))
+  .catch((err) => console.error('[worker] Failed to register calendar recurrence tick:', err));
+
+// ── Cleanup: delete old action logs daily at 3am ──
+getCleanupQueue()
+  .add('cleanup-daily', { type: 'old_action_logs', olderThanDays: 90 }, { repeat: { pattern: '0 3 * * *' }, jobId: 'cleanup-daily' })
+  .then(() => console.log('[worker] Cleanup job registered (daily at 3am, 90-day retention)'))
+  .catch((err) => console.error('[worker] Failed to register cleanup job:', err));
 
 // ── Graceful shutdown with timeout ──
 let isShuttingDown = false;
