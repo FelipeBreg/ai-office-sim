@@ -6576,3 +6576,44 @@ VERIFICATION:
   - turbo typecheck: 15/15 packages pass, 0 errors
 
 ================================================================================
+COMMIT #139 — 2026-03-13 — Document search, upload pipeline, cascade depth config
+================================================================================
+
+PHASE: Post-V5 — Production Readiness
+
+WHAT CHANGED:
+
+  1. Document search: real pgvector RAG (packages/api/src/routers/documents.ts)
+    - Replaced placeholder that returned random chunks with score 0.5
+    - Now calls ragSearch() from @ai-office/ai — full pgvector cosine similarity
+    - Returns real relevance scores ranked by semantic similarity
+    - Graceful fallback: if OpenAI embedding fails, returns recent chunks
+    - Memory page search now produces meaningful, ranked results
+
+  2. Document upload: full ingest pipeline (packages/api/src/routers/documents.ts)
+    - Upload endpoint now accepts optional `content` field (text read client-side)
+    - When content is provided, runs through ingestDocument() — chunking + embeddings
+    - Returns chunkCount and status='ingested' on success
+    - Binary files (PDF/DOCX) still create a record for future processing
+
+  3. Frontend file upload: reads text content client-side (apps/web/src/app/.../memory/page.tsx)
+    - handleFiles() now detects text-based files (.txt, .csv, .md, .json, .xml, etc.)
+    - Uses FileReader.readAsText() to extract content before uploading
+    - Sends content through the ingest pipeline for immediate embedding + chunking
+    - Binary files still send metadata only (unchanged behavior)
+
+  4. Cascade depth from config (apps/worker/src/jobs/agent-execution.ts)
+    - Was hardcoded to 5, now reads maxCascadeDepth from orchestrator_config table
+    - Config query already existed for dailySpendLimitUsd — added maxCascadeDepth to same select
+    - Falls back to 5 if no config exists
+
+FILES: 4 changed
+  - MODIFIED: packages/api/src/routers/documents.ts (RAG search + upload ingest)
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/memory/page.tsx (FileReader for uploads)
+  - MODIFIED: apps/worker/src/jobs/agent-execution.ts (cascade depth from config)
+  - MODIFIED: DEVLOG.txt
+
+VERIFICATION:
+  - turbo typecheck: 15/15 packages pass, 0 errors
+
+================================================================================

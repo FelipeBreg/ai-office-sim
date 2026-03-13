@@ -368,12 +368,37 @@ function CompanyDocumentsTab() {
 
   const handleFiles = useCallback(
     (files: FileList) => {
+      const TEXT_TYPES = new Set([
+        'text/plain', 'text/csv', 'text/markdown', 'text/html',
+        'application/json', 'application/xml',
+      ]);
+      const TEXT_EXTENSIONS = new Set(['.txt', '.csv', '.md', '.json', '.xml', '.html', '.htm', '.log', '.yaml', '.yml']);
+
       Array.from(files).forEach((file) => {
-        uploadMutation.mutate({
-          fileName: file.name,
-          fileSize: file.size,
-          mimeType: file.type,
-        });
+        const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+        const isText = TEXT_TYPES.has(file.type) || TEXT_EXTENSIONS.has(ext);
+
+        if (isText) {
+          // Read text content client-side and send through ingest pipeline
+          const reader = new FileReader();
+          reader.onload = () => {
+            const content = reader.result as string;
+            uploadMutation.mutate({
+              fileName: file.name,
+              fileSize: file.size,
+              mimeType: file.type || 'text/plain',
+              content: content.slice(0, 500_000),
+            });
+          };
+          reader.readAsText(file);
+        } else {
+          // Binary files (PDF, DOCX) — send metadata only
+          uploadMutation.mutate({
+            fileName: file.name,
+            fileSize: file.size,
+            mimeType: file.type,
+          });
+        }
       });
     },
     [uploadMutation],

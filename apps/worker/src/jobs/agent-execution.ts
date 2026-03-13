@@ -111,7 +111,10 @@ export async function processAgentExecution(
 
   // 1c. Check project daily spend limit
   const [config] = await db
-    .select({ dailySpendLimitUsd: orchestratorConfig.dailySpendLimitUsd })
+    .select({
+      dailySpendLimitUsd: orchestratorConfig.dailySpendLimitUsd,
+      maxCascadeDepth: orchestratorConfig.maxCascadeDepth,
+    })
     .from(orchestratorConfig)
     .where(eq(orchestratorConfig.projectId, projectId))
     .limit(1);
@@ -143,7 +146,7 @@ export async function processAgentExecution(
 
   // 1d. Cascade safety checks
   if (data.cascade) {
-    const maxDepth = 5; // TODO: read from orchestrator_config
+    const maxDepth = config?.maxCascadeDepth ?? 5;
     if (data.cascade.cascadeDepth > maxDepth) {
       console.warn(
         `[agent-execution] Cascade depth exceeded (${data.cascade.cascadeDepth}/${maxDepth}) — rejecting agent ${agentId}`,

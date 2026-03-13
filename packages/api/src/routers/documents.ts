@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, projectProcedure, adminProcedure } from '../trpc.js';
 import { db, documents, documentChunks, eq, and, or, desc, count, isNull } from '@ai-office/db';
-import { ingestDocument } from '@ai-office/ai';
+import { ingestDocument, ragSearch } from '@ai-office/ai';
 import { TRPCError } from '@trpc/server';
 
 export const documentsRouter = createTRPCRouter({
@@ -86,38 +86,52 @@ export const documentsRouter = createTRPCRouter({
   search: projectProcedure
     .input(z.object({ query: z.string().min(1).max(500) }))
     .mutation(async ({ ctx, input }) => {
-      // Placeholder: full RAG search is in @ai-office/ai
-      // This returns a simple text-match fallback for now
-      const results = await db
-        .select({
-          id: documentChunks.id,
-          content: documentChunks.content,
-          documentId: documentChunks.documentId,
-        })
-        .from(documentChunks)
-        .where(eq(documentChunks.projectId, ctx.project!.id))
-        .limit(10);
+      try {
+        const results = await ragSearch({
+          projectId: ctx.project!.id,
+          query: input.query,
+          topK: 10,
+        });
 
-      // Join with document titles
-      const docIds = [...new Set(results.map((r) => r.documentId))];
-      const docs = docIds.length > 0
-        ? await db
-            .select({ id: documents.id, title: documents.title, sourceType: documents.sourceType })
-            .from(documents)
-            .where(eq(documents.projectId, ctx.project!.id))
-        : [];
-
-      const docMap = new Map(docs.map((d) => [d.id, d]));
-
-      return results.map((r) => {
-        const doc = docMap.get(r.documentId);
-        return {
+        return results.map((r) => ({
           content: r.content.slice(0, 300),
-          documentTitle: doc?.title ?? 'Unknown',
-          sourceType: doc?.sourceType ?? 'upload',
-          score: 0.5, // placeholder score
-        };
-      });
+          documentTitle: r.documentTitle,
+          sourceType: r.sourceType,
+          score: r.score,
+        }));
+      } catch (err) {
+        console.error('[documents.search] RAG search failed, falling back:', err);
+        // Fallback: return recent chunks without vector ranking
+        const chunks = await db
+          .select({
+            id: documentChunks.id,
+            content: documentChunks.content,
+            documentId: documentChunks.documentId,
+          })
+          .from(documentChunks)
+          .where(eq(documentChunks.projectId, ctx.project!.id))
+          .limit(10);
+
+        const docIds = [...new Set(chunks.map((r) => r.documentId))];
+        const docs = docIds.length > 0
+          ? await db
+              .select({ id: documents.id, title: documents.title, sourceType: documents.sourceType })
+              .from(documents)
+              .where(eq(documents.projectId, ctx.project!.id))
+          : [];
+
+        const docMap = new Map(docs.map((d) => [d.id, d]));
+
+        return chunks.map((r) => {
+          const doc = docMap.get(r.documentId);
+          return {
+            content: r.content.slice(0, 300),
+            documentTitle: doc?.title ?? 'Unknown',
+            sourceType: doc?.sourceType ?? 'upload',
+            score: 0,
+          };
+        });
+      }
     }),
 
   upload: adminProcedure
@@ -126,18 +140,39 @@ export const documentsRouter = createTRPCRouter({
         fileName: z.string().min(1),
         fileSize: z.number().int().positive(),
         mimeType: z.string().min(1),
+        content: z.string().max(500_000).optional(),
         agentId: z.string().uuid().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Placeholder: actual file processing is done via BullMQ + ingest pipeline
+      // If text content was provided (read client-side), ingest it through the full pipeline
+      if (input.content && input.content.length > 0) {
+        const result = await ingestDocument({
+          projectId: ctx.project!.id,
+          title: input.fileName,
+          content: input.content,
+          sourceType: 'upload',
+          agentId: input.agentId,
+        });
+
+        if (result.error) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: result.error,
+          });
+        }
+
+        return { id: result.documentId!, status: 'ingested', chunkCount: result.chunkCount };
+      }
+
+      // No content provided (binary file like PDF/DOCX) — create record for future processing
       const [doc] = await db
         .insert(documents)
         .values({
           projectId: ctx.project!.id,
           title: input.fileName,
           sourceType: 'upload',
-          content: '', // Will be populated by the ingestion worker
+          content: '',
           ...(input.agentId ? { agentId: input.agentId } : {}),
         })
         .returning();
