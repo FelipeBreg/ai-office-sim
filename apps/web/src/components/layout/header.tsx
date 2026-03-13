@@ -10,6 +10,7 @@ import { useUIStore } from '@/stores/ui-store';
 import { useConnectionStatus, usePendingApprovalCount } from '@/stores/realtime-store';
 import { LocaleSwitcher } from '@/components/locale-switcher/locale-switcher';
 import { safeColor } from '@/lib/safe-color';
+import { SearchDialog } from './search-dialog';
 
 const CONNECTION_INDICATOR: Record<string, { color: string; label: string }> = {
   connected: { color: 'bg-[#2EA043]', label: 'Connected' },
@@ -39,6 +40,7 @@ export function Header() {
   const projects = useProjects();
   const setCurrentProject = useProjectStore((s) => s.setCurrentProject);
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isMac, setIsMac] = useState(false);
   const theme = useUIStore((s) => s.theme);
@@ -86,7 +88,7 @@ export function Header() {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        // TODO: Open global search dialog
+        setSearchOpen((prev) => !prev);
       }
     }
     document.addEventListener('keydown', handleKeyDown);
@@ -110,14 +112,18 @@ export function Header() {
         <span className="text-text-secondary">{t(pageName)}</span>
       </div>
 
-      {/* Center: search stub */}
-      <button className="flex items-center gap-2 border border-border-default bg-bg-deepest px-2.5 py-1 transition-colors hover:border-border-hover">
+      {/* Center: search */}
+      <button
+        onClick={() => setSearchOpen(true)}
+        className="flex items-center gap-2 border border-border-default bg-bg-deepest px-2.5 py-1 transition-colors hover:border-border-hover"
+      >
         <Search size={12} strokeWidth={1.5} className="text-text-muted" />
         <span className="text-[11px] text-text-muted">{t('searchPlaceholder')}</span>
         <kbd className="ml-3 border border-border-default bg-bg-base px-1 py-0.5 text-[9px] text-text-muted">
           {isMac ? '⌘K' : 'Ctrl+K'}
         </kbd>
       </button>
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Right: controls */}
       <div className="flex items-center gap-3">

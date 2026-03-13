@@ -160,13 +160,14 @@ function WorkflowCard({
   workflow,
   t,
   onDelete,
+  runCount = 0,
 }: {
   workflow: Workflow;
   t: ReturnType<typeof useTranslations<'workflows'>>;
   onDelete?: (id: string) => void;
+  runCount?: number;
 }) {
   const { nodeTypes, agentCount, nodeCount } = extractNodeInfo(workflow.definition);
-  const runCount = 0; // TODO: wire up when run history is available
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -437,6 +438,7 @@ export default function WorkflowsPage() {
   const { isManager, isAdmin } = useRole();
   const [activeTab, setActiveTab] = useState<Tab>('workflows');
   const { data: workflows, isLoading, isError } = trpc.workflows.list.useQuery();
+  const { data: runCounts } = trpc.workflows.getRunCountsByWorkflow.useQuery();
   const deleteMutation = trpc.workflows.delete.useMutation({
     onSuccess: () => {
       void utils.workflows.list.invalidate();
@@ -522,6 +524,7 @@ export default function WorkflowsPage() {
                     workflow={workflow as unknown as Workflow}
                     t={t}
                     onDelete={isAdmin ? handleDelete : undefined}
+                    runCount={runCounts?.[workflow.id] ?? 0}
                   />
                 ))}
               </div>

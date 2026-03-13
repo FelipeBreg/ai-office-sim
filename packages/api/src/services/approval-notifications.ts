@@ -156,21 +156,24 @@ export async function notifyApprovalRequested(
     }
   }
 
-  // 3. WhatsApp notification (optional, rate-limited)
+  // 3. WhatsApp notification (optional, requires configured number)
   if (options?.sendWhatsApp) {
-    const message =
-      `📋 *Aprovação Pendente*\n` +
-      `Agente: ${payload.agentName}\n` +
-      `Ação: ${payload.actionDescription}\n` +
-      `Risco: ${payload.riskLevel}`;
+    // Look up the project's WhatsApp notification number from env or project settings
+    const whatsappNumber = process.env.APPROVAL_WHATSAPP_NUMBER ?? '';
 
-    // WhatsApp notifications are opt-in; the caller provides the number
-    try {
-      // The WhatsApp number for notifications is configured per-project
-      // For now, this is a placeholder — the caller handles the routing
-      await options.sendWhatsApp('', message);
-    } catch {
-      console.error('Failed to send WhatsApp approval notification');
+    if (whatsappNumber) {
+      const message =
+        `📋 *Aprovação Pendente*\n` +
+        `Agente: ${payload.agentName}\n` +
+        `Ação: ${payload.actionDescription}\n` +
+        `Risco: ${payload.riskLevel}`;
+
+      try {
+        await options.sendWhatsApp(whatsappNumber, message);
+        notifiedCount++;
+      } catch {
+        console.error('Failed to send WhatsApp approval notification');
+      }
     }
   }
 

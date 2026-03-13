@@ -563,7 +563,9 @@ function BillingTab() {
   const projectsQuery = trpc.projects.list.useQuery();
   const agentsQuery = trpc.agents.list.useQuery();
   const subscriptionQuery = trpc.billing.currentSubscription.useQuery();
+  const tokenBalanceQuery = trpc.billing.tokenBalance.useQuery();
   const invoicesQuery = trpc.billing.invoiceHistory.useQuery({ limit: 10 });
+  const checkoutMutation = trpc.billing.createCheckoutSession.useMutation();
 
   const [interval, setInterval] = useState<'monthly' | 'annual'>('monthly');
   const currency = locale === 'pt-BR' ? 'brl' : 'usd';
@@ -591,11 +593,27 @@ function BillingTab() {
             <span className="text-[8px] uppercase tracking-[0.15em] text-text-muted">
               {t('currentBalance')}
             </span>
-            <div className="mt-1 text-sm font-bold text-text-primary">$0.00</div>
+            <div className="mt-1 text-sm font-bold text-text-primary">
+              {currency === 'brl' ? 'R$' : '$'}
+              {((tokenBalanceQuery.data?.balanceCents ?? 0) / 100).toFixed(2)}
+            </div>
           </div>
           <Button
             size="sm"
-            onClick={() => window.alert(t('addCreditsComingSoon'))}
+            disabled={checkoutMutation.isPending}
+            onClick={() => {
+              checkoutMutation.mutate(
+                { plan: planKey === 'starter' ? 'growth' : planKey as 'growth' | 'pro' | 'enterprise', interval, currency },
+                {
+                  onSuccess: (data) => {
+                    if (data.url) window.location.href = data.url;
+                  },
+                  onError: () => {
+                    window.alert(t('addCreditsComingSoon'));
+                  },
+                },
+              );
+            }}
           >
             {t('addCredits')}
           </Button>

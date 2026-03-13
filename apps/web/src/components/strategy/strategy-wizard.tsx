@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   X,
@@ -142,13 +142,19 @@ export function StrategyWizard({ open, onClose }: StrategyWizardProps) {
       resetAndClose();
     },
   });
+  const refineMutation = trpc.strategies.refineDraft.useMutation({
+    onSuccess: (data) => {
+      setIsRefining(false);
+      setAiRefined(data.refined);
+    },
+    onError: () => {
+      setIsRefining(false);
+      setAiRefined(null);
+    },
+  });
 
   /* -- Reset --------------------------------------------------------------- */
   const resetAndClose = useCallback(() => {
-    if (refineTimerRef.current) {
-      clearTimeout(refineTimerRef.current);
-      refineTimerRef.current = null;
-    }
     setStep(0);
     setObjective('');
     setType('growth');
@@ -160,24 +166,18 @@ export function StrategyWizard({ open, onClose }: StrategyWizardProps) {
   }, [onClose]);
 
   /* -- Next step ----------------------------------------------------------- */
-  const refineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   function handleNext() {
     if (step === 0) {
       setStep(1);
       setIsRefining(true);
       setAiRefined(null);
 
-      if (refineTimerRef.current) clearTimeout(refineTimerRef.current);
-      refineTimerRef.current = setTimeout(() => {
-        setIsRefining(false);
-        // TODO: Replace with real AI refinement via trpc.strategies.refineWithAI
-        setAiRefined(
-          `${objective}\n\n` +
-            t('wizardRefined') + `: ${t(('type' + type.charAt(0).toUpperCase() + type.slice(1)) as Parameters<typeof t>[0])}`,
-        );
-        refineTimerRef.current = null;
-      }, 2500);
+      refineMutation.mutate({
+        userDraft: objective,
+        type,
+        ...(startDate ? { startDate } : {}),
+        ...(endDate ? { endDate } : {}),
+      });
     }
   }
 

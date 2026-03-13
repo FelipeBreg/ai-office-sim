@@ -444,4 +444,22 @@ export const workflowsRouter = createTRPCRouter({
       waitingApproval: Number(stats?.waitingApproval ?? 0),
     };
   }),
+
+  /** Get run counts grouped by workflow ID */
+  getRunCountsByWorkflow: projectProcedure.query(async ({ ctx }) => {
+    const rows = await db
+      .select({
+        workflowId: workflowRuns.workflowId,
+        runCount: count(),
+      })
+      .from(workflowRuns)
+      .where(eq(workflowRuns.projectId, ctx.project!.id))
+      .groupBy(workflowRuns.workflowId);
+
+    const map: Record<string, number> = {};
+    for (const row of rows) {
+      map[row.workflowId] = Number(row.runCount);
+    }
+    return map;
+  }),
 });

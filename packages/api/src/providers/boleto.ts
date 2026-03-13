@@ -1,14 +1,31 @@
 /**
- * Boleto Payment Provider Abstraction
+ * Boleto Payment Provider — Mercado Pago Integration
  *
- * In production, this would integrate with Stripe Brazil or a dedicated boleto
- * provider for annual plan purchases. For now, this is a type-safe stub.
+ * Uses the Mercado Pago Payments API to generate boletos for annual plan purchases.
+ * Docs: https://www.mercadopago.com.br/developers/en/reference/payments/_payments/post
  *
  * Boleto is available for annual plans only (not monthly).
  *
- * Required env vars (for production):
- *   BOLETO_API_KEY, BOLETO_SANDBOX
+ * Required env vars:
+ *   MERCADOPAGO_ACCESS_TOKEN  — production or sandbox access token
+ *   MERCADOPAGO_SANDBOX       — "true" to use sandbox mode (optional)
  */
+
+const MP_BASE_URL = 'https://api.mercadopago.com';
+
+function getAccessToken(): string {
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  if (!token) throw new Error('MERCADOPAGO_ACCESS_TOKEN is not configured');
+  return token;
+}
+
+function mpHeaders(): Record<string, string> {
+  return {
+    'Authorization': `Bearer ${getAccessToken()}`,
+    'Content-Type': 'application/json',
+    'X-Idempotency-Key': `boleto-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+  };
+}
 
 export interface Boleto {
   id: string;
@@ -36,41 +53,121 @@ export interface BoletoWebhookPayload {
   paidAt?: string;
 }
 
+/** Map Mercado Pago payment status to our boleto status */
+function mapMpStatus(mpStatus: string): Boleto['status'] {
+  switch (mpStatus) {
+    case 'approved': return 'paid';
+    case 'pending':
+    case 'in_process':
+    case 'authorized':
+      return 'pending';
+    case 'rejected':
+    case 'cancelled':
+      return 'canceled';
+    default:
+      return 'pending';
+  }
+}
+
 /**
- * Generate a boleto for an annual plan purchase
- * TODO: Implement with Stripe Brazil or dedicated provider
+ * Generate a boleto for an annual plan purchase via Mercado Pago
  */
 export async function createBoleto(input: CreateBoletoInput): Promise<Boleto> {
   const dueDays = input.dueDays ?? 7;
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + dueDays);
 
-  // Stub — return mock data for development
+  const body = {
+    transaction_amount: input.amount / 100, // MP expects float in BRL (not cents)
+    description: input.planDescription,
+    payment_method_id: 'bolbradesco', // Bradesco boleto — most common
+    payer: {
+      email: `org-${input.orgId.slice(0, 8)}@ai-office.dev`,
+      first_name: input.orgName,
+      identification: {
+        type: 'CNPJ',
+        number: '00000000000000', // placeholder — real CNPJ from org profile when available
+      },
+    },
+    date_of_expiration: dueDate.toISOString(),
+    metadata: {
+      org_id: input.orgId,
+      plan_description: input.planDescription,
+      source: 'ai-office-sim',
+    },
+  };
+
+  const res = await fetch(`${MP_BASE_URL}/v1/payments`, {
+    method: 'POST',
+    headers: mpHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('[boleto] Mercado Pago create payment failed:', res.status, err);
+    throw new Error(`Mercado Pago boleto payment failed: ${res.status}`);
+  }
+
+  const data = await res.json() as {
+    id: number;
+    status: string;
+    barcode?: { content?: string };
+    transaction_details?: {
+      external_resource_url?: string;
+      digitable_line?: string;
+    };
+  };
+
   return {
-    id: `bol_${Date.now()}_${input.orgId.slice(0, 8)}`,
-    barcode: '00000.00000 00000.000000 00000.000000 0 00000000000000',
-    digitableLine: '00000.00000 00000.000000 00000.000000 0 00000000000000',
-    pdfUrl: '',
+    id: String(data.id),
+    barcode: data.barcode?.content ?? '',
+    digitableLine: data.transaction_details?.digitable_line ?? '',
+    pdfUrl: data.transaction_details?.external_resource_url ?? '',
     amount: input.amount,
     dueDate,
-    status: 'pending',
+    status: mapMpStatus(data.status),
     orgName: input.orgName,
     planDescription: input.planDescription,
   };
 }
 
 /**
- * Check the status of a boleto
- * TODO: Implement with provider API
+ * Check the status of a boleto via Mercado Pago
  */
 export async function getBoletoStatus(boletoId: string): Promise<Boleto['status']> {
-  return 'pending';
+  const res = await fetch(`${MP_BASE_URL}/v1/payments/${boletoId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getAccessToken()}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    console.error('[boleto] Mercado Pago get payment failed:', res.status);
+    return 'pending';
+  }
+
+  const data = await res.json() as { status: string };
+  return mapMpStatus(data.status);
 }
 
 /**
- * Cancel a pending boleto
- * TODO: Implement with provider API
+ * Cancel a pending boleto via Mercado Pago
  */
 export async function cancelBoleto(boletoId: string): Promise<boolean> {
-  return false;
+  const res = await fetch(`${MP_BASE_URL}/v1/payments/${boletoId}`, {
+    method: 'PUT',
+    headers: mpHeaders(),
+    body: JSON.stringify({ status: 'cancelled' }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('[boleto] Mercado Pago cancel failed:', res.status, err);
+    return false;
+  }
+
+  return true;
 }

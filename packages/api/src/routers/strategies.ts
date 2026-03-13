@@ -331,6 +331,62 @@ Keep it concise and actionable. Write in the same language as the user draft. Do
       return updated!;
     }),
 
+  /** Refine a draft strategy text with AI (no saved strategy needed — used by wizard) */
+  refineDraft: projectProcedure
+    .input(
+      z.object({
+        userDraft: z.string().min(1).max(5000),
+        type: z.string(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const systemAgentId = '00000000-0000-0000-0000-000000000000';
+
+      const { response } = await callLLM(
+        {
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1500,
+          messages: [
+            {
+              role: 'user',
+              content: `You are a business strategy consultant. Refine the following strategy draft into a clear, actionable plan.
+
+Strategy Type: ${input.type}
+Timeline: ${input.startDate ? `${input.startDate} to ${input.endDate ?? 'ongoing'}` : 'Not defined'}
+
+USER DRAFT:
+${input.userDraft}
+
+Write a refined strategy that includes:
+1. A clear objective statement (1-2 sentences)
+2. Key actions to take (3-5 bullet points)
+3. Success criteria
+4. Risks to monitor
+
+Keep it concise and actionable. Write in the same language as the user draft. Do not use markdown headers — use plain text with line breaks.`,
+            },
+          ],
+        },
+        {
+          projectId: ctx.project!.id,
+          agentId: systemAgentId,
+          sessionId: `strategy-refine-draft-${randomUUID()}`,
+          agentName: 'Strategy Refiner',
+        },
+      );
+
+      const textBlock = response.content.find((b) => b.type === 'text');
+      const refined = textBlock && textBlock.type === 'text' ? textBlock.text : '';
+
+      if (!refined) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'AI refinement produced empty result' });
+      }
+
+      return { refined };
+    }),
+
   addLearning: adminProcedure
     .input(
       z.object({

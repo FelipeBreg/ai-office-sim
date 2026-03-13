@@ -1,13 +1,29 @@
 /**
- * Pix Payment Provider Abstraction
+ * Pix Payment Provider — Mercado Pago Integration
  *
- * In production, this would integrate with EFI Bank (Gerencianet) or similar
- * provider that supports recurring Pix charges. For now, this is a type-safe
- * stub that defines the interface for future implementation.
+ * Uses the Mercado Pago Payments API to create Pix charges, check status, and refund.
+ * Docs: https://www.mercadopago.com.br/developers/en/reference/payments/_payments/post
  *
- * Required env vars (for production):
- *   PIX_CLIENT_ID, PIX_CLIENT_SECRET, PIX_CERTIFICATE_PATH, PIX_SANDBOX
+ * Required env vars:
+ *   MERCADOPAGO_ACCESS_TOKEN  — production or sandbox access token
+ *   MERCADOPAGO_SANDBOX       — "true" to use sandbox mode (optional)
  */
+
+const MP_BASE_URL = 'https://api.mercadopago.com';
+
+function getAccessToken(): string {
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  if (!token) throw new Error('MERCADOPAGO_ACCESS_TOKEN is not configured');
+  return token;
+}
+
+function mpHeaders(): Record<string, string> {
+  return {
+    'Authorization': `Bearer ${getAccessToken()}`,
+    'Content-Type': 'application/json',
+    'X-Idempotency-Key': `pix-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+  };
+}
 
 export interface PixCharge {
   txId: string;
@@ -33,37 +49,118 @@ export interface PixWebhookPayload {
   endToEndId?: string;
 }
 
+/** Map Mercado Pago payment status to our status */
+function mapMpStatus(mpStatus: string): PixCharge['status'] {
+  switch (mpStatus) {
+    case 'approved': return 'paid';
+    case 'pending':
+    case 'in_process':
+    case 'authorized':
+      return 'pending';
+    case 'refunded':
+    case 'charged_back':
+      return 'refunded';
+    case 'rejected':
+    case 'cancelled':
+      return 'expired';
+    default:
+      return 'pending';
+  }
+}
+
 /**
- * Create a Pix charge (QR code + copia-e-cola)
- * TODO: Implement with EFI Bank API
+ * Create a Pix charge via Mercado Pago Payments API
  */
 export async function createPixCharge(input: CreatePixChargeInput): Promise<PixCharge> {
   const expirationMinutes = input.expirationMinutes ?? 30;
+  const expiresAt = new Date(Date.now() + expirationMinutes * 60 * 1000);
 
-  // Stub — return mock data for development
+  const body = {
+    transaction_amount: input.amount / 100, // MP expects float in BRL (not cents)
+    description: input.description,
+    payment_method_id: 'pix',
+    payer: {
+      email: `org-${input.orgId.slice(0, 8)}@ai-office.dev`,
+    },
+    date_of_expiration: expiresAt.toISOString(),
+    metadata: {
+      org_id: input.orgId,
+      source: 'ai-office-sim',
+    },
+  };
+
+  const res = await fetch(`${MP_BASE_URL}/v1/payments`, {
+    method: 'POST',
+    headers: mpHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('[pix] Mercado Pago create payment failed:', res.status, err);
+    throw new Error(`Mercado Pago Pix payment failed: ${res.status}`);
+  }
+
+  const data = await res.json() as {
+    id: number;
+    status: string;
+    point_of_interaction?: {
+      transaction_data?: {
+        qr_code?: string;
+        qr_code_base64?: string;
+      };
+    };
+  };
+
+  const txData = data.point_of_interaction?.transaction_data;
+
   return {
-    txId: `pix_${Date.now()}_${input.orgId.slice(0, 8)}`,
-    qrCode: 'STUB_QR_CODE_DATA',
-    qrCodeBase64: '',
-    copiaECola: `00020126580014br.gov.bcb.pix0136stub-${input.orgId.slice(0, 8)}`,
+    txId: String(data.id),
+    qrCode: txData?.qr_code ?? '',
+    qrCodeBase64: txData?.qr_code_base64 ?? '',
+    copiaECola: txData?.qr_code ?? '',
     amount: input.amount,
-    expiresAt: new Date(Date.now() + expirationMinutes * 60 * 1000),
-    status: 'pending',
+    expiresAt,
+    status: mapMpStatus(data.status),
   };
 }
 
 /**
- * Check the status of a Pix charge
- * TODO: Implement with EFI Bank API
+ * Check the status of a Pix charge via Mercado Pago
  */
 export async function getPixChargeStatus(txId: string): Promise<PixCharge['status']> {
-  return 'pending';
+  const res = await fetch(`${MP_BASE_URL}/v1/payments/${txId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getAccessToken()}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    console.error('[pix] Mercado Pago get payment failed:', res.status);
+    return 'pending';
+  }
+
+  const data = await res.json() as { status: string };
+  return mapMpStatus(data.status);
 }
 
 /**
- * Process a Pix refund
- * TODO: Implement with EFI Bank API
+ * Process a Pix refund via Mercado Pago
  */
-export async function refundPixCharge(txId: string, endToEndId: string): Promise<boolean> {
-  return false;
+export async function refundPixCharge(txId: string, _endToEndId: string): Promise<boolean> {
+  const res = await fetch(`${MP_BASE_URL}/v1/payments/${txId}/refunds`, {
+    method: 'POST',
+    headers: mpHeaders(),
+    body: JSON.stringify({}),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('[pix] Mercado Pago refund failed:', res.status, err);
+    return false;
+  }
+
+  return true;
 }
