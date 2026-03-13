@@ -6667,3 +6667,81 @@ VERIFICATION:
   - turbo typecheck: 15/15 packages pass, 0 errors
 
 ================================================================================
+
+================================================================================
+COMMIT #141 — 2026-03-13 — Mercado Pago payments, global search, strategy AI, billing wiring
+================================================================================
+
+WHAT CHANGED:
+  packages/api/src/providers/pix.ts
+    - Complete rewrite: replaced stub with real Mercado Pago Payments API
+    - createPixCharge(): POST /v1/payments with payment_method_id: 'pix'
+    - getPixChargeStatus(): GET /v1/payments/{id} with status mapping
+    - refundPixCharge(): POST /v1/payments/{id}/refunds
+    - Uses MERCADOPAGO_ACCESS_TOKEN env var for auth
+
+  packages/api/src/providers/boleto.ts
+    - Complete rewrite: replaced stub with real Mercado Pago Payments API
+    - createBoleto(): POST /v1/payments with payment_method_id: 'bolbradesco'
+    - getBoletoStatus(): GET /v1/payments/{id} with status mapping
+    - cancelBoleto(): PUT /v1/payments/{id} with status: 'cancelled'
+    - Returns real barcode, digitable line, and PDF URL from API response
+
+  packages/api/src/routers/strategies.ts
+    - Added refineDraft mutation: takes raw userDraft + type + dates
+    - Calls Claude Haiku to produce refined strategy text
+    - No saved strategy required — used by wizard before creation
+
+  apps/web/src/components/strategy/strategy-wizard.tsx
+    - Removed setTimeout fake refinement (was faking 2.5s delay)
+    - Wired to real trpc.strategies.refineDraft mutation
+    - Removed unused useRef import and timer cleanup
+
+  apps/web/src/components/layout/search-dialog.tsx (NEW)
+    - Full Cmd+K global search dialog with framer-motion animations
+    - Searches agents (by name/archetype), workflows (by name/description),
+      strategies (by draft/type), and documents (via RAG search)
+    - Keyboard navigation: ↑↓ to navigate, Enter to open, Esc to close
+    - Debounced search with 250ms delay
+    - Results grouped by category with color-coded icons
+
+  apps/web/src/components/layout/header.tsx
+    - Search button now opens SearchDialog on click
+    - Cmd+K / Ctrl+K now toggles search dialog instead of no-op
+    - Added searchOpen state
+
+  packages/api/src/services/approval-notifications.ts
+    - WhatsApp: no longer sends to empty string ''
+    - Reads APPROVAL_WHATSAPP_NUMBER env var; skips if not configured
+    - Prevents silent failures from sending to invalid recipient
+
+  packages/api/src/routers/workflows.ts
+    - Added getRunCountsByWorkflow endpoint
+    - Groups workflow runs by workflowId with count aggregate
+    - Returns Record<workflowId, count> for efficient card rendering
+
+  apps/web/src/app/[locale]/(auth)/workflows/page.tsx
+    - WorkflowCard now accepts runCount prop (was hardcoded 0)
+    - Page queries getRunCountsByWorkflow and passes counts to cards
+
+  apps/web/src/app/[locale]/(auth)/settings/page.tsx
+    - Balance now shows real tokenBalance from billing.tokenBalance query
+    - Currency-aware display (R$ for BRL, $ for USD)
+    - Add Credits button creates Stripe checkout session via createCheckoutSession
+    - Falls back to alert only if Stripe is not configured
+
+  apps/web/messages/en-US.json, apps/web/messages/pt-BR.json
+    - Added nav.searchHint, nav.noResults, nav.navigate, nav.select, nav.close
+
+WHY:
+  - Pix and Boleto were fully stubbed returning fake data — now real Mercado Pago
+  - Strategy wizard was faking AI refinement with setTimeout — now calls real LLM
+  - Cmd+K was captured but empty — now opens full search across entire platform
+  - WhatsApp approval notifications silently failed sending to '' — now skips properly
+  - Workflow run counts were hardcoded 0 — now queried from DB
+  - Settings balance was hardcoded $0.00 — now shows real token balance
+
+VERIFICATION:
+  - tsc --noEmit passes for packages/api, apps/web, apps/worker (0 errors)
+
+================================================================================
