@@ -6617,3 +6617,53 @@ VERIFICATION:
   - turbo typecheck: 15/15 packages pass, 0 errors
 
 ================================================================================
+COMMIT #140 — 2026-03-13 — Fix silent failures: notifications, OAuth2, email, memory
+================================================================================
+
+PHASE: Post-V5 — Production Reliability
+
+WHAT CHANGED:
+
+  1. Calendar reminder notifications fixed (apps/worker/src/workers/calendar-reminder.worker.ts)
+    - Was emitting generic 'agent:action' with empty agentId/sessionId
+    - Now emits 'notification:calendar_reminder' with eventId, eventTitle, eventType, startAt
+    - Added CalendarReminderNotificationEvent type to realtime events
+    - Users now see which event is due and when
+
+  2. OAuth2 token refresh: logging + error recovery (packages/ai/src/tools/oauth2-helper.ts)
+    - Added console.warn when refresh token is missing (was silent null return)
+    - Added console.error when OAuth2 config env vars are missing
+    - Wrapped refreshAccessToken() in try/catch with detailed error logging
+    - On refresh failure: marks credential as expired (expiresAt = epoch 0) so UI shows re-auth needed
+    - On success: logs confirmation message
+
+  3. Approval notifications: real risk level + action type (apps/worker/src/workers/notification.worker.ts)
+    - Was hardcoded: actionType='tool_call', riskLevel='medium' for every approval
+    - Now queries approval record from DB to get real actionType and riskLevel
+    - Added import: db, approvals, eq from @ai-office/db
+    - Falls back to defaults if DB lookup fails
+
+  4. Email polling: error tracking + alerting (apps/worker/src/workers/email-inbound.worker.ts)
+    - Added Redis-based consecutive failure counter per connection (1h TTL)
+    - After 3 consecutive failures: sends notification, marks connection as 'disconnected'
+    - Resets failure counter on successful poll
+    - Added imports: getNotificationQueue, getRedisClient from @ai-office/queue
+
+  5. Agent memory extraction: failure notification (apps/worker/src/jobs/agent-execution.ts)
+    - Was console.warn only — nobody knew when memory learning stopped working
+    - Now sends notification via agent_error with agent name, session ID, and error message
+    - Double-fault protection: won't crash if notification queue itself fails
+
+FILES: 7 changed
+  - MODIFIED: apps/worker/src/workers/calendar-reminder.worker.ts (proper notification event)
+  - MODIFIED: apps/worker/src/workers/notification.worker.ts (real approval data from DB)
+  - MODIFIED: apps/worker/src/workers/email-inbound.worker.ts (error tracking + alerts)
+  - MODIFIED: apps/worker/src/jobs/agent-execution.ts (memory extraction alerts)
+  - MODIFIED: packages/ai/src/tools/oauth2-helper.ts (logging + error recovery)
+  - MODIFIED: packages/realtime/src/events.ts (CalendarReminderNotificationEvent type)
+  - MODIFIED: packages/realtime/src/index.ts (export new type)
+
+VERIFICATION:
+  - turbo typecheck: 15/15 packages pass, 0 errors
+
+================================================================================

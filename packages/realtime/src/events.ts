@@ -146,6 +146,15 @@ export interface BudgetProjectionWarningEvent {
   timestamp: string;
 }
 
+export interface CalendarReminderNotificationEvent {
+  eventId: string;
+  eventTitle: string;
+  eventType: string;
+  startAt: string | null;
+  reminderId: string;
+  timestamp: string;
+}
+
 // ── Server → Client Event Map ──
 
 export interface ServerToClientEvents {
@@ -170,6 +179,7 @@ export interface ServerToClientEvents {
   'conversation:status_changed': (data: ConversationStatusChangedEvent) => void;
   'conversation:assigned': (data: ConversationAssignedEvent) => void;
   'budget:projection_warning': (data: BudgetProjectionWarningEvent) => void;
+  'notification:calendar_reminder': (data: CalendarReminderNotificationEvent) => void;
 }
 
 // ── Client → Server Events ──

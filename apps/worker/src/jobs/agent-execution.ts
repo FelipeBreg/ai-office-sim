@@ -401,8 +401,18 @@ export async function processAgentExecution(
           }
         }
       } catch (memErr) {
-        console.warn(`[agent-execution] Memory extraction failed for ${sessionId}:`, memErr);
-        // Non-blocking — don't fail the session for memory extraction issues
+        console.error(`[agent-execution] Memory extraction failed for ${sessionId}:`, memErr);
+        // Non-blocking — don't fail the session, but notify so it can be investigated
+        try {
+          await getNotificationQueue().add(`mem-fail-${sessionId}`, {
+            type: 'agent_error',
+            projectId,
+            agentId,
+            message: `Memory extraction failed for agent "${agent.name}" (session ${sessionId.slice(0, 8)}): ${memErr instanceof Error ? memErr.message : 'unknown error'}`,
+          });
+        } catch {
+          // Double-fault protection: don't crash if notification also fails
+        }
       }
     }
 

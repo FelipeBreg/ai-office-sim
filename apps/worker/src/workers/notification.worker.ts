@@ -1,6 +1,7 @@
 import { QUEUE_NAMES, notificationJobSchema } from '@ai-office/queue';
 import type { NotificationJob } from '@ai-office/queue';
 import { createTypedWorker } from './create-worker.js';
+import { db, approvals, eq } from '@ai-office/db';
 import { emitToProject } from '../socket/server.js';
 
 export function createNotificationWorker() {
@@ -15,11 +16,27 @@ export function createNotificationWorker() {
       switch (type) {
         case 'approval_requested':
           if (agentId && approvalId) {
+            // Read real actionType and riskLevel from the approval record
+            let actionType = 'tool_call';
+            let riskLevel: 'low' | 'medium' | 'high' | 'critical' = 'medium';
+            try {
+              const [approval] = await db
+                .select({ actionType: approvals.actionType, riskLevel: approvals.riskLevel })
+                .from(approvals)
+                .where(eq(approvals.id, approvalId))
+                .limit(1);
+              if (approval) {
+                actionType = approval.actionType;
+                riskLevel = approval.riskLevel;
+              }
+            } catch {
+              // Use defaults if DB lookup fails
+            }
             emitToProject(projectId, 'approval:requested', {
               approvalId,
               agentId,
-              actionType: 'tool_call',
-              riskLevel: 'medium',
+              actionType,
+              riskLevel,
             });
           }
           break;

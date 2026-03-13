@@ -83,33 +83,52 @@ export async function getValidAccessToken(
 
   // Token expired — try to refresh
   if (!cred.refreshToken) {
-    return null; // Can't refresh without a refresh token
+    console.warn(`[oauth2] Token expired for ${toolType} (project=${projectId}) but no refresh token available. User needs to re-authorize.`);
+    return null;
   }
 
   const provider = getProvider(toolType);
   const config = getOAuth2Config(provider);
-  if (!config) return null;
+  if (!config) {
+    console.error(`[oauth2] OAuth2 config missing for provider "${provider}" — check env vars. Token refresh for ${toolType} (project=${projectId}) cannot proceed.`);
+    return null;
+  }
 
   const decryptedRefresh = decryptCredentials(cred.refreshToken);
-  const tokens = await refreshAccessToken(provider, config, decryptedRefresh);
 
-  const encryptedAccess = encryptCredentials(tokens.accessToken);
-  const encryptedRefresh = tokens.refreshToken
-    ? encryptCredentials(tokens.refreshToken)
-    : cred.refreshToken;
+  try {
+    const tokens = await refreshAccessToken(provider, config, decryptedRefresh);
 
-  const expiresAt = tokens.expiresIn
-    ? new Date(Date.now() + tokens.expiresIn * 1000)
-    : null;
+    const encryptedAccess = encryptCredentials(tokens.accessToken);
+    const encryptedRefresh = tokens.refreshToken
+      ? encryptCredentials(tokens.refreshToken)
+      : cred.refreshToken;
 
-  await db
-    .update(toolCredentials)
-    .set({
-      accessToken: encryptedAccess,
-      refreshToken: encryptedRefresh,
-      expiresAt,
-    })
-    .where(eq(toolCredentials.id, cred.id));
+    const expiresAt = tokens.expiresIn
+      ? new Date(Date.now() + tokens.expiresIn * 1000)
+      : null;
 
-  return tokens.accessToken;
+    await db
+      .update(toolCredentials)
+      .set({
+        accessToken: encryptedAccess,
+        refreshToken: encryptedRefresh,
+        expiresAt,
+      })
+      .where(eq(toolCredentials.id, cred.id));
+
+    console.log(`[oauth2] Token refreshed for ${toolType} (project=${projectId})`);
+    return tokens.accessToken;
+  } catch (err) {
+    console.error(
+      `[oauth2] Token refresh FAILED for ${toolType} (project=${projectId}):`,
+      err instanceof Error ? err.message : err,
+    );
+    // Mark credential as needing re-authorization by clearing expiresAt
+    await db
+      .update(toolCredentials)
+      .set({ expiresAt: new Date(0) })
+      .where(eq(toolCredentials.id, cred.id));
+    return null;
+  }
 }

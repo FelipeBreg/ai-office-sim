@@ -1,4 +1,4 @@
-import { QUEUE_NAMES, emailInboundJobSchema, getAgentExecutionQueue } from '@ai-office/queue';
+import { QUEUE_NAMES, emailInboundJobSchema, getAgentExecutionQueue, getNotificationQueue, getRedisClient } from '@ai-office/queue';
 import type { EmailInboundJob } from '@ai-office/queue';
 import { randomUUID } from 'node:crypto';
 import { createTypedWorker } from './create-worker.js';
@@ -15,6 +15,8 @@ import { createEmailClient } from '@ai-office/ai';
 import { decryptCredentials } from '@ai-office/shared';
 import type { EmailProvider, EmailCredentials } from '@ai-office/ai';
 import { emitToProject } from '../socket/server.js';
+
+const MAX_CONSECUTIVE_FAILURES = 3;
 
 /**
  * Email Inbound Polling Worker
@@ -81,8 +83,34 @@ export function createEmailInboundWorker() {
             console.error(
               `[email-inbound] IMAP error for project=${conn.projectId}: ${result.error}`,
             );
+
+            // Track consecutive failures and alert after threshold
+            const redis = getRedisClient();
+            const failKey = `email_fail:${conn.id}`;
+            const failCount = await redis.incr(failKey);
+            await redis.expire(failKey, 3600); // Reset counter after 1 hour of no failures
+
+            if (failCount >= MAX_CONSECUTIVE_FAILURES) {
+              console.error(`[email-inbound] Connection ${conn.id} (project=${conn.projectId}) has failed ${failCount} times consecutively`);
+              await getNotificationQueue().add(`email-fail-${conn.id}`, {
+                type: 'agent_error',
+                projectId: conn.projectId,
+                message: `Email monitoring stopped: IMAP connection failed ${failCount} times. Last error: ${result.error}. Check email credentials in Settings.`,
+              });
+
+              // Mark connection as disconnected so it stops being polled
+              await db
+                .update(emailConnections)
+                .set({ status: 'disconnected' })
+                .where(eq(emailConnections.id, conn.id));
+            }
+
             continue;
           }
+
+          // Reset failure counter on success
+          const redis = getRedisClient();
+          await redis.del(`email_fail:${conn.id}`).catch(() => {});
 
           if (result.emails.length === 0) continue;
 

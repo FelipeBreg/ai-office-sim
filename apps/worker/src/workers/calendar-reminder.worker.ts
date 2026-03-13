@@ -38,11 +38,12 @@ export function createCalendarReminderWorker() {
         for (const reminder of dueReminders) {
           // Emit in-app notification via Socket.IO
           if (reminder.channel === 'in_app') {
-            emitToProject(reminder.projectId, 'agent:action', {
-              agentId: '',
-              sessionId: '',
-              actionType: 'llm_response',
-              status: 'completed',
+            emitToProject(reminder.projectId, 'notification:calendar_reminder', {
+              eventId: reminder.eventId,
+              eventTitle: reminder.eventTitle,
+              eventType: reminder.eventType,
+              startAt: reminder.startAt?.toISOString() ?? null,
+              reminderId: reminder.reminderId,
               timestamp: now.toISOString(),
             });
           }
