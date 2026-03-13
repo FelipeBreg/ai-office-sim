@@ -6532,3 +6532,47 @@ VERIFICATION:
   - turbo typecheck: 15/15 packages pass, 0 errors
 
 ================================================================================
+COMMIT #138 — 2026-03-13 — Onboarding scraper + dead code cleanup
+================================================================================
+
+PHASE: Post-V5 — Production Readiness
+
+WHAT CHANGED:
+
+  1. Dead mock code removed: useAgentStatuses hook (apps/web/src/components/office/)
+    - Deleted useAgentStatuses.ts entirely — contained cycling demo statuses never used
+    - OfficeCanvas already uses real Socket.IO statuses via useLiveAgentStatuses()
+    - Updated TeamRoster.tsx import: AgentStatusMap now from AgentLayer (canonical source)
+    - Removed re-export from office/index.ts
+
+  2. Onboarding smart scraper: real URL fetching + Claude Haiku analysis
+    - Backend (packages/api/src/routers/onboarding.ts):
+      - fetchPageText(): fetches URL with 10s timeout, strips scripts/styles/tags, limits to 12k chars
+      - Fetches all provided URLs in parallel (website, linkedin, instagram, facebook)
+      - Sends scraped text to Claude Haiku with structured JSON prompt
+      - parseProfileJSON(): handles markdown code fences and raw JSON responses
+      - Returns structured profile: description, products, targetAudience, brandVoice,
+        channels, teamSize, techStack, competitors, contentThemes
+      - Graceful fallback: returns empty profile if scraping fails or no URLs provided
+      - Added companyName to input schema for better LLM context
+    - Frontend (apps/web/src/app/[locale]/(auth)/onboarding/smart/page.tsx):
+      - Scanning step now calls scrapeCompany mutation when entering step 1
+      - Progress bar caps at 90% while waiting for scrape, rushes to 100% when done
+      - Passed scrapeFinished prop to StepScanning component
+
+  3. Worker handlers verified (no changes needed)
+    - calendar-reminder.worker.ts: fully implemented (send_reminders + mark_overdue)
+    - calendar-recurrence.worker.ts: fully implemented (recurring event expansion with horizon)
+    - cleanup.worker.ts: fully implemented (expired_sessions, old_action_logs, stale_jobs)
+
+FILES: 5 changed
+  - DELETED:  apps/web/src/components/office/useAgentStatuses.ts
+  - MODIFIED: apps/web/src/components/office/index.ts (removed dead export)
+  - MODIFIED: apps/web/src/components/office/TeamRoster.tsx (import fix)
+  - MODIFIED: packages/api/src/routers/onboarding.ts (real scraper)
+  - MODIFIED: apps/web/src/app/[locale]/(auth)/onboarding/smart/page.tsx (wired scraper)
+
+VERIFICATION:
+  - turbo typecheck: 15/15 packages pass, 0 errors
+
+================================================================================

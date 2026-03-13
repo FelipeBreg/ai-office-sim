@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import type { AgentStatus } from './AgentAvatar';
-import type { AgentStatusMap } from './useAgentStatuses';
+import type { AgentStatusMap } from './AgentLayer';
 import { useRosterStore, type RosterMode } from '@/stores/roster-store';
 
 // ── Types ────────────────────────────────────────────────────────────

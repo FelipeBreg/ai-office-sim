@@ -215,7 +215,15 @@ function StepCompanyProfile({
 /*  Step 1: Scanning / Analysis (auto-advance)                                */
 /* -------------------------------------------------------------------------- */
 
-function StepScanning({ t, onComplete }: { t: (key: string) => string; onComplete: () => void }) {
+function StepScanning({
+  t,
+  onComplete,
+  scrapeFinished,
+}: {
+  t: (key: string) => string;
+  onComplete: () => void;
+  scrapeFinished: boolean;
+}) {
   const [progress, setProgress] = useState(0);
   const completed = useRef(false);
 
@@ -223,19 +231,23 @@ function StepScanning({ t, onComplete }: { t: (key: string) => string; onComplet
     if (completed.current) return;
     const interval = setInterval(() => {
       setProgress((p) => {
-        if (p >= 100) {
-          clearInterval(interval);
-          if (!completed.current) {
-            completed.current = true;
-            setTimeout(onComplete, 500);
+        // If scrape is done, rush to 100; otherwise cap at 90 to wait
+        const cap = scrapeFinished ? 100 : 90;
+        if (p >= cap) {
+          if (p >= 100) {
+            clearInterval(interval);
+            if (!completed.current) {
+              completed.current = true;
+              setTimeout(onComplete, 500);
+            }
           }
-          return 100;
+          return p;
         }
         return p + 2;
       });
     }, 80);
     return () => clearInterval(interval);
-  }, [onComplete]);
+  }, [onComplete, scrapeFinished]);
 
   const steps = [
     { label: t('smartScanWebsite'), threshold: 20 },
@@ -561,6 +573,10 @@ export default function SmartOnboardingPage() {
   // Step 3: Fleet
   const [recommendation, setRecommendation] = useState<FleetRecommendation | null>(null);
 
+  // Step 1: Scraping
+  const scrapeMutation = trpc.onboarding.scrapeCompany.useMutation();
+  const [scrapeFinished, setScrapeFinished] = useState(false);
+
   // Step 4: Deploy
   const [deploying, setDeploying] = useState(false);
   const [deployed, setDeployed] = useState(false);
@@ -594,10 +610,20 @@ export default function SmartOnboardingPage() {
 
   const goNext = useCallback(() => {
     if (step < 4) {
+      // Trigger scraping when moving from step 0 to step 1
+      if (step === 0 && websiteUrl) {
+        setScrapeFinished(false);
+        scrapeMutation.mutate(
+          { companyName, websiteUrl: websiteUrl || undefined },
+          { onSettled: () => setScrapeFinished(true) },
+        );
+      } else if (step === 0) {
+        setScrapeFinished(true); // No URL to scrape, skip
+      }
       setDirection(1);
       setStep((s) => (s + 1) as SmartStep);
     }
-  }, [step]);
+  }, [step, websiteUrl, companyName, scrapeMutation]);
 
   const goBack = useCallback(() => {
     if (step > 0) {
@@ -704,7 +730,7 @@ export default function SmartOnboardingPage() {
                   t={t}
                 />
               )}
-              {step === 1 && <StepScanning t={t} onComplete={handleScanComplete} />}
+              {step === 1 && <StepScanning t={t} onComplete={handleScanComplete} scrapeFinished={scrapeFinished} />}
               {step === 2 && (
                 <StepStrategy
                   primaryGoal={primaryGoal}

@@ -6,7 +6,6 @@ export type { AgentData, AgentLayerProps, AgentStatusMap } from './AgentLayer';
 export { AgentInspectPanel } from './AgentInspectPanel';
 export type { InspectedAgent, ActionFeedItem, AgentInspectPanelProps } from './AgentInspectPanel';
 export { getAgentPosition, getRoomSlots, getRoomCapacity, getRoomKeys } from './AgentPositions';
-export { useAgentStatuses } from './useAgentStatuses';
 export { FloorSystem } from './FloorSystem';
 export { FloorCameraController } from './FloorCameraController';
 export { TeamRoster } from './TeamRoster';
