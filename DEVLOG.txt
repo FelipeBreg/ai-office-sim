@@ -6404,3 +6404,74 @@ VERIFICATION:
   - tsc --noEmit: 0 errors (api + web)
 
 ================================================================================
+
+================================================================================
+COMMIT #136 — Wire Real LLM Calls: Analytics Learning + Strategy Refinement + Stripe Billing
+================================================================================
+DATE: 2026-03-13
+HASH: (see git log)
+PHASE: Post-V5 — Production Readiness
+
+WHAT WAS FIXED:
+
+  1. Analytics Worker — Real LLM Learning Detection
+    - Replaced stub learning generation with actual Claude (Haiku) call
+    - Builds structured action summaries per agent: total/succeeded/failed counts,
+      top 5 tools used, agent archetype context
+    - Prompt asks Claude to analyze patterns against strategy goals and return
+      JSON with insight, recommendation, and confidence score
+    - parseLearningResponse() handles JSON extraction with markdown wrapper
+      tolerance, fallback to plain text, field truncation (2K chars),
+      confidence clamping (0-1)
+    - Deduplication guard preserved (skips if learning exists for
+      strategy+agent in past 7 days)
+    - Uses system agent ID for analytics LLM calls (separate from real agents)
+
+  2. Strategy AI Refinement — Real LLM Call
+    - refineWithAI endpoint now calls Claude (Haiku) with strategy context:
+      type, timeline, user draft, existing KPIs, and applied learnings
+    - Generates structured refined plan: objective, key actions, success
+      criteria, risks to monitor
+    - Updates strategy.aiRefined and increments version
+    - Language-aware: responds in same language as user draft
+    - applyLearning now merges learning into aiRefined via async Claude call
+      (non-blocking, with error logging)
+
+  3. Stripe Billing — Fully Functional
+    - Added stripe SDK as dependency to @ai-office/api
+    - createCheckoutSession: creates real Stripe Checkout Session
+      - Auto-creates Stripe customer if none exists (stores stripeCustomerId)
+      - Resolves price IDs from STRIPE_PRICE_* env vars
+      - Configures success/cancel URLs with app URL detection
+      - Returns real checkout URL
+    - createPortalSession: creates real Stripe Customer Portal session
+    - getStripe() helper with clear error if STRIPE_SECRET_KEY not set
+    - Fixed operator precedence bug in appUrl ternary
+
+  Review Fixes:
+    1. Missing closing brace in applyLearning (syntax error) — fixed
+    2. Operator precedence bug in Stripe appUrl — || vs ternary — fixed
+    3. Removed hardcoded Stripe apiVersion cast — uses SDK default
+
+FILES: 5 changed
+  - MODIFIED: apps/worker/src/workers/analytics.worker.ts (real LLM calls)
+  - MODIFIED: packages/api/src/routers/strategies.ts (real LLM refinement + merge)
+  - MODIFIED: packages/api/src/routers/billing.ts (real Stripe integration)
+  - MODIFIED: packages/api/package.json (+stripe dependency)
+  - MODIFIED: pnpm-lock.yaml
+
+VERIFICATION:
+  - turbo typecheck --force: 15/15 packages pass, 0 errors
+
+ENV VARS REQUIRED (new):
+  - STRIPE_SECRET_KEY: Stripe secret key
+  - STRIPE_PRICE_GROWTH_MONTHLY_BRL: Price ID for Growth monthly BRL
+  - STRIPE_PRICE_GROWTH_MONTHLY_USD: Price ID for Growth monthly USD
+  - STRIPE_PRICE_GROWTH_ANNUAL_BRL: Price ID for Growth annual BRL
+  - STRIPE_PRICE_GROWTH_ANNUAL_USD: Price ID for Growth annual USD
+  - STRIPE_PRICE_PRO_MONTHLY_BRL: Price ID for Pro monthly BRL
+  - STRIPE_PRICE_PRO_MONTHLY_USD: Price ID for Pro monthly USD
+  - STRIPE_PRICE_PRO_ANNUAL_BRL: Price ID for Pro annual BRL
+  - STRIPE_PRICE_PRO_ANNUAL_USD: Price ID for Pro annual USD
+
+================================================================================

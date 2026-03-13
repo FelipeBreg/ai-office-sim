@@ -14,11 +14,43 @@ import {
   sql,
   count,
 } from '@ai-office/db';
+import { callLLM } from '@ai-office/ai';
+import { randomUUID } from 'crypto';
 import { createTypedWorker } from './create-worker.js';
 
 /* -------------------------------------------------------------------------- */
 /*  Learning detection — analyzes recent agent actions for strategy insights  */
 /* -------------------------------------------------------------------------- */
+
+interface LearningAnalysis {
+  insight: string;
+  recommendation: string;
+  confidence: number;
+}
+
+function parseLearningResponse(text: string): LearningAnalysis {
+  try {
+    // Try to extract JSON from the response (Claude may wrap it in markdown)
+    const jsonMatch = text.match(/\{[\s\S]*?\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        insight: String(parsed.insight || '').slice(0, 2000),
+        recommendation: String(parsed.recommendation || '').slice(0, 2000),
+        confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0.5)),
+      };
+    }
+  } catch {
+    // Fall through to plain text extraction
+  }
+
+  // Fallback: use the full text as insight
+  return {
+    insight: text.slice(0, 2000),
+    recommendation: '',
+    confidence: 0.5,
+  };
+}
 
 async function detectLearnings(projectId: string, date: string): Promise<number> {
   // Get active strategies for this project
@@ -66,26 +98,31 @@ async function detectLearnings(projectId: string, date: string): Promise<number>
 
   const agentMap = new Map(projectAgents.map((a) => [a.id, a]));
 
-  // For each active strategy, analyze actions and generate learnings
-  // TODO: Replace with real LLM call (callLLM from @ai-office/ai) when available
-  // For now, generate structured learning stubs based on action patterns
   let learningsCreated = 0;
+  // Use a synthetic agent ID for the analytics system's own LLM calls
+  const systemAgentId = '00000000-0000-0000-0000-000000000000';
 
   for (const strategy of activeStrategies) {
-    // Summarize actions by agent
-    const actionsByAgent = new Map<string, number>();
+    // Summarize actions by agent with tool breakdown
+    const actionsByAgent = new Map<string, { total: number; succeeded: number; failed: number; tools: Map<string, number> }>();
     for (const action of recentActions) {
-      const count = actionsByAgent.get(action.agentId) ?? 0;
-      actionsByAgent.set(action.agentId, count + 1);
+      const existing = actionsByAgent.get(action.agentId) ?? { total: 0, succeeded: 0, failed: 0, tools: new Map() };
+      existing.total++;
+      if (action.status === 'completed') existing.succeeded++;
+      if (action.status === 'failed') existing.failed++;
+      if (action.toolName) {
+        existing.tools.set(action.toolName, (existing.tools.get(action.toolName) ?? 0) + 1);
+      }
+      actionsByAgent.set(action.agentId, existing);
     }
 
     // Find most active agent for this analysis cycle
     let topAgentId: string | null = null;
     let topCount = 0;
-    for (const [agentId, count] of actionsByAgent) {
-      if (count > topCount) {
+    for (const [agentId, stats] of actionsByAgent) {
+      if (stats.total > topCount) {
         topAgentId = agentId;
-        topCount = count;
+        topCount = stats.total;
       }
     }
 
@@ -93,11 +130,6 @@ async function detectLearnings(projectId: string, date: string): Promise<number>
 
     const topAgent = agentMap.get(topAgentId);
     if (!topAgent) continue;
-
-    // TODO: Send action summaries to Claude with a prompt:
-    // "Given strategy: {strategy.userDraft}, and these agent actions: {actionSummary},
-    //  what patterns or insights relate to the strategy goals?"
-    // Parse response into structured learnings (insight + recommendation + confidence)
 
     // Check if we already created a learning for this strategy+agent in the past 7 days
     const existingLearnings = await db
@@ -114,22 +146,74 @@ async function detectLearnings(projectId: string, date: string): Promise<number>
 
     if (existingLearnings.length > 0) continue;
 
-    // Stub: create a placeholder learning to demonstrate the pipeline
-    const insight = `Agent "${topAgent.name}" completed ${topCount} actions in the past 7 days ` +
-      `related to the ${strategy.type} strategy. Pattern analysis pending LLM integration.`;
+    // Build action summary for Claude
+    const agentSummaries: string[] = [];
+    for (const [agentId, stats] of actionsByAgent) {
+      const agent = agentMap.get(agentId);
+      const toolList = [...stats.tools.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([tool, cnt]) => `${tool}(${cnt})`)
+        .join(', ');
+      agentSummaries.push(
+        `- ${agent?.name ?? agentId} (${agent?.archetype ?? 'unknown'}): ${stats.total} actions (${stats.succeeded} ok, ${stats.failed} failed). Top tools: ${toolList}`,
+      );
+    }
 
     try {
+      const { response } = await callLLM(
+        {
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 500,
+          messages: [
+            {
+              role: 'user',
+              content: `You are a business strategy analyst. Analyze agent activity patterns and generate ONE actionable learning for the given strategy.
+
+STRATEGY:
+- Type: ${strategy.type}
+- Status: ${strategy.status}
+- Objective: ${strategy.userDraft || 'Not specified'}
+- AI Refined Plan: ${strategy.aiRefined || 'None yet'}
+
+AGENT ACTIVITY (last 7 days):
+${agentSummaries.join('\n')}
+
+Most active agent: "${topAgent.name}" (${topAgent.archetype}) with ${topCount} actions.
+
+Respond with ONLY a JSON object (no markdown, no explanation):
+{"insight": "one sentence describing the pattern you observed", "recommendation": "one sentence with a specific actionable suggestion", "confidence": 0.7}
+
+The confidence should be 0.3-0.5 if data is sparse, 0.6-0.8 if patterns are clear, 0.9+ only if very strong evidence.`,
+            },
+          ],
+        },
+        {
+          projectId,
+          agentId: systemAgentId,
+          sessionId: `analytics-${randomUUID()}`,
+          agentName: 'Analytics System',
+        },
+      );
+
+      const textBlock = response.content.find((b) => b.type === 'text');
+      if (!textBlock || textBlock.type !== 'text') continue;
+
+      const learning = parseLearningResponse(textBlock.text);
+
+      if (!learning.insight) continue;
+
       await db.insert(strategyLearnings).values({
         strategyId: strategy.id,
         projectId,
         agentId: topAgentId,
-        insight,
-        recommendation: 'Pending AI analysis — will be replaced by Claude-generated recommendations.',
-        confidence: '0.5',
+        insight: learning.insight,
+        recommendation: learning.recommendation || null,
+        confidence: String(learning.confidence),
       });
       learningsCreated++;
     } catch (err) {
-      console.error(`[analytics] Failed to insert learning for strategy ${strategy.id}:`, err);
+      console.error(`[analytics] Failed to generate learning for strategy ${strategy.id}:`, err);
     }
   }
 

@@ -19,6 +19,7 @@
     "@ai-office/shared": "workspace:*",
     "@trpc/server": "^11.0.0",
     "drizzle-orm": "^0.38.0",
+    "stripe": "^20.4.1",
     "superjson": "^2.2.0",
     "zod": "^3.24.0"
   },

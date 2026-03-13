@@ -14,6 +14,8 @@ import {
   sql,
   inArray,
 } from '@ai-office/db';
+import { callLLM } from '@ai-office/ai';
+import { randomUUID } from 'crypto';
 import { TRPCError } from '@trpc/server';
 
 export const strategiesRouter = createTRPCRouter({
@@ -83,7 +85,13 @@ export const strategiesRouter = createTRPCRouter({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Learning not found' });
       }
 
-      // Apply learning + increment version in a transaction
+      // Apply learning + increment version + merge into aiRefined via Claude
+      const [strategy] = await db
+        .select()
+        .from(strategies)
+        .where(eq(strategies.id, learning.strategyId))
+        .limit(1);
+
       const result = await db.transaction(async (tx) => {
         const [updated] = await tx
           .update(strategyLearnings)
@@ -96,10 +104,52 @@ export const strategiesRouter = createTRPCRouter({
           .set({ version: sql`${strategies.version} + 1` })
           .where(eq(strategies.id, learning.strategyId));
 
-        // TODO: P3-2.6 — merge learning into strategy aiRefined text via Claude call
-
         return updated!;
       });
+
+      // Merge learning into aiRefined text asynchronously (non-blocking)
+      if (strategy?.aiRefined) {
+        const systemAgentId = '00000000-0000-0000-0000-000000000000';
+        callLLM(
+          {
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 1500,
+            messages: [
+              {
+                role: 'user',
+                content: `You have an existing strategy plan and a new learning to incorporate. Update the plan to reflect this new insight. Keep the same structure and language. Be concise.
+
+CURRENT PLAN:
+${strategy.aiRefined}
+
+NEW LEARNING TO INCORPORATE:
+Insight: ${learning.insight}
+${learning.recommendation ? `Recommendation: ${learning.recommendation}` : ''}
+
+Return ONLY the updated plan text, nothing else.`,
+              },
+            ],
+          },
+          {
+            projectId: ctx.project!.id,
+            agentId: systemAgentId,
+            sessionId: `learning-merge-${randomUUID()}`,
+            agentName: 'Strategy Refiner',
+          },
+        )
+          .then(async ({ response: mergeResponse }) => {
+            const block = mergeResponse.content.find((b) => b.type === 'text');
+            if (block && block.type === 'text' && block.text) {
+              await db
+                .update(strategies)
+                .set({ aiRefined: block.text })
+                .where(eq(strategies.id, learning.strategyId));
+            }
+          })
+          .catch((err) => {
+            console.error(`[strategies] Failed to merge learning into aiRefined:`, err);
+          });
+      }
 
       return result;
     }),
@@ -201,8 +251,84 @@ export const strategiesRouter = createTRPCRouter({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'User draft is required for AI refinement' });
       }
 
-      // TODO: Enqueue AI refinement job via BullMQ
-      return { enqueued: true, strategyId: strategy.id };
+      // Fetch existing KPIs and learnings for richer context
+      const kpis = await db
+        .select()
+        .from(strategyKpis)
+        .where(eq(strategyKpis.strategyId, strategy.id));
+
+      const learnings = await db
+        .select()
+        .from(strategyLearnings)
+        .where(
+          and(
+            eq(strategyLearnings.strategyId, strategy.id),
+            eq(strategyLearnings.isApplied, true),
+          ),
+        )
+        .orderBy(desc(strategyLearnings.createdAt))
+        .limit(10);
+
+      const kpiContext = kpis.length > 0
+        ? `\nCurrent KPIs:\n${kpis.map((k) => `- ${k.name}: current=${k.currentValue}, target=${k.targetValue}`).join('\n')}`
+        : '';
+
+      const learningsContext = learnings.length > 0
+        ? `\nApplied Learnings:\n${learnings.map((l) => `- ${l.insight}`).join('\n')}`
+        : '';
+
+      const systemAgentId = '00000000-0000-0000-0000-000000000000';
+
+      const { response } = await callLLM(
+        {
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1500,
+          messages: [
+            {
+              role: 'user',
+              content: `You are a business strategy consultant. Refine the following strategy draft into a clear, actionable plan.
+
+Strategy Type: ${strategy.type}
+Timeline: ${strategy.startDate ? `${strategy.startDate} to ${strategy.endDate}` : 'Not defined'}
+
+USER DRAFT:
+${strategy.userDraft}
+${kpiContext}
+${learningsContext}
+
+Write a refined strategy that includes:
+1. A clear objective statement (1-2 sentences)
+2. Key actions to take (3-5 bullet points)
+3. Success criteria
+4. Risks to monitor
+
+Keep it concise and actionable. Write in the same language as the user draft. Do not use markdown headers — use plain text with line breaks.`,
+            },
+          ],
+        },
+        {
+          projectId: ctx.project!.id,
+          agentId: systemAgentId,
+          sessionId: `strategy-refine-${randomUUID()}`,
+          agentName: 'Strategy Refiner',
+        },
+      );
+
+      const textBlock = response.content.find((b) => b.type === 'text');
+      const aiRefined = textBlock && textBlock.type === 'text' ? textBlock.text : '';
+
+      if (!aiRefined) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'AI refinement produced empty result' });
+      }
+
+      // Update strategy with AI-refined version
+      const [updated] = await db
+        .update(strategies)
+        .set({ aiRefined, version: sql`${strategies.version} + 1` })
+        .where(eq(strategies.id, strategy.id))
+        .returning();
+
+      return updated!;
     }),
 
   addLearning: adminProcedure

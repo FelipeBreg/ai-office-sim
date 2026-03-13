@@ -17,6 +17,29 @@ import {
 } from '@ai-office/db';
 import { TRPCError } from '@trpc/server';
 import { PLAN_PRICING, PLAN_FEATURES } from '@ai-office/shared';
+import Stripe from 'stripe';
+
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: 'Stripe is not configured. Set STRIPE_SECRET_KEY environment variable.',
+    });
+  }
+  return new Stripe(key);
+}
+
+const PRICE_ID_MAP: Record<string, string | undefined> = {
+  'growth_monthly_brl': process.env.STRIPE_PRICE_GROWTH_MONTHLY_BRL,
+  'growth_monthly_usd': process.env.STRIPE_PRICE_GROWTH_MONTHLY_USD,
+  'growth_annual_brl': process.env.STRIPE_PRICE_GROWTH_ANNUAL_BRL,
+  'growth_annual_usd': process.env.STRIPE_PRICE_GROWTH_ANNUAL_USD,
+  'pro_monthly_brl': process.env.STRIPE_PRICE_PRO_MONTHLY_BRL,
+  'pro_monthly_usd': process.env.STRIPE_PRICE_PRO_MONTHLY_USD,
+  'pro_annual_brl': process.env.STRIPE_PRICE_PRO_ANNUAL_BRL,
+  'pro_annual_usd': process.env.STRIPE_PRICE_PRO_ANNUAL_USD,
+};
 
 export const billingRouter = createTRPCRouter({
   /** Get current subscription for the org */
@@ -161,7 +184,7 @@ export const billingRouter = createTRPCRouter({
       }
     }),
 
-  /** Create a Stripe checkout session URL (stub — needs Stripe SDK in production) */
+  /** Create a Stripe checkout session URL */
   createCheckoutSession: protectedProcedure.use(requireRole('admin'))
     .input(
       z.object({
@@ -184,12 +207,56 @@ export const billingRouter = createTRPCRouter({
         });
       }
 
-      // TODO: Replace with actual Stripe Checkout Session creation
-      // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-      // const session = await stripe.checkout.sessions.create({ ... });
+      const stripe = getStripe();
+      const orgId = ctx.org!.id;
+
+      // Look up or create Stripe customer
+      const [org] = await db
+        .select()
+        .from(organizations)
+        .where(eq(organizations.id, orgId))
+        .limit(1);
+
+      let customerId = org?.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          name: org?.name ?? undefined,
+          metadata: { orgId, clerkOrgId: org?.clerkOrgId ?? '' },
+        });
+        customerId = customer.id;
+
+        await db
+          .update(organizations)
+          .set({ stripeCustomerId: customerId })
+          .where(eq(organizations.id, orgId));
+      }
+
+      // Resolve price ID from environment
+      const priceKey = `${input.plan}_${input.interval}_${input.currency}`;
+      const priceId = PRICE_ID_MAP[priceKey];
+
+      if (!priceId) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: `Stripe price not configured for ${priceKey}. Set STRIPE_PRICE_${priceKey.toUpperCase()} env var.`,
+        });
+      }
+
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL
+        || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        mode: 'subscription',
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${appUrl}/settings?billing=success`,
+        cancel_url: `${appUrl}/settings?billing=cancelled`,
+        metadata: { orgId, plan: input.plan },
+      });
+
       return {
-        url: null as string | null,
-        message: 'Stripe checkout session creation requires STRIPE_SECRET_KEY environment variable.',
+        url: session.url,
         plan: input.plan,
         interval: input.interval,
         amount,
@@ -197,7 +264,7 @@ export const billingRouter = createTRPCRouter({
       };
     }),
 
-  /** Create a Stripe Customer Portal session URL (stub) */
+  /** Create a Stripe Customer Portal session URL */
   createPortalSession: protectedProcedure.use(requireRole('admin')).mutation(async ({ ctx }) => {
     const orgId = ctx.org!.id;
 
@@ -214,11 +281,18 @@ export const billingRouter = createTRPCRouter({
       });
     }
 
-    // TODO: Replace with actual Stripe Customer Portal session creation
-    return {
-      url: null as string | null,
-      message: 'Stripe portal session creation requires STRIPE_SECRET_KEY environment variable.',
-    };
+    const stripe = getStripe();
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: org.stripeCustomerId,
+      return_url: `${appUrl}/settings`,
+    });
+
+    return { url: session.url };
   }),
 
   /** Estimate agent cost based on configuration */
